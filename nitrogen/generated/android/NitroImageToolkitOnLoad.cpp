@@ -27,7 +27,7 @@ int initialize(JavaVM* vm) {
 }
 
 struct JHybridNitroImageToolkitSpecImpl: public jni::JavaClass<JHybridNitroImageToolkitSpecImpl, JHybridNitroImageToolkitSpec::JavaPart> {
-  static constexpr auto kJavaDescriptor = "Lcom/nitroimagetoolkit/HybridNitroImageToolkit;";
+  static constexpr auto kJavaDescriptor = "Lcom/margelo/nitro/nitroimagetoolkit/HybridNitroImageToolkit;";
   static std::shared_ptr<JHybridNitroImageToolkitSpec> create() {
     static const auto constructorFn = javaClassStatic()->getConstructor<JHybridNitroImageToolkitSpecImpl::javaobject()>();
     jni::local_ref<JHybridNitroImageToolkitSpec::JavaPart> javaPart = javaClassStatic()->newObject(constructorFn);

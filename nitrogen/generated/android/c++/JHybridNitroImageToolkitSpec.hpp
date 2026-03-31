@@ -54,7 +54,14 @@ namespace margelo::nitro::nitroimagetoolkit {
 
   public:
     // Methods
-    double sum(double num1, double num2) override;
+    std::shared_ptr<Promise<std::shared_ptr<margelo::nitro::image::HybridImageSpec>>> gaussianBlur(const std::shared_ptr<margelo::nitro::image::HybridImageSpec>& image, double radius) override;
+    std::shared_ptr<Promise<std::optional<std::shared_ptr<margelo::nitro::image::HybridImageSpec>>>> getCached(const std::string& key) override;
+    std::shared_ptr<Promise<void>> cache(const std::shared_ptr<margelo::nitro::image::HybridImageSpec>& image, const std::string& key) override;
+    std::shared_ptr<Promise<void>> evict(const std::string& key) override;
+    std::shared_ptr<Promise<void>> clearCache() override;
+    void setMaxDiskCacheSize(double bytes) override;
+    void setMaxMemoryCacheCount(double count) override;
+    std::shared_ptr<Promise<double>> getDiskCacheSize() override;
 
   private:
     jni::global_ref<JHybridNitroImageToolkitSpec::JavaPart> _javaPart;

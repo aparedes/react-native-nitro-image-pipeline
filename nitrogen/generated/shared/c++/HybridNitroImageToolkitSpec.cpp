@@ -14,7 +14,14 @@ namespace margelo::nitro::nitroimagetoolkit {
     HybridObject::loadHybridMethods();
     // load custom methods/properties
     registerHybrids(this, [](Prototype& prototype) {
-      prototype.registerHybridMethod("sum", &HybridNitroImageToolkitSpec::sum);
+      prototype.registerHybridMethod("gaussianBlur", &HybridNitroImageToolkitSpec::gaussianBlur);
+      prototype.registerHybridMethod("getCached", &HybridNitroImageToolkitSpec::getCached);
+      prototype.registerHybridMethod("cache", &HybridNitroImageToolkitSpec::cache);
+      prototype.registerHybridMethod("evict", &HybridNitroImageToolkitSpec::evict);
+      prototype.registerHybridMethod("clearCache", &HybridNitroImageToolkitSpec::clearCache);
+      prototype.registerHybridMethod("setMaxDiskCacheSize", &HybridNitroImageToolkitSpec::setMaxDiskCacheSize);
+      prototype.registerHybridMethod("setMaxMemoryCacheCount", &HybridNitroImageToolkitSpec::setMaxMemoryCacheCount);
+      prototype.registerHybridMethod("getDiskCacheSize", &HybridNitroImageToolkitSpec::getDiskCacheSize);
     });
   }
 

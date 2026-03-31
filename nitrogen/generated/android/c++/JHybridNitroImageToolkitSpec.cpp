@@ -7,9 +7,17 @@
 
 #include "JHybridNitroImageToolkitSpec.hpp"
 
+// Forward declaration of `HybridImageSpec` to properly resolve imports.
+namespace margelo::nitro::image { class HybridImageSpec; }
 
-
-
+#include <memory>
+#include <NitroImage/HybridImageSpec.hpp>
+#include <NitroModules/Promise.hpp>
+#include <NitroModules/JPromise.hpp>
+#include <NitroImage/JHybridImageSpec.hpp>
+#include <optional>
+#include <NitroModules/JUnit.hpp>
+#include <string>
 
 namespace margelo::nitro::nitroimagetoolkit {
 
@@ -44,10 +52,106 @@ namespace margelo::nitro::nitroimagetoolkit {
   
 
   // Methods
-  double JHybridNitroImageToolkitSpec::sum(double num1, double num2) {
-    static const auto method = _javaPart->javaClassStatic()->getMethod<double(double /* num1 */, double /* num2 */)>("sum");
-    auto __result = method(_javaPart, num1, num2);
-    return __result;
+  std::shared_ptr<Promise<std::shared_ptr<margelo::nitro::image::HybridImageSpec>>> JHybridNitroImageToolkitSpec::gaussianBlur(const std::shared_ptr<margelo::nitro::image::HybridImageSpec>& image, double radius) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<margelo::nitro::image::JHybridImageSpec::JavaPart> /* image */, double /* radius */)>("gaussianBlur");
+    auto __result = method(_javaPart, std::dynamic_pointer_cast<margelo::nitro::image::JHybridImageSpec>(image)->getJavaPart(), radius);
+    return [&]() {
+      auto __promise = Promise<std::shared_ptr<margelo::nitro::image::HybridImageSpec>>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
+        auto __result = jni::static_ref_cast<margelo::nitro::image::JHybridImageSpec::JavaPart>(__boxedResult);
+        __promise->resolve(__result->getJHybridImageSpec());
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
+  std::shared_ptr<Promise<std::optional<std::shared_ptr<margelo::nitro::image::HybridImageSpec>>>> JHybridNitroImageToolkitSpec::getCached(const std::string& key) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* key */)>("getCached");
+    auto __result = method(_javaPart, jni::make_jstring(key));
+    return [&]() {
+      auto __promise = Promise<std::optional<std::shared_ptr<margelo::nitro::image::HybridImageSpec>>>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
+        auto __result = jni::static_ref_cast<margelo::nitro::image::JHybridImageSpec::JavaPart>(__boxedResult);
+        __promise->resolve(__result != nullptr ? std::make_optional(__result->getJHybridImageSpec()) : std::nullopt);
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
+  std::shared_ptr<Promise<void>> JHybridNitroImageToolkitSpec::cache(const std::shared_ptr<margelo::nitro::image::HybridImageSpec>& image, const std::string& key) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<margelo::nitro::image::JHybridImageSpec::JavaPart> /* image */, jni::alias_ref<jni::JString> /* key */)>("cache");
+    auto __result = method(_javaPart, std::dynamic_pointer_cast<margelo::nitro::image::JHybridImageSpec>(image)->getJavaPart(), jni::make_jstring(key));
+    return [&]() {
+      auto __promise = Promise<void>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& /* unit */) {
+        __promise->resolve();
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
+  std::shared_ptr<Promise<void>> JHybridNitroImageToolkitSpec::evict(const std::string& key) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* key */)>("evict");
+    auto __result = method(_javaPart, jni::make_jstring(key));
+    return [&]() {
+      auto __promise = Promise<void>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& /* unit */) {
+        __promise->resolve();
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
+  std::shared_ptr<Promise<void>> JHybridNitroImageToolkitSpec::clearCache() {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>()>("clearCache");
+    auto __result = method(_javaPart);
+    return [&]() {
+      auto __promise = Promise<void>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& /* unit */) {
+        __promise->resolve();
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
+  }
+  void JHybridNitroImageToolkitSpec::setMaxDiskCacheSize(double bytes) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void(double /* bytes */)>("setMaxDiskCacheSize");
+    method(_javaPart, bytes);
+  }
+  void JHybridNitroImageToolkitSpec::setMaxMemoryCacheCount(double count) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void(double /* count */)>("setMaxMemoryCacheCount");
+    method(_javaPart, count);
+  }
+  std::shared_ptr<Promise<double>> JHybridNitroImageToolkitSpec::getDiskCacheSize() {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>()>("getDiskCacheSize");
+    auto __result = method(_javaPart);
+    return [&]() {
+      auto __promise = Promise<double>::create();
+      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
+        auto __result = jni::static_ref_cast<jni::JDouble>(__boxedResult);
+        __promise->resolve(__result->value());
+      });
+      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
+        jni::JniException __jniError(__throwable);
+        __promise->reject(std::make_exception_ptr(__jniError));
+      });
+      return __promise;
+    }();
   }
 
 } // namespace margelo::nitro::nitroimagetoolkit

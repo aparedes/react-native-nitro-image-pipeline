@@ -10,6 +10,8 @@ package com.margelo.nitro.nitroimagetoolkit
 import androidx.annotation.Keep
 import com.facebook.jni.HybridData
 import com.facebook.proguard.annotations.DoNotStrip
+import com.margelo.nitro.image.HybridImageSpec
+import com.margelo.nitro.core.Promise
 import com.margelo.nitro.core.HybridObject
 
 /**
@@ -30,7 +32,35 @@ abstract class HybridNitroImageToolkitSpec: HybridObject() {
   // Methods
   @DoNotStrip
   @Keep
-  abstract fun sum(num1: Double, num2: Double): Double
+  abstract fun gaussianBlur(image: com.margelo.nitro.image.HybridImageSpec, radius: Double): Promise<com.margelo.nitro.image.HybridImageSpec>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun getCached(key: String): Promise<com.margelo.nitro.image.HybridImageSpec?>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun cache(image: com.margelo.nitro.image.HybridImageSpec, key: String): Promise<Unit>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun evict(key: String): Promise<Unit>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun clearCache(): Promise<Unit>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun setMaxDiskCacheSize(bytes: Double): Unit
+  
+  @DoNotStrip
+  @Keep
+  abstract fun setMaxMemoryCacheCount(count: Double): Unit
+  
+  @DoNotStrip
+  @Keep
+  abstract fun getDiskCacheSize(): Promise<Double>
 
   // Default implementation of `HybridObject.toString()`
   override fun toString(): String {

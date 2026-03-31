@@ -8,14 +8,20 @@
 #pragma once
 
 // Forward declarations of C++ defined types
+// Forward declaration of `HybridImageSpec` to properly resolve imports.
+namespace margelo::nitro::image { class HybridImageSpec; }
 // Forward declaration of `HybridNitroImageToolkitSpec` to properly resolve imports.
 namespace margelo::nitro::nitroimagetoolkit { class HybridNitroImageToolkitSpec; }
 
 // Include C++ defined types
 #include "HybridNitroImageToolkitSpec.hpp"
+#include <NitroImage/HybridImageSpec.hpp>
+#include <NitroModules/Promise.hpp>
 #include <NitroModules/Result.hpp>
 #include <exception>
 #include <memory>
+#include <optional>
+#include <string>
 
 // C++ helpers for Swift
 #include "NitroImageToolkit-Swift-Cxx-Bridge.hpp"
@@ -27,6 +33,8 @@ namespace margelo::nitro::nitroimagetoolkit { class HybridNitroImageToolkitSpec;
 #include <NitroModules/DateToChronoDate.hpp>
 
 // Forward declarations of Swift defined types
+// Forward declaration of `HybridImageSpec_cxx` to properly resolve imports.
+namespace NitroImage { class HybridImageSpec_cxx; }
 // Forward declaration of `HybridNitroImageToolkitSpec_cxx` to properly resolve imports.
 namespace NitroImageToolkit { class HybridNitroImageToolkitSpec_cxx; }
 

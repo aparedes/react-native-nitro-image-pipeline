@@ -13,9 +13,14 @@
 #error NitroModules cannot be found! Are you sure you installed NitroModules properly?
 #endif
 
+// Forward declaration of `HybridImageSpec` to properly resolve imports.
+namespace margelo::nitro::image { class HybridImageSpec; }
 
-
-
+#include <memory>
+#include <NitroImage/HybridImageSpec.hpp>
+#include <NitroModules/Promise.hpp>
+#include <optional>
+#include <string>
 
 namespace margelo::nitro::nitroimagetoolkit {
 
@@ -48,7 +53,14 @@ namespace margelo::nitro::nitroimagetoolkit {
 
     public:
       // Methods
-      virtual double sum(double num1, double num2) = 0;
+      virtual std::shared_ptr<Promise<std::shared_ptr<margelo::nitro::image::HybridImageSpec>>> gaussianBlur(const std::shared_ptr<margelo::nitro::image::HybridImageSpec>& image, double radius) = 0;
+      virtual std::shared_ptr<Promise<std::optional<std::shared_ptr<margelo::nitro::image::HybridImageSpec>>>> getCached(const std::string& key) = 0;
+      virtual std::shared_ptr<Promise<void>> cache(const std::shared_ptr<margelo::nitro::image::HybridImageSpec>& image, const std::string& key) = 0;
+      virtual std::shared_ptr<Promise<void>> evict(const std::string& key) = 0;
+      virtual std::shared_ptr<Promise<void>> clearCache() = 0;
+      virtual void setMaxDiskCacheSize(double bytes) = 0;
+      virtual void setMaxMemoryCacheCount(double count) = 0;
+      virtual std::shared_ptr<Promise<double>> getDiskCacheSize() = 0;
 
     protected:
       // Hybrid Setup
