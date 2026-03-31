@@ -1,0 +1,27 @@
+{
+  "formatter": {
+    "external": {
+      "command": "biome",
+      "arguments": ["format", "--write", "--stdin-file-path", "{buffer_path}"]
+    }
+  },
+  "format_on_save": "on",
+  "languages": {
+    "TypeScript": {
+      "language_servers": ["biome", "..."],
+      "formatter": "language_server"
+    },
+    "TSX": {
+      "language_servers": ["biome", "..."],
+      "formatter": "language_server"
+    },
+    "JavaScript": {
+      "language_servers": ["biome", "..."],
+      "formatter": "language_server"
+    },
+    "JSON": {
+      "language_servers": ["biome", "..."],
+      "formatter": "language_server"
+    }
+  }
+}

@@ -1,15 +1,11 @@
 {
   "$schema": "https://nitro.margelo.com/nitro.schema.json",
-  "cxxNamespace": [
-    "nitroimagetoolkit"
-  ],
+  "cxxNamespace": ["nitroimagetoolkit"],
   "ios": {
     "iosModuleName": "NitroImageToolkit"
   },
   "android": {
-    "androidNamespace": [
-      "nitroimagetoolkit"
-    ],
+    "androidNamespace": ["nitroimagetoolkit"],
     "androidCxxLibName": "NitroImageToolkit"
   },
   "autolinking": {
@@ -24,7 +20,5 @@
       }
     }
   },
-  "ignorePaths": [
-    "**/node_modules"
-  ]
+  "ignorePaths": ["**/node_modules"]
 }
