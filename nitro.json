@@ -1,0 +1,30 @@
+{
+  "$schema": "https://nitro.margelo.com/nitro.schema.json",
+  "cxxNamespace": [
+    "nitroimagetoolkit"
+  ],
+  "ios": {
+    "iosModuleName": "NitroImageToolkit"
+  },
+  "android": {
+    "androidNamespace": [
+      "nitroimagetoolkit"
+    ],
+    "androidCxxLibName": "NitroImageToolkit"
+  },
+  "autolinking": {
+    "NitroImageToolkit": {
+      "ios": {
+        "language": "swift",
+        "implementationClassName": "HybridNitroImageToolkit"
+      },
+      "android": {
+        "language": "kotlin",
+        "implementationClassName": "HybridNitroImageToolkit"
+      }
+    }
+  },
+  "ignorePaths": [
+    "**/node_modules"
+  ]
+}
