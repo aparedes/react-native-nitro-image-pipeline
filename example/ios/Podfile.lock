@@ -75,32 +75,6 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - NitroWebImage (0.13.1):
-    - hermes-engine
-    - NitroImage
-    - NitroModules
-    - RCTRequired
-    - RCTTypeSafety
-    - React-callinvoker
-    - React-Core
-    - React-Core-prebuilt
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-ImageManager
-    - React-jsi
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - ReactNativeDependencies
-    - SDWebImage
-    - Yoga
   - RCTDeprecation (0.84.1)
   - RCTRequired (0.84.1)
   - RCTSwiftUI (0.84.1)
@@ -1952,9 +1926,6 @@ PODS:
     - React-utils (= 0.84.1)
     - ReactNativeDependencies
   - ReactNativeDependencies (0.84.1)
-  - SDWebImage (5.21.7):
-    - SDWebImage/Core (= 5.21.7)
-  - SDWebImage/Core (5.21.7)
   - Yoga (0.0.0)
 
 DEPENDENCIES:
@@ -1963,7 +1934,6 @@ DEPENDENCIES:
   - NitroImage (from `../../node_modules/react-native-nitro-image`)
   - NitroImageToolkit (from `../..`)
   - NitroModules (from `../../node_modules/react-native-nitro-modules`)
-  - NitroWebImage (from `../../node_modules/react-native-nitro-web-image`)
   - RCTDeprecation (from `../../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation`)
   - RCTRequired (from `../../node_modules/react-native/Libraries/Required`)
   - RCTSwiftUI (from `../../node_modules/react-native/ReactApple/RCTSwiftUI`)
@@ -2036,12 +2006,7 @@ DEPENDENCIES:
   - ReactCodegen (from `build/generated/ios/ReactCodegen`)
   - ReactCommon/turbomodule/core (from `../../node_modules/react-native/ReactCommon`)
   - ReactNativeDependencies (from `../../node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec`)
-  - SDWebImage
   - Yoga (from `../../node_modules/react-native/ReactCommon/yoga`)
-
-SPEC REPOS:
-  trunk:
-    - SDWebImage
 
 EXTERNAL SOURCES:
   FBLazyVector:
@@ -2055,8 +2020,6 @@ EXTERNAL SOURCES:
     :path: "../.."
   NitroModules:
     :path: "../../node_modules/react-native-nitro-modules"
-  NitroWebImage:
-    :path: "../../node_modules/react-native-nitro-web-image"
   RCTDeprecation:
     :path: "../../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation"
   RCTRequired:
@@ -2208,7 +2171,6 @@ SPEC CHECKSUMS:
   NitroImage: 9d69b4452fe608321ed1281a3daedc22ff8a7338
   NitroImageToolkit: 5c55358ed5cd95dfbd0066bf1b0d2a9a030b3e5f
   NitroModules: 76063cb7bc1a21cf46d11b25abfcf1759bf0be47
-  NitroWebImage: f175cfaa49ae98de6fcd7fb0b3d706af11a5339a
   RCTDeprecation: af44b104091a34482596cd9bd7e8d90c4e9b4bd7
   RCTRequired: bb77b070f75f53398ce43c0aaaa58337cebe2bf6
   RCTSwiftUI: afc0a0a635860da1040a0b894bfd529da06d7810
@@ -2280,9 +2242,8 @@ SPEC CHECKSUMS:
   ReactCodegen: c00d0836354d71c00275db9fb1c70dee27cdab44
   ReactCommon: 07572bf9e687c8a52fbe4a3641e9e3a1a477c78e
   ReactNativeDependencies: fe35c5b35749e190137f10a6b5e89741ecd27bb5
-  SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
   Yoga: c0b3f2c7e8d3e327e450223a2414ca3fa296b9a2
 
-PODFILE CHECKSUM: 05fb3d495013f83fec3e926efc58928d7c247f34
+PODFILE CHECKSUM: 09a2d78a48a1f23f45bda828ed5e71a8b8399ced
 
 COCOAPODS: 1.15.2
