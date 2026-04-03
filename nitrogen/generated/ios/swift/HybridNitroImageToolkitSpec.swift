@@ -14,14 +14,11 @@ public protocol HybridNitroImageToolkitSpec_protocol: HybridObject {
   
 
   // Methods
+  func loadImage(url: String, options: Options?) throws -> Promise<(any HybridImageSpec)>
+  func preLoadImage(url: String) throws -> Promise<Void>
+  func preLoadImages(urls: [String]) throws -> Promise<Void>
   func gaussianBlur(image: (any HybridImageSpec), radius: Double) throws -> Promise<(any HybridImageSpec)>
-  func getCached(key: String) throws -> Promise<(any HybridImageSpec)?>
-  func cache(image: (any HybridImageSpec), key: String) throws -> Promise<Void>
-  func evict(key: String) throws -> Promise<Void>
-  func clearCache() throws -> Promise<Void>
-  func setMaxDiskCacheSize(bytes: Double) throws -> Void
-  func setMaxMemoryCacheCount(count: Double) throws -> Void
-  func getDiskCacheSize() throws -> Promise<Double>
+  func clearCache() throws -> Void
 }
 
 public extension HybridNitroImageToolkitSpec_protocol {

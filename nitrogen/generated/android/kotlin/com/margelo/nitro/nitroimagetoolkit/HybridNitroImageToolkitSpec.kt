@@ -32,35 +32,23 @@ abstract class HybridNitroImageToolkitSpec: HybridObject() {
   // Methods
   @DoNotStrip
   @Keep
+  abstract fun loadImage(url: String, options: Options?): Promise<com.margelo.nitro.image.HybridImageSpec>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun preLoadImage(url: String): Promise<Unit>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun preLoadImages(urls: Array<String>): Promise<Unit>
+  
+  @DoNotStrip
+  @Keep
   abstract fun gaussianBlur(image: com.margelo.nitro.image.HybridImageSpec, radius: Double): Promise<com.margelo.nitro.image.HybridImageSpec>
   
   @DoNotStrip
   @Keep
-  abstract fun getCached(key: String): Promise<com.margelo.nitro.image.HybridImageSpec?>
-  
-  @DoNotStrip
-  @Keep
-  abstract fun cache(image: com.margelo.nitro.image.HybridImageSpec, key: String): Promise<Unit>
-  
-  @DoNotStrip
-  @Keep
-  abstract fun evict(key: String): Promise<Unit>
-  
-  @DoNotStrip
-  @Keep
-  abstract fun clearCache(): Promise<Unit>
-  
-  @DoNotStrip
-  @Keep
-  abstract fun setMaxDiskCacheSize(bytes: Double): Unit
-  
-  @DoNotStrip
-  @Keep
-  abstract fun setMaxMemoryCacheCount(count: Double): Unit
-  
-  @DoNotStrip
-  @Keep
-  abstract fun getDiskCacheSize(): Promise<Double>
+  abstract fun clearCache(): Unit
 
   // Default implementation of `HybridObject.toString()`
   override fun toString(): String {

@@ -54,14 +54,11 @@ namespace margelo::nitro::nitroimagetoolkit {
 
   public:
     // Methods
+    std::shared_ptr<Promise<std::shared_ptr<margelo::nitro::image::HybridImageSpec>>> loadImage(const std::string& url, const std::optional<Options>& options) override;
+    std::shared_ptr<Promise<void>> preLoadImage(const std::string& url) override;
+    std::shared_ptr<Promise<void>> preLoadImages(const std::vector<std::string>& urls) override;
     std::shared_ptr<Promise<std::shared_ptr<margelo::nitro::image::HybridImageSpec>>> gaussianBlur(const std::shared_ptr<margelo::nitro::image::HybridImageSpec>& image, double radius) override;
-    std::shared_ptr<Promise<std::optional<std::shared_ptr<margelo::nitro::image::HybridImageSpec>>>> getCached(const std::string& key) override;
-    std::shared_ptr<Promise<void>> cache(const std::shared_ptr<margelo::nitro::image::HybridImageSpec>& image, const std::string& key) override;
-    std::shared_ptr<Promise<void>> evict(const std::string& key) override;
-    std::shared_ptr<Promise<void>> clearCache() override;
-    void setMaxDiskCacheSize(double bytes) override;
-    void setMaxMemoryCacheCount(double count) override;
-    std::shared_ptr<Promise<double>> getDiskCacheSize() override;
+    void clearCache() override;
 
   private:
     jni::global_ref<JHybridNitroImageToolkitSpec::JavaPart> _javaPart;

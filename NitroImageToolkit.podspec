@@ -11,7 +11,7 @@ Pod::Spec.new do |s|
   s.authors      = package["author"]
 
   s.platforms    = { :ios => min_ios_version_supported, :visionos => 1.0 }
-  s.source       = { :git => "https://github.com/alejandroparedesalva/react-native-nitro-image-toolkit.git", :tag => "#{s.version}" }
+  s.source       = { :git => "https://github.com/aparedes/react-native-nitro-image-toolkit.git", :tag => "#{s.version}" }
 
   s.source_files = [
     # Implementation (Swift)
@@ -27,5 +27,13 @@ Pod::Spec.new do |s|
 
   s.dependency 'React-jsi'
   s.dependency 'React-callinvoker'
+  s.dependency 'NitroImage'
+
+  spm_dependency(s,
+    url: 'https://github.com/kean/Nuke',
+    requirement: { kind: 'upToNextMajorVersion', minimumVersion: '13.0.0' },
+    products: ['Nuke']
+  )
+
   install_modules_dependencies(s)
 end

@@ -8,13 +8,19 @@
 #pragma once
 
 // Forward declarations of C++ defined types
+// Forward declaration of `CacheOption` to properly resolve imports.
+namespace margelo::nitro::nitroimagetoolkit { enum class CacheOption; }
 // Forward declaration of `HybridImageSpec` to properly resolve imports.
 namespace margelo::nitro::image { class HybridImageSpec; }
 // Forward declaration of `HybridNitroImageToolkitSpec` to properly resolve imports.
 namespace margelo::nitro::nitroimagetoolkit { class HybridNitroImageToolkitSpec; }
+// Forward declaration of `Options` to properly resolve imports.
+namespace margelo::nitro::nitroimagetoolkit { struct Options; }
 
 // Include C++ defined types
+#include "CacheOption.hpp"
 #include "HybridNitroImageToolkitSpec.hpp"
+#include "Options.hpp"
 #include <NitroImage/HybridImageSpec.hpp>
 #include <NitroModules/Promise.hpp>
 #include <NitroModules/Result.hpp>
@@ -22,6 +28,7 @@ namespace margelo::nitro::nitroimagetoolkit { class HybridNitroImageToolkitSpec;
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
 // C++ helpers for Swift
 #include "NitroImageToolkit-Swift-Cxx-Bridge.hpp"

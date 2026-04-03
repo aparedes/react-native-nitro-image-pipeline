@@ -1,1 +1,10 @@
-{}
+{
+  "ignore_dirs": [
+    "node_modules",
+    "lib",
+    "nitrogen/generated",
+    "android/build",
+    "ios/build",
+    ".gradle"
+  ]
+}

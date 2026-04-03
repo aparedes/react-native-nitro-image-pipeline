@@ -14,12 +14,19 @@ namespace NitroImageToolkit { class HybridNitroImageToolkitSpec_cxx; }
 
 // Forward declaration of `HybridImageSpec` to properly resolve imports.
 namespace margelo::nitro::image { class HybridImageSpec; }
+// Forward declaration of `Options` to properly resolve imports.
+namespace margelo::nitro::nitroimagetoolkit { struct Options; }
+// Forward declaration of `CacheOption` to properly resolve imports.
+namespace margelo::nitro::nitroimagetoolkit { enum class CacheOption; }
 
 #include <memory>
 #include <NitroImage/HybridImageSpec.hpp>
 #include <NitroModules/Promise.hpp>
-#include <optional>
 #include <string>
+#include "Options.hpp"
+#include <optional>
+#include "CacheOption.hpp"
+#include <vector>
 
 #include "NitroImageToolkit-Swift-Cxx-Umbrella.hpp"
 
@@ -71,6 +78,30 @@ namespace margelo::nitro::nitroimagetoolkit {
 
   public:
     // Methods
+    inline std::shared_ptr<Promise<std::shared_ptr<margelo::nitro::image::HybridImageSpec>>> loadImage(const std::string& url, const std::optional<Options>& options) override {
+      auto __result = _swiftPart.loadImage(url, options);
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+      auto __value = std::move(__result.value());
+      return __value;
+    }
+    inline std::shared_ptr<Promise<void>> preLoadImage(const std::string& url) override {
+      auto __result = _swiftPart.preLoadImage(url);
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+      auto __value = std::move(__result.value());
+      return __value;
+    }
+    inline std::shared_ptr<Promise<void>> preLoadImages(const std::vector<std::string>& urls) override {
+      auto __result = _swiftPart.preLoadImages(urls);
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+      auto __value = std::move(__result.value());
+      return __value;
+    }
     inline std::shared_ptr<Promise<std::shared_ptr<margelo::nitro::image::HybridImageSpec>>> gaussianBlur(const std::shared_ptr<margelo::nitro::image::HybridImageSpec>& image, double radius) override {
       auto __result = _swiftPart.gaussianBlur(image, std::forward<decltype(radius)>(radius));
       if (__result.hasError()) [[unlikely]] {
@@ -79,57 +110,11 @@ namespace margelo::nitro::nitroimagetoolkit {
       auto __value = std::move(__result.value());
       return __value;
     }
-    inline std::shared_ptr<Promise<std::optional<std::shared_ptr<margelo::nitro::image::HybridImageSpec>>>> getCached(const std::string& key) override {
-      auto __result = _swiftPart.getCached(key);
-      if (__result.hasError()) [[unlikely]] {
-        std::rethrow_exception(__result.error());
-      }
-      auto __value = std::move(__result.value());
-      return __value;
-    }
-    inline std::shared_ptr<Promise<void>> cache(const std::shared_ptr<margelo::nitro::image::HybridImageSpec>& image, const std::string& key) override {
-      auto __result = _swiftPart.cache(image, key);
-      if (__result.hasError()) [[unlikely]] {
-        std::rethrow_exception(__result.error());
-      }
-      auto __value = std::move(__result.value());
-      return __value;
-    }
-    inline std::shared_ptr<Promise<void>> evict(const std::string& key) override {
-      auto __result = _swiftPart.evict(key);
-      if (__result.hasError()) [[unlikely]] {
-        std::rethrow_exception(__result.error());
-      }
-      auto __value = std::move(__result.value());
-      return __value;
-    }
-    inline std::shared_ptr<Promise<void>> clearCache() override {
+    inline void clearCache() override {
       auto __result = _swiftPart.clearCache();
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }
-      auto __value = std::move(__result.value());
-      return __value;
-    }
-    inline void setMaxDiskCacheSize(double bytes) override {
-      auto __result = _swiftPart.setMaxDiskCacheSize(std::forward<decltype(bytes)>(bytes));
-      if (__result.hasError()) [[unlikely]] {
-        std::rethrow_exception(__result.error());
-      }
-    }
-    inline void setMaxMemoryCacheCount(double count) override {
-      auto __result = _swiftPart.setMaxMemoryCacheCount(std::forward<decltype(count)>(count));
-      if (__result.hasError()) [[unlikely]] {
-        std::rethrow_exception(__result.error());
-      }
-    }
-    inline std::shared_ptr<Promise<double>> getDiskCacheSize() override {
-      auto __result = _swiftPart.getDiskCacheSize();
-      if (__result.hasError()) [[unlikely]] {
-        std::rethrow_exception(__result.error());
-      }
-      auto __value = std::move(__result.value());
-      return __value;
     }
 
   private:

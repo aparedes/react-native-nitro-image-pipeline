@@ -64,7 +64,6 @@
     "react": "19.2.3",
     "react-native": "0.84.1",
     "react-native-builder-bob": "^0.40.18",
-    "react-native-nitro-image": "^0.13.1",
     "react-native-nitro-modules": "0.35.2",
     "semantic-release": "^25.0.3",
     "typescript": "^5.8.3"

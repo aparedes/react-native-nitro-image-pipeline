@@ -126,6 +126,66 @@ open class HybridNitroImageToolkitSpec_cxx {
 
   // Methods
   @inline(__always)
+  public final func loadImage(url: std.string, options: bridge.std__optional_Options_) -> bridge.Result_std__shared_ptr_Promise_std__shared_ptr_margelo__nitro__image__HybridImageSpec____ {
+    do {
+      let __result = try self.__implementation.loadImage(url: String(url), options: options.value)
+      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_std__shared_ptr_margelo__nitro__image__HybridImageSpec___ in
+        let __promise = bridge.create_std__shared_ptr_Promise_std__shared_ptr_margelo__nitro__image__HybridImageSpec___()
+        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_std__shared_ptr_margelo__nitro__image__HybridImageSpec___(__promise)
+        __result
+          .then({ __result in __promiseHolder.resolve({ () -> bridge.std__shared_ptr_margelo__nitro__image__HybridImageSpec_ in
+              let __cxxWrapped = __result.getCxxWrapper()
+              return __cxxWrapped.getCxxPart()
+            }()) })
+          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
+        return __promise
+      }()
+      return bridge.create_Result_std__shared_ptr_Promise_std__shared_ptr_margelo__nitro__image__HybridImageSpec____(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_std__shared_ptr_Promise_std__shared_ptr_margelo__nitro__image__HybridImageSpec____(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func preLoadImage(url: std.string) -> bridge.Result_std__shared_ptr_Promise_void___ {
+    do {
+      let __result = try self.__implementation.preLoadImage(url: String(url))
+      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_void__ in
+        let __promise = bridge.create_std__shared_ptr_Promise_void__()
+        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_void__(__promise)
+        __result
+          .then({ __result in __promiseHolder.resolve() })
+          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
+        return __promise
+      }()
+      return bridge.create_Result_std__shared_ptr_Promise_void___(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_std__shared_ptr_Promise_void___(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func preLoadImages(urls: bridge.std__vector_std__string_) -> bridge.Result_std__shared_ptr_Promise_void___ {
+    do {
+      let __result = try self.__implementation.preLoadImages(urls: urls.map({ __item in String(__item) }))
+      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_void__ in
+        let __promise = bridge.create_std__shared_ptr_Promise_void__()
+        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_void__(__promise)
+        __result
+          .then({ __result in __promiseHolder.resolve() })
+          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
+        return __promise
+      }()
+      return bridge.create_Result_std__shared_ptr_Promise_void___(__resultCpp)
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_std__shared_ptr_Promise_void___(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
   public final func gaussianBlur(image: bridge.std__shared_ptr_margelo__nitro__image__HybridImageSpec_, radius: Double) -> bridge.Result_std__shared_ptr_Promise_std__shared_ptr_margelo__nitro__image__HybridImageSpec____ {
     do {
       let __result = try self.__implementation.gaussianBlur(image: { () -> any HybridImageSpec in
@@ -152,132 +212,13 @@ open class HybridNitroImageToolkitSpec_cxx {
   }
   
   @inline(__always)
-  public final func getCached(key: std.string) -> bridge.Result_std__shared_ptr_Promise_std__optional_std__shared_ptr_margelo__nitro__image__HybridImageSpec_____ {
+  public final func clearCache() -> bridge.Result_void_ {
     do {
-      let __result = try self.__implementation.getCached(key: String(key))
-      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_std__optional_std__shared_ptr_margelo__nitro__image__HybridImageSpec____ in
-        let __promise = bridge.create_std__shared_ptr_Promise_std__optional_std__shared_ptr_margelo__nitro__image__HybridImageSpec____()
-        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_std__optional_std__shared_ptr_margelo__nitro__image__HybridImageSpec____(__promise)
-        __result
-          .then({ __result in __promiseHolder.resolve({ () -> bridge.std__optional_std__shared_ptr_margelo__nitro__image__HybridImageSpec__ in
-              if let __unwrappedValue = __result {
-                return bridge.create_std__optional_std__shared_ptr_margelo__nitro__image__HybridImageSpec__({ () -> bridge.std__shared_ptr_margelo__nitro__image__HybridImageSpec_ in
-                  let __cxxWrapped = __unwrappedValue.getCxxWrapper()
-                  return __cxxWrapped.getCxxPart()
-                }())
-              } else {
-                return .init()
-              }
-            }()) })
-          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
-        return __promise
-      }()
-      return bridge.create_Result_std__shared_ptr_Promise_std__optional_std__shared_ptr_margelo__nitro__image__HybridImageSpec_____(__resultCpp)
-    } catch (let __error) {
-      let __exceptionPtr = __error.toCpp()
-      return bridge.create_Result_std__shared_ptr_Promise_std__optional_std__shared_ptr_margelo__nitro__image__HybridImageSpec_____(__exceptionPtr)
-    }
-  }
-  
-  @inline(__always)
-  public final func cache(image: bridge.std__shared_ptr_margelo__nitro__image__HybridImageSpec_, key: std.string) -> bridge.Result_std__shared_ptr_Promise_void___ {
-    do {
-      let __result = try self.__implementation.cache(image: { () -> any HybridImageSpec in
-        let __unsafePointer = bridge.get_std__shared_ptr_margelo__nitro__image__HybridImageSpec_(image)
-        let __instance = HybridImageSpec_cxx.fromUnsafe(__unsafePointer)
-        return __instance.getHybridImageSpec()
-      }(), key: String(key))
-      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_void__ in
-        let __promise = bridge.create_std__shared_ptr_Promise_void__()
-        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_void__(__promise)
-        __result
-          .then({ __result in __promiseHolder.resolve() })
-          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
-        return __promise
-      }()
-      return bridge.create_Result_std__shared_ptr_Promise_void___(__resultCpp)
-    } catch (let __error) {
-      let __exceptionPtr = __error.toCpp()
-      return bridge.create_Result_std__shared_ptr_Promise_void___(__exceptionPtr)
-    }
-  }
-  
-  @inline(__always)
-  public final func evict(key: std.string) -> bridge.Result_std__shared_ptr_Promise_void___ {
-    do {
-      let __result = try self.__implementation.evict(key: String(key))
-      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_void__ in
-        let __promise = bridge.create_std__shared_ptr_Promise_void__()
-        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_void__(__promise)
-        __result
-          .then({ __result in __promiseHolder.resolve() })
-          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
-        return __promise
-      }()
-      return bridge.create_Result_std__shared_ptr_Promise_void___(__resultCpp)
-    } catch (let __error) {
-      let __exceptionPtr = __error.toCpp()
-      return bridge.create_Result_std__shared_ptr_Promise_void___(__exceptionPtr)
-    }
-  }
-  
-  @inline(__always)
-  public final func clearCache() -> bridge.Result_std__shared_ptr_Promise_void___ {
-    do {
-      let __result = try self.__implementation.clearCache()
-      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_void__ in
-        let __promise = bridge.create_std__shared_ptr_Promise_void__()
-        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_void__(__promise)
-        __result
-          .then({ __result in __promiseHolder.resolve() })
-          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
-        return __promise
-      }()
-      return bridge.create_Result_std__shared_ptr_Promise_void___(__resultCpp)
-    } catch (let __error) {
-      let __exceptionPtr = __error.toCpp()
-      return bridge.create_Result_std__shared_ptr_Promise_void___(__exceptionPtr)
-    }
-  }
-  
-  @inline(__always)
-  public final func setMaxDiskCacheSize(bytes: Double) -> bridge.Result_void_ {
-    do {
-      try self.__implementation.setMaxDiskCacheSize(bytes: bytes)
+      try self.__implementation.clearCache()
       return bridge.create_Result_void_()
     } catch (let __error) {
       let __exceptionPtr = __error.toCpp()
       return bridge.create_Result_void_(__exceptionPtr)
-    }
-  }
-  
-  @inline(__always)
-  public final func setMaxMemoryCacheCount(count: Double) -> bridge.Result_void_ {
-    do {
-      try self.__implementation.setMaxMemoryCacheCount(count: count)
-      return bridge.create_Result_void_()
-    } catch (let __error) {
-      let __exceptionPtr = __error.toCpp()
-      return bridge.create_Result_void_(__exceptionPtr)
-    }
-  }
-  
-  @inline(__always)
-  public final func getDiskCacheSize() -> bridge.Result_std__shared_ptr_Promise_double___ {
-    do {
-      let __result = try self.__implementation.getDiskCacheSize()
-      let __resultCpp = { () -> bridge.std__shared_ptr_Promise_double__ in
-        let __promise = bridge.create_std__shared_ptr_Promise_double__()
-        let __promiseHolder = bridge.wrap_std__shared_ptr_Promise_double__(__promise)
-        __result
-          .then({ __result in __promiseHolder.resolve(__result) })
-          .catch({ __error in __promiseHolder.reject(__error.toCpp()) })
-        return __promise
-      }()
-      return bridge.create_Result_std__shared_ptr_Promise_double___(__resultCpp)
-    } catch (let __error) {
-      let __exceptionPtr = __error.toCpp()
-      return bridge.create_Result_std__shared_ptr_Promise_double___(__exceptionPtr)
     }
   }
 }

@@ -36,7 +36,7 @@ def getExtOrIntegerDefault(name) {
 }
 
 android {
-  namespace "com.nitroimagetoolkit"
+  namespace "com.margelo.nitro.nitroimagetoolkit"
 
   ndkVersion getExtOrDefault("ndkVersion")
   compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
@@ -137,12 +137,19 @@ dependencies {
 
   // Add a dependency on NitroModules
   implementation project(":react-native-nitro-modules")
+
+  // Add a dependency on NitroImage
+  implementation project(":react-native-nitro-image")
+  // Coil
+  implementation("io.coil-kt.coil3:coil:3.3.0")
+  implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
+  implementation("io.coil-kt.coil3:coil-gif:3.3.0")
 }
 
 if (isNewArchitectureEnabled()) {
   react {
     jsRootDir = file("../src/")
     libraryName = "NitroImageToolkit"
-    codegenJavaPackageName = "com.nitroimagetoolkit"
+    codegenJavaPackageName = "com.margelo.nitro.nitroimagetoolkit"
   }
 }

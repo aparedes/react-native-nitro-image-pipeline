@@ -41,27 +41,11 @@ namespace margelo::nitro::nitroimagetoolkit::bridge::swift {
     };
   }
   
-  // pragma MARK: std::function<void(const std::optional<std::shared_ptr<margelo::nitro::image::HybridImageSpec>>& /* result */)>
-  Func_void_std__optional_std__shared_ptr_margelo__nitro__image__HybridImageSpec__ create_Func_void_std__optional_std__shared_ptr_margelo__nitro__image__HybridImageSpec__(void* NON_NULL swiftClosureWrapper) noexcept {
-    auto swiftClosure = NitroImageToolkit::Func_void_std__optional_std__shared_ptr_margelo__nitro__image__HybridImageSpec__::fromUnsafe(swiftClosureWrapper);
-    return [swiftClosure = std::move(swiftClosure)](const std::optional<std::shared_ptr<margelo::nitro::image::HybridImageSpec>>& result) mutable -> void {
-      swiftClosure.call(result);
-    };
-  }
-  
   // pragma MARK: std::function<void()>
   Func_void create_Func_void(void* NON_NULL swiftClosureWrapper) noexcept {
     auto swiftClosure = NitroImageToolkit::Func_void::fromUnsafe(swiftClosureWrapper);
     return [swiftClosure = std::move(swiftClosure)]() mutable -> void {
       swiftClosure.call();
-    };
-  }
-  
-  // pragma MARK: std::function<void(double /* result */)>
-  Func_void_double create_Func_void_double(void* NON_NULL swiftClosureWrapper) noexcept {
-    auto swiftClosure = NitroImageToolkit::Func_void_double::fromUnsafe(swiftClosureWrapper);
-    return [swiftClosure = std::move(swiftClosure)](double result) mutable -> void {
-      swiftClosure.call(result);
     };
   }
   
