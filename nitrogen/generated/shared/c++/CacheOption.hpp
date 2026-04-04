@@ -23,7 +23,7 @@
 #error NitroModules cannot be found! Are you sure you installed NitroModules properly?
 #endif
 
-namespace margelo::nitro::nitroimagetoolkit {
+namespace margelo::nitro::nitroimagepipeline {
 
   /**
    * An enum which can be represented as a JavaScript union (CacheOption).
@@ -34,28 +34,28 @@ namespace margelo::nitro::nitroimagetoolkit {
     NONE      SWIFT_NAME(none) = 2,
   } CLOSED_ENUM;
 
-} // namespace margelo::nitro::nitroimagetoolkit
+} // namespace margelo::nitro::nitroimagepipeline
 
 namespace margelo::nitro {
 
   // C++ CacheOption <> JS CacheOption (union)
   template <>
-  struct JSIConverter<margelo::nitro::nitroimagetoolkit::CacheOption> final {
-    static inline margelo::nitro::nitroimagetoolkit::CacheOption fromJSI(jsi::Runtime& runtime, const jsi::Value& arg) {
+  struct JSIConverter<margelo::nitro::nitroimagepipeline::CacheOption> final {
+    static inline margelo::nitro::nitroimagepipeline::CacheOption fromJSI(jsi::Runtime& runtime, const jsi::Value& arg) {
       std::string unionValue = JSIConverter<std::string>::fromJSI(runtime, arg);
       switch (hashString(unionValue.c_str(), unionValue.size())) {
-        case hashString("memory"): return margelo::nitro::nitroimagetoolkit::CacheOption::MEMORY;
-        case hashString("disk"): return margelo::nitro::nitroimagetoolkit::CacheOption::DISK;
-        case hashString("none"): return margelo::nitro::nitroimagetoolkit::CacheOption::NONE;
+        case hashString("memory"): return margelo::nitro::nitroimagepipeline::CacheOption::MEMORY;
+        case hashString("disk"): return margelo::nitro::nitroimagepipeline::CacheOption::DISK;
+        case hashString("none"): return margelo::nitro::nitroimagepipeline::CacheOption::NONE;
         default: [[unlikely]]
           throw std::invalid_argument("Cannot convert \"" + unionValue + "\" to enum CacheOption - invalid value!");
       }
     }
-    static inline jsi::Value toJSI(jsi::Runtime& runtime, margelo::nitro::nitroimagetoolkit::CacheOption arg) {
+    static inline jsi::Value toJSI(jsi::Runtime& runtime, margelo::nitro::nitroimagepipeline::CacheOption arg) {
       switch (arg) {
-        case margelo::nitro::nitroimagetoolkit::CacheOption::MEMORY: return JSIConverter<std::string>::toJSI(runtime, "memory");
-        case margelo::nitro::nitroimagetoolkit::CacheOption::DISK: return JSIConverter<std::string>::toJSI(runtime, "disk");
-        case margelo::nitro::nitroimagetoolkit::CacheOption::NONE: return JSIConverter<std::string>::toJSI(runtime, "none");
+        case margelo::nitro::nitroimagepipeline::CacheOption::MEMORY: return JSIConverter<std::string>::toJSI(runtime, "memory");
+        case margelo::nitro::nitroimagepipeline::CacheOption::DISK: return JSIConverter<std::string>::toJSI(runtime, "disk");
+        case margelo::nitro::nitroimagepipeline::CacheOption::NONE: return JSIConverter<std::string>::toJSI(runtime, "none");
         default: [[unlikely]]
           throw std::invalid_argument("Cannot convert CacheOption to JS - invalid value: "
                                     + std::to_string(static_cast<int>(arg)) + "!");

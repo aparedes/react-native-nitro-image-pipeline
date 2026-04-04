@@ -10,10 +10,10 @@ import NitroModules
 /**
  * Represents an instance of `Options`, backed by a C++ struct.
  */
-public typealias Options = margelo.nitro.nitroimagetoolkit.Options
+public typealias Options = margelo.nitro.nitroimagepipeline.Options
 
 public extension Options {
-  private typealias bridge = margelo.nitro.nitroimagetoolkit.bridge.swift
+  private typealias bridge = margelo.nitro.nitroimagepipeline.bridge.swift
 
   /**
    * Create a new instance of `Options`.

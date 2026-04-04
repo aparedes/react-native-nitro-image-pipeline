@@ -27,7 +27,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - NitroImageToolkit (0.1.0):
+  - NitroImagePipeline (0.1.0):
     - hermes-engine
     - NitroImage
     - NitroModules
@@ -1932,7 +1932,7 @@ DEPENDENCIES:
   - FBLazyVector (from `../../node_modules/react-native/Libraries/FBLazyVector`)
   - hermes-engine (from `../../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
   - NitroImage (from `../../node_modules/react-native-nitro-image`)
-  - NitroImageToolkit (from `../..`)
+  - NitroImagePipeline (from `../..`)
   - NitroModules (from `../../node_modules/react-native-nitro-modules`)
   - RCTDeprecation (from `../../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation`)
   - RCTRequired (from `../../node_modules/react-native/Libraries/Required`)
@@ -2016,7 +2016,7 @@ EXTERNAL SOURCES:
     :tag: hermes-v250829098.0.9
   NitroImage:
     :path: "../../node_modules/react-native-nitro-image"
-  NitroImageToolkit:
+  NitroImagePipeline:
     :path: "../.."
   NitroModules:
     :path: "../../node_modules/react-native-nitro-modules"
@@ -2169,7 +2169,7 @@ SPEC CHECKSUMS:
   FBLazyVector: e97c19a5a442429d1988f182a1940fb08df514da
   hermes-engine: 30d98b8a64c13d77dc223c4a008d4375b9eaf053
   NitroImage: 9d69b4452fe608321ed1281a3daedc22ff8a7338
-  NitroImageToolkit: 5c55358ed5cd95dfbd0066bf1b0d2a9a030b3e5f
+  NitroImagePipeline: 06ccb4e8cab91928f5171bcb68270b7cfe07146d
   NitroModules: 76063cb7bc1a21cf46d11b25abfcf1759bf0be47
   RCTDeprecation: af44b104091a34482596cd9bd7e8d90c4e9b4bd7
   RCTRequired: bb77b070f75f53398ce43c0aaaa58337cebe2bf6
@@ -2244,6 +2244,6 @@ SPEC CHECKSUMS:
   ReactNativeDependencies: fe35c5b35749e190137f10a6b5e89741ecd27bb5
   Yoga: c0b3f2c7e8d3e327e450223a2414ca3fa296b9a2
 
-PODFILE CHECKSUM: 09a2d78a48a1f23f45bda828ed5e71a8b8399ced
+PODFILE CHECKSUM: 8c8fc80fdb1246a72f5fec2fbfe2f2e362b261ee
 
 COCOAPODS: 1.15.2

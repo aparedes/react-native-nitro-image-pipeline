@@ -14,7 +14,7 @@
 #include "JCacheOption.hpp"
 #include <optional>
 
-namespace margelo::nitro::nitroimagetoolkit {
+namespace margelo::nitro::nitroimagepipeline {
 
   using namespace facebook;
 
@@ -23,7 +23,7 @@ namespace margelo::nitro::nitroimagetoolkit {
    */
   struct JOptions final: public jni::JavaClass<JOptions> {
   public:
-    static constexpr auto kJavaDescriptor = "Lcom/margelo/nitro/nitroimagetoolkit/Options;";
+    static constexpr auto kJavaDescriptor = "Lcom/margelo/nitro/nitroimagepipeline/Options;";
 
   public:
     /**
@@ -64,4 +64,4 @@ namespace margelo::nitro::nitroimagetoolkit {
     }
   };
 
-} // namespace margelo::nitro::nitroimagetoolkit
+} // namespace margelo::nitro::nitroimagepipeline

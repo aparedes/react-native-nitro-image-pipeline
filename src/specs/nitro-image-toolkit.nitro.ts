@@ -4,7 +4,7 @@ import type { HybridObject } from 'react-native-nitro-modules';
 type CacheOption = 'memory' | 'disk' | 'none';
 type Options = { blur?: number; cache?: CacheOption; cornerRadius?: number };
 
-export interface NitroImageToolkit
+export interface NitroImagePipeline
   extends HybridObject<{ ios: 'swift'; android: 'kotlin' }> {
   loadImage(url: string, options?: Options): Promise<Image>;
   preLoadImage(url: string): Promise<void>;

@@ -1,9 +1,9 @@
 #include <jni.h>
 #include <fbjni/fbjni.h>
-#include "NitroImageToolkitOnLoad.hpp"
+#include "NitroImagePipelineOnLoad.hpp"
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
   return facebook::jni::initialize(vm, []() {
-    margelo::nitro::nitroimagetoolkit::registerAllNatives();
+    margelo::nitro::nitroimagepipeline::registerAllNatives();
   });
 }

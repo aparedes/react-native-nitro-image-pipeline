@@ -1,8 +1,11 @@
 import type React from 'react';
-import { Suspense, use, useEffect, useState } from 'react';
+import { Suspense, use, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { type Image, NitroImage } from 'react-native-nitro-image';
-import { NitroImageToolkit, useImage } from 'react-native-nitro-image-toolkit';
+import {
+  NitroImagePipeline,
+  useImage,
+} from 'react-native-nitro-image-pipeline';
 
 function App({ img2 }: { img2: Promise<Image> }): React.JSX.Element {
   console.log('app');
@@ -10,7 +13,7 @@ function App({ img2 }: { img2: Promise<Image> }): React.JSX.Element {
   const [blur, setBlur] = useState(0);
   const image = useImage({
     url: 'https://picsum.photos/id/3/5000/3333',
-    blur: 0,
+    blur: blur,
     cornerRadius: 80,
   });
 
@@ -42,7 +45,7 @@ const styles = StyleSheet.create({
 });
 
 export default () => {
-  const img2 = NitroImageToolkit.loadImage(
+  const img2 = NitroImagePipeline.loadImage(
     'https://picsum.photos/id/100/5000/3333',
     { blur: 0 },
   );

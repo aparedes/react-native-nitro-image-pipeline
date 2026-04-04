@@ -10,7 +10,7 @@
 #include <fbjni/fbjni.h>
 #include "CacheOption.hpp"
 
-namespace margelo::nitro::nitroimagetoolkit {
+namespace margelo::nitro::nitroimagepipeline {
 
   using namespace facebook;
 
@@ -19,7 +19,7 @@ namespace margelo::nitro::nitroimagetoolkit {
    */
   struct JCacheOption final: public jni::JavaClass<JCacheOption> {
   public:
-    static constexpr auto kJavaDescriptor = "Lcom/margelo/nitro/nitroimagetoolkit/CacheOption;";
+    static constexpr auto kJavaDescriptor = "Lcom/margelo/nitro/nitroimagepipeline/CacheOption;";
 
   public:
     /**
@@ -58,4 +58,4 @@ namespace margelo::nitro::nitroimagetoolkit {
     }
   };
 
-} // namespace margelo::nitro::nitroimagetoolkit
+} // namespace margelo::nitro::nitroimagepipeline

@@ -8,7 +8,7 @@
 /**
  * Represents the JS union `CacheOption`, backed by a C++ enum.
  */
-public typealias CacheOption = margelo.nitro.nitroimagetoolkit.CacheOption
+public typealias CacheOption = margelo.nitro.nitroimagepipeline.CacheOption
 
 public extension CacheOption {
   /**

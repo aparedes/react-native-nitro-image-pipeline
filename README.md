@@ -1,10 +1,10 @@
-# react-native-nitro-image-toolkit
+# react-native-nitro-image-pipeline
 
 A high-performance image loading, caching, and processing library for React Native, built with [Nitro Modules](https://nitro.margelo.com/).
 
-[![Version](https://img.shields.io/npm/v/react-native-nitro-image-toolkit.svg)](https://www.npmjs.com/package/react-native-nitro-image-toolkit)
-[![Downloads](https://img.shields.io/npm/dm/react-native-nitro-image-toolkit.svg)](https://www.npmjs.com/package/react-native-nitro-image-toolkit)
-[![License](https://img.shields.io/npm/l/react-native-nitro-image-toolkit.svg)](https://github.com/patrickkabwe/react-native-nitro-image-toolkit/LICENSE)
+[![Version](https://img.shields.io/npm/v/react-native-nitro-image-pipeline.svg)](https://www.npmjs.com/package/react-native-nitro-image-pipeline)
+[![Downloads](https://img.shields.io/npm/dm/react-native-nitro-image-pipeline.svg)](https://www.npmjs.com/package/react-native-nitro-image-pipeline)
+[![License](https://img.shields.io/npm/l/react-native-nitro-image-pipeline.svg)](https://github.com/aparedes/react-native-nitro-image-pipeline/LICENSE)
 
 ## Features
 
@@ -26,7 +26,14 @@ A high-performance image loading, caching, and processing library for React Nati
 ## Installation
 
 ```bash
-bun add react-native-nitro-image-toolkit react-native-nitro-modules
+# npm
+npm install react-native-nitro-image-pipeline react-native-nitro-modules react-native-nitro-image
+
+# pnpm
+pnpm add react-native-nitro-image-pipeline react-native-nitro-modules react-native-nitro-image
+
+# bun
+bun add react-native-nitro-image-pipeline react-native-nitro-modules react-native-nitro-image
 ```
 
 ## Usage
@@ -36,7 +43,7 @@ bun add react-native-nitro-image-toolkit react-native-nitro-modules
 The simplest way to load an image in a component:
 
 ```tsx
-import { useImage } from 'react-native-nitro-image-toolkit';
+import { useImage } from 'react-native-nitro-image-pipeline';
 
 function MyComponent() {
   const { image, error } = useImage({
@@ -56,29 +63,29 @@ function MyComponent() {
 ### Direct API
 
 ```ts
-import { NitroImageToolkit } from 'react-native-nitro-image-toolkit';
+import { NitroImagePipeline } from 'react-native-nitro-image-pipeline';
 
 // Load an image with options
-const image = await NitroImageToolkit.loadImage('https://example.com/photo.jpg', {
+const image = await NitroImagePipeline.loadImage('https://example.com/photo.jpg', {
   blur: 4,
   cornerRadius: 12,
   cache: 'disk',
 });
 
 // Prefetch a single image
-await NitroImageToolkit.preLoadImage('https://example.com/photo.jpg');
+await NitroImagePipeline.preLoadImage('https://example.com/photo.jpg');
 
 // Prefetch multiple images
-await NitroImageToolkit.preLoadImages([
+await NitroImagePipeline.preLoadImages([
   'https://example.com/a.jpg',
   'https://example.com/b.jpg',
 ]);
 
 // Apply Gaussian blur to an already-loaded image
-const blurred = await NitroImageToolkit.gaussianBlur(image, 10);
+const blurred = await NitroImagePipeline.gaussianBlur(image, 10);
 
 // Clear the image cache
-NitroImageToolkit.clearCache();
+NitroImagePipeline.clearCache();
 ```
 
 ## API Reference

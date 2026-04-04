@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import type { Image } from 'react-native-nitro-image';
 import { NitroModules } from 'react-native-nitro-modules';
 
-import type { NitroImageToolkit as NitroImageToolkitSpec } from './specs/nitro-image-toolkit.nitro';
+import type { NitroImagePipeline as NitroImagePipelineSpec } from './specs/nitro-image-toolkit.nitro';
 
-export const NitroImageToolkit =
-  NitroModules.createHybridObject<NitroImageToolkitSpec>('NitroImageToolkit');
+export const NitroImagePipeline =
+  NitroModules.createHybridObject<NitroImagePipelineSpec>('NitroImagePipeline');
 
 type Result =
   // Loading State
@@ -49,7 +49,7 @@ export function useImage({
   useEffect(() => {
     (async () => {
       try {
-        const result = await NitroImageToolkit.loadImage(url, {
+        const result = await NitroImagePipeline.loadImage(url, {
           blur,
           cornerRadius,
         });

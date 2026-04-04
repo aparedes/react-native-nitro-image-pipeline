@@ -20,7 +20,7 @@ def isNewArchitectureEnabled() {
 
 apply plugin: "com.android.library"
 apply plugin: 'org.jetbrains.kotlin.android'
-apply from: '../nitrogen/generated/android/NitroImageToolkit+autolinking.gradle'
+apply from: '../nitrogen/generated/android/NitroImagePipeline+autolinking.gradle'
 apply from: "./fix-prefab.gradle"
 
 if (isNewArchitectureEnabled()) {
@@ -28,15 +28,15 @@ if (isNewArchitectureEnabled()) {
 }
 
 def getExtOrDefault(name) {
-  return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties["NitroImageToolkit_" + name]
+  return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties["NitroImagePipeline_" + name]
 }
 
 def getExtOrIntegerDefault(name) {
-  return rootProject.ext.has(name) ? rootProject.ext.get(name) : (project.properties["NitroImageToolkit_" + name]).toInteger()
+  return rootProject.ext.has(name) ? rootProject.ext.get(name) : (project.properties["NitroImagePipeline_" + name]).toInteger()
 }
 
 android {
-  namespace "com.margelo.nitro.nitroimagetoolkit"
+  namespace "com.margelo.nitro.nitroimagepipeline"
 
   ndkVersion getExtOrDefault("ndkVersion")
   compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
@@ -149,7 +149,7 @@ dependencies {
 if (isNewArchitectureEnabled()) {
   react {
     jsRootDir = file("../src/")
-    libraryName = "NitroImageToolkit"
-    codegenJavaPackageName = "com.margelo.nitro.nitroimagetoolkit"
+    libraryName = "NitroImagePipeline"
+    codegenJavaPackageName = "com.margelo.nitro.nitroimagepipeline"
   }
 }
