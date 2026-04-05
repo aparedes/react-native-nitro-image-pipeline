@@ -79,6 +79,9 @@
     "react-native-nitro-modules": "*",
     "react-native-nitro-image": "*"
   },
+  "overrides": {
+    "lodash-es": "4.17.21"
+  },
   "react-native-builder-bob": {
     "source": "src",
     "output": "lib",
