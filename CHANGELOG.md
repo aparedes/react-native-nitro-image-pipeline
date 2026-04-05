@@ -1,3 +1,9 @@
+## [0.1.1](https://github.com/aparedes/react-native-nitro-image-pipeline/compare/v0.1.0...v0.1.1) (2026-04-05)
+
+### 🐛 Bug Fixes
+
+* pin lodash-es to 4.17.21 to fix semantic-release ([#15](https://github.com/aparedes/react-native-nitro-image-pipeline/issues/15)) ([47ee4f6](https://github.com/aparedes/react-native-nitro-image-pipeline/commit/47ee4f6dfd622154f27b1a0e1a4f60bd600aa464))
+
 # Changelog
 
 ## [0.1.0] - 2026-04-05
