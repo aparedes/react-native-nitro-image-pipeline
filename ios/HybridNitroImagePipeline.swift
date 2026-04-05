@@ -13,92 +13,82 @@ import Nuke
 import UIKit
 import CoreImage
 
-fileprivate class HybridImage: HybridImageSpec, NativeImage {
-  let uiImage: UIImage
+private class HybridImage: HybridImageSpec, NativeImage {
+    let uiImage: UIImage
 
-  // MARK: - Init
-
-  init(uiImage: UIImage) {
-    self.uiImage = uiImage
-    super.init()
-  }
-
-  // MARK: - Required Spec Properties
-
-  var width: Double {
-    return Double(uiImage.size.width)
-  }
-
-  var height: Double {
-    return Double(uiImage.size.height)
-  }
-
-  // MARK: - Optional / Common Methods
-
-  func toArrayBuffer() throws -> ArrayBuffer {
-    guard let data = uiImage.pngData() else {
-      throw RuntimeError.error(withMessage: "Failed to encode image to PNG")
-    }
-    return try ArrayBuffer.copy(data: data)
-  }
-
-func toBase64() throws -> String {
-    guard let data = uiImage.pngData() else {
-      throw RuntimeError.error(withMessage: "Failed to encode image")
+    init(uiImage: UIImage) {
+        self.uiImage = uiImage
+        super.init()
     }
 
-    return data.base64EncodedString()
-  }
+    var width: Double {
+        return Double(uiImage.size.width)
+    }
 
-  // MARK: - Debug / Description (optional but useful)
+    var height: Double {
+        return Double(uiImage.size.height)
+    }
 
- var description: String {
-    return "HybridImage(\(width)x\(height))"
-  }
+    func toArrayBuffer() throws -> ArrayBuffer {
+        guard let data = uiImage.pngData() else {
+            throw RuntimeError.error(withMessage: "Failed to encode image to PNG")
+        }
+        return try ArrayBuffer.copy(data: data)
+    }
+
+    func toBase64() throws -> String {
+        guard let data = uiImage.pngData() else {
+            throw RuntimeError.error(withMessage: "Failed to encode image")
+        }
+
+        return data.base64EncodedString()
+    }
+
+    var description: String {
+        return "HybridImage(\(width)x\(height))"
+    }
 }
 
 class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
-
-    
     private let prefetcher = ImagePrefetcher()
-    
+
     override init() {
         ImagePipeline.shared = ImagePipeline(configuration: .withDataCache)
     }
-    
+
     func loadImage(url: String, options: Options?) throws -> Promise<any HybridImageSpec> {
         return Promise.async {
             let imgRequest = ImageRequest(url: URL(string: url), processors: [
                 .gaussianBlur(radius: Int(options?.blur ?? 0)),
-                .roundedCorners(radius: options?.cornerRadius ?? 0),
-                
+                .roundedCorners(radius: options?.cornerRadius ?? 0)
+
             ])
             let image = try await ImagePipeline.shared.image(for: imgRequest)
             return HybridImage(uiImage: image)
         }
     }
-    
+
     func preLoadImage(url: String) throws -> Promise<Void> {
         return Promise.async {
             guard let imageUrl = URL(string: url) else {
                 throw RuntimeError.error(withMessage: "Invalid URL: \(url)")
             }
-            
+
             self.prefetcher.startPrefetching(with: [imageUrl])
         }
     }
-    
+
     func preLoadImages(urls: [String]) throws -> Promise<Void> {
         return Promise.async {
             let imageUrls = urls.compactMap { URL(string: $0) }
             self.prefetcher.startPrefetching(with: imageUrls)
         }
     }
-    
+
     func clearCache() throws {
         ImagePipeline.shared.cache.removeAll()
     }
-    
+
     func gaussianBlur(image: any HybridImageSpec, radius: Double) throws -> Promise<any HybridImageSpec> {
         return Promise.async {
             guard let nativeImage = image as? NativeImage else {
