@@ -58,11 +58,22 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
 
     func loadImage(url: String, options: Options?) throws -> Promise<any HybridImageSpec> {
         return Promise.async {
-            let imgRequest = ImageRequest(url: URL(string: url), processors: [
-                .gaussianBlur(radius: Int(options?.blur ?? 0)),
-                .roundedCorners(radius: options?.cornerRadius ?? 0)
 
-            ])
+            let cacheOptions: ImageRequest.Options = switch options?.cache {
+            case .memory: [.disableMemoryCache]
+            case .disk:   [.disableDiskCache]
+            case .none?:  [.disableDiskCache, .disableMemoryCache]
+            default:      []
+            }
+
+            let imgRequest = ImageRequest(
+                url: URL(string: url),
+                processors: [
+                    .gaussianBlur(radius: Int(options?.blur ?? 0)),
+                    .roundedCorners(radius: options?.cornerRadius ?? 0)
+                ], options: cacheOptions
+            )
+
             let image = try await ImagePipeline.shared.image(for: imgRequest)
             return HybridImage(uiImage: image)
         }
