@@ -1,3 +1,9 @@
+## [0.2.0](https://github.com/aparedes/react-native-nitro-image-pipeline/compare/v0.1.1...v0.2.0) (2026-04-06)
+
+### ✨ Features
+
+* respect cache option for image loading ([8124543](https://github.com/aparedes/react-native-nitro-image-pipeline/commit/812454352d3ffa004ec3c5e3dd15d148bebfaf75))
+
 ## [0.1.1](https://github.com/aparedes/react-native-nitro-image-pipeline/compare/v0.1.0...v0.1.1) (2026-04-05)
 
 ### 🐛 Bug Fixes
