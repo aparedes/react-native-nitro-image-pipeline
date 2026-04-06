@@ -146,7 +146,7 @@ dependencies {
   implementation("io.coil-kt.coil3:coil-gif:3.3.0")
   // Cronet (uses Play Services provider — no APK size cost, falls back gracefully if unavailable)
   implementation("com.google.android.gms:play-services-cronet:18.1.0")
-  implementation("com.google.net.cronet:cronet-okhttp:0.1.0")
+  implementation("com.google.net.cronet:cronet-okhttp:0.1.1")
 }
 
 if (isNewArchitectureEnabled()) {
