@@ -8,6 +8,7 @@ import coil3.ImageLoader
 import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
+import coil3.request.CachePolicy
 import coil3.request.ErrorResult
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
@@ -53,55 +54,68 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
         .build()
   }
 
-  override fun loadImage(url: String, options: Options?): Promise<HybridImageSpec> =
-      Promise.async {
-        val blur = options?.blur?.toFloat() ?: 0f
-        val cornerRadius = options?.cornerRadius?.toFloat() ?: 0f
-        val transformations = buildList {
-          if (blur > 0f) add(BlurTransformation(context, blur))
-          if (cornerRadius > 0f) add(RoundedCornersTransformation(cornerRadius))
-        }
-        val memoryCacheKey = buildString {
-          append(url)
-          if (blur > 0f) append("_blur$blur")
-          if (cornerRadius > 0f) append("_corner$cornerRadius")
-        }
-        val request =
-            ImageRequest.Builder(context)
-                .data(url)
-                .allowHardware(true)
-                .memoryCacheKey(memoryCacheKey)
-                .transformations(transformations)
-                .build()
-
-        val result = imageLoader.execute(request)
-        when (result) {
-          is ErrorResult -> throw result.throwable
-          is SuccessResult -> {
-            val bitmap =
-                when (val img = result.image) {
-                  is BitmapImage -> img.bitmap
-                  is DrawableImage -> img.drawable.toBitmap()
-                  else -> throw Error("Unsupported image type: ${img.javaClass.simpleName}")
+  override fun loadImage(url: String, options: Options?): Promise<HybridImageSpec> = Promise.async {
+    val blur = options?.blur?.toFloat() ?: 0f
+    val cornerRadius = options?.cornerRadius?.toFloat() ?: 0f
+    val transformations = buildList {
+      if (blur > 0f) add(BlurTransformation(context, blur))
+      if (cornerRadius > 0f) add(RoundedCornersTransformation(cornerRadius))
+    }
+    val memoryCacheKey = buildString {
+      append(url)
+      if (blur > 0f) append("_blur$blur")
+      if (cornerRadius > 0f) append("_corner$cornerRadius")
+    }
+    val request =
+        ImageRequest.Builder(context)
+            .data(url)
+            .apply {
+              when (options?.cache) {
+                CacheOption.MEMORY -> {
+                  memoryCachePolicy(CachePolicy.ENABLED)
+                  diskCachePolicy(CachePolicy.DISABLED)
                 }
-            HybridImage(bitmap)
-          }
-        }
-      }
+                CacheOption.DISK -> {
+                  memoryCachePolicy(CachePolicy.DISABLED)
+                  diskCachePolicy(CachePolicy.ENABLED)
+                }
+                CacheOption.NONE -> {
+                  memoryCachePolicy(CachePolicy.DISABLED)
+                  diskCachePolicy(CachePolicy.DISABLED)
+                }
+                null -> Unit // Coil defaults: both enabled
+              }
+            }
+            .allowHardware(true)
+            .memoryCacheKey(memoryCacheKey)
+            .transformations(transformations)
+            .build()
 
-  override fun preLoadImage(url: String): Promise<Unit> =
-      Promise.async {
-        val request = ImageRequest.Builder(context).data(url).build()
-        imageLoader.execute(request)
+    when (val result = imageLoader.execute(request)) {
+      is ErrorResult -> throw result.throwable
+      is SuccessResult -> {
+        val bitmap =
+            when (val img = result.image) {
+              is BitmapImage -> img.bitmap
+              is DrawableImage -> img.drawable.toBitmap()
+              else -> throw Error("Unsupported image type: ${img.javaClass.simpleName}")
+            }
+        HybridImage(bitmap)
       }
+    }
+  }
 
-  override fun preLoadImages(urls: Array<String>): Promise<Unit> =
-      Promise.async {
-        for (url in urls) {
-          val request = ImageRequest.Builder(context).data(url).build()
-          imageLoader.execute(request)
-        }
-      }
+  override fun preLoadImage(url: String): Promise<Unit> = Promise.async {
+    val request = ImageRequest.Builder(context).data(url).build()
+    imageLoader.execute(request)
+  }
+
+  override fun preLoadImages(urls: Array<String>): Promise<Unit> = Promise.async {
+    for (url in urls) {
+      val request = ImageRequest.Builder(context).data(url).build()
+      imageLoader.execute(request)
+    }
+  }
 
   override fun gaussianBlur(image: HybridImageSpec, radius: Double): Promise<HybridImageSpec> =
       Promise.async {
