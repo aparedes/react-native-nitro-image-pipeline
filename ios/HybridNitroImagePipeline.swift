@@ -58,10 +58,9 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
 
     func loadImage(url: String, options: Options?) throws -> Promise<any HybridImageSpec> {
         return Promise.async {
-
             let cacheOptions: ImageRequest.Options = switch options?.cache {
-            case .memory: [.disableMemoryCache]
-            case .disk:   [.disableDiskCache]
+            case .memory: [.disableDiskCache]
+            case .disk:   [.disableMemoryCache]
             case .none?:  [.disableDiskCache, .disableMemoryCache]
             default:      []
             }
