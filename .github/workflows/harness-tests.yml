@@ -117,20 +117,19 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('example/android/**/*.gradle*') }}
           restore-keys: ${{ runner.os }}-gradle-
 
-      - name: Install Android emulator system image
-        run: |
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install \
-            "system-images;android-36;google_apis;x86_64" \
-            "emulator"
-
       - name: Build Android APK
         working-directory: example/android
         run: ./gradlew assembleDebug --no-daemon --build-cache -PreactNativeArchitectures=x86_64
 
       - name: Run Harness Tests
-        uses: callstackincubator/react-native-harness@v1.1.0
+        uses: reactivecircus/android-emulator-runner@v2
         with:
-          runner: medium_phone_api_36.1
-          app: ${{ github.workspace }}/example/android/app/build/outputs/apk/debug/app-debug.apk
-          projectRoot: example
-          cacheAvd: true
+          api-level: 36
+          arch: x86_64
+          target: google_apis
+          avd-name: Medium_Phone_API_36.1
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: |
+            adb reverse tcp:8081 tcp:8081
+            adb install ${{ github.workspace }}/example/android/app/build/outputs/apk/debug/app-debug.apk
+            cd example && bunx react-native-harness --harnessRunner medium_phone_api_36.1

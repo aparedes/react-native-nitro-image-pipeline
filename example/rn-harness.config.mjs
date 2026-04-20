@@ -14,11 +14,7 @@ export default {
   runners: [
     androidPlatform({
       name: 'medium_phone_api_36.1',
-      device: androidEmulator('Pixel_API_36'),
-      avd: {
-        systemImage: 'system-images;android-36;google_apis;x86_64',
-        device: 'pixel',
-      },
+      device: androidEmulator('Medium_Phone_API_36.1'),
       bundleId: 'com.nitroimagepipelineexample',
     }),
     applePlatform({

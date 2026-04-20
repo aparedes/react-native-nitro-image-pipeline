@@ -1,4 +1,4 @@
-global.RN_HARNESS = {
-  appRegistryComponentName: 'NitroImagePipelineExample',
-  disableViewFlattening: false,
-};
+global.RN_HARNESS = { 
+    appRegistryComponentName: 'NitroImagePipelineExample',
+    disableViewFlattening: false,
+  };
