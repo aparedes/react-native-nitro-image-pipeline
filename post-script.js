@@ -16,7 +16,7 @@ const androidWorkaround = async () => {
     'NitroImagePipelineOnLoad.cpp',
   );
 
-  const str = await readFile(androidOnLoadFile, { encoding: 'utf8' });
-  await writeFile(androidOnLoadFile, str.replace(/margelo\/nitro\//g, ''));
+  // No post-processing needed: Kotlin classes are in com.margelo.nitro.nitroimagepipeline,
+  // which matches what nitrogen generates.
 };
 androidWorkaround();
