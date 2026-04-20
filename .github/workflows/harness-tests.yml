@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - main
+      - test/harness-action
     paths:
       - 'src/**'
       - 'example/__tests__/**'
@@ -55,6 +56,9 @@ jobs:
             example/ios/Pods
           key: ${{ runner.os }}-pods-${{ hashFiles('example/ios/Podfile.lock') }}
           restore-keys: ${{ runner.os }}-pods-
+
+      - name: Install xcpretty
+        run: gem install xcpretty
 
       - name: Install Pods
         working-directory: example/ios
@@ -112,6 +116,11 @@ jobs:
             ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-${{ hashFiles('example/android/**/*.gradle*') }}
           restore-keys: ${{ runner.os }}-gradle-
+
+      - name: Install Android emulator system image
+        run: |
+          sdkmanager --install "system-images;android-36;google_apis;x86_64" "emulator"
+          echo "no" | avdmanager create avd -n "Pixel_API_36" -k "system-images;android-36;google_apis;x86_64" -d "pixel"
 
       - name: Build Android APK
         working-directory: example/android

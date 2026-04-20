@@ -8,7 +8,7 @@ export default {
   runners: [
     androidPlatform({
       name: 'medium_phone_api_36.1',
-      device: androidEmulator('Medium_Phone_API_36.1'),
+      device: androidEmulator('Pixel_API_36'),
       bundleId: 'com.nitroimagepipelineexample',
     }),
     applePlatform({
