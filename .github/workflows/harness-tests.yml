@@ -119,12 +119,13 @@ jobs:
 
       - name: Install Android emulator system image
         run: |
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "system-images;android-36;google_apis;x86_64" "emulator"
-          echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n "Pixel_API_36" -k "system-images;android-36;google_apis;x86_64" -d "pixel"
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install \
+            "system-images;android-36;google_apis;x86_64" \
+            "emulator"
 
       - name: Build Android APK
         working-directory: example/android
-        run: ./gradlew assembleDebug --no-daemon --build-cache
+        run: ./gradlew assembleDebug --no-daemon --build-cache -PreactNativeArchitectures=x86_64
 
       - name: Run Harness Tests
         uses: callstackincubator/react-native-harness@v1.1.0
