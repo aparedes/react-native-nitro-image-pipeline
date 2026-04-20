@@ -1,6 +1,6 @@
-import { Text } from 'react-native';
-import { describe, it, expect, waitFor, render } from 'react-native-harness';
 import { screen } from '@react-native-harness/ui';
+import { Text } from 'react-native';
+import { describe, expect, it, render, waitFor } from 'react-native-harness';
 import { useImage } from 'react-native-nitro-image-pipeline';
 
 const VALID_URL = 'https://picsum.photos/id/3/200/200';

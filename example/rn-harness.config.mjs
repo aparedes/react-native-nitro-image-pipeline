@@ -1,5 +1,11 @@
-import { androidPlatform, androidEmulator } from "@react-native-harness/platform-android";
-import { applePlatform, appleSimulator } from "@react-native-harness/platform-apple";
+import {
+  androidEmulator,
+  androidPlatform,
+} from '@react-native-harness/platform-android';
+import {
+  applePlatform,
+  appleSimulator,
+} from '@react-native-harness/platform-apple';
 
 export default {
   entryPoint: './index.js',

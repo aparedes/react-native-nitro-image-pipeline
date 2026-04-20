@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'react-native-harness';
+import { beforeAll, describe, expect, it } from 'react-native-harness';
 import { NitroImagePipeline } from 'react-native-nitro-image-pipeline';
 
 const VALID_URL = 'https://picsum.photos/id/3/200/200';

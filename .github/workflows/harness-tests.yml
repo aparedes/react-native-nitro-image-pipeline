@@ -82,7 +82,7 @@ jobs:
         uses: callstackincubator/react-native-harness@v1.1.0
         with:
           runner: iphone-17
-          app: example/ios/build/Build/Products/Debug-iphonesimulator/NitroImagePipelineExample.app
+          app: ${{ github.workspace }}/example/ios/build/Build/Products/Debug-iphonesimulator/NitroImagePipelineExample.app
           projectRoot: example
 
   test-android:
@@ -119,8 +119,8 @@ jobs:
 
       - name: Install Android emulator system image
         run: |
-          sdkmanager --install "system-images;android-36;google_apis;x86_64" "emulator"
-          echo "no" | avdmanager create avd -n "Pixel_API_36" -k "system-images;android-36;google_apis;x86_64" -d "pixel"
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "system-images;android-36;google_apis;x86_64" "emulator"
+          echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n "Pixel_API_36" -k "system-images;android-36;google_apis;x86_64" -d "pixel"
 
       - name: Build Android APK
         working-directory: example/android
@@ -130,6 +130,6 @@ jobs:
         uses: callstackincubator/react-native-harness@v1.1.0
         with:
           runner: medium_phone_api_36.1
-          app: example/android/app/build/outputs/apk/debug/app-debug.apk
+          app: ${{ github.workspace }}/example/android/app/build/outputs/apk/debug/app-debug.apk
           projectRoot: example
           cacheAvd: true
