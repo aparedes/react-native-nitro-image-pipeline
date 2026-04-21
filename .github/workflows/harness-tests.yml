@@ -1,0 +1,137 @@
+name: Harness Tests
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - main
+      - test/harness-action
+    paths:
+      - 'src/**'
+      - 'example/__tests__/**'
+      - 'example/.harness/**'
+      - '.github/workflows/harness-tests.yml'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'example/__tests__/**'
+      - 'example/.harness/**'
+      - '.github/workflows/harness-tests.yml'
+      - 'package.json'
+      - 'example/package.json'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-ios:
+    name: Harness Tests (iOS)
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: 26.4
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: example/ios
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cocoapods/repos
+            example/ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('example/ios/Podfile.lock') }}
+          restore-keys: ${{ runner.os }}-pods-
+
+      - name: Install xcpretty
+        run: gem install xcpretty
+
+      - name: Install Pods
+        working-directory: example/ios
+        run: pod install
+
+      - name: Build iOS Simulator App
+        working-directory: example/ios
+        run: |
+          set -o pipefail && xcodebuild \
+            CC=clang CPLUSPLUS=clang++ LD=clang LDPLUSPLUS=clang++ \
+            -derivedDataPath build -UseModernBuildSystem=YES \
+            -workspace NitroImagePipelineExample.xcworkspace \
+            -scheme NitroImagePipelineExample \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            -destination 'platform=iOS Simulator,name=iPhone 17' \
+            build \
+            CODE_SIGNING_ALLOWED=NO | xcpretty
+
+      - name: Run Harness Tests
+        uses: callstackincubator/react-native-harness@v1.1.0
+        with:
+          runner: iphone-17
+          app: ${{ github.workspace }}/example/ios/build/Build/Products/Debug-iphonesimulator/NitroImagePipelineExample.app
+          projectRoot: example
+
+  test-android:
+    name: Harness Tests (Android)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Cache Gradle
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('example/android/**/*.gradle*') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      - name: Build Android APK
+        working-directory: example/android
+        run: ./gradlew assembleDebug --no-daemon --build-cache -PreactNativeArchitectures=x86_64
+
+      - name: Run Harness Tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          arch: x86_64
+          target: google_apis
+          avd-name: Medium_Phone_API_36.1
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: |
+            adb reverse tcp:8081 tcp:8081
+            adb install ${{ github.workspace }}/example/android/app/build/outputs/apk/debug/app-debug.apk
+            cd example && bunx react-native-harness --harnessRunner medium_phone_api_36.1
