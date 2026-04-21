@@ -1,3 +1,10 @@
+## [0.3.0](https://github.com/aparedes/react-native-nitro-image-pipeline/compare/v0.2.0...v0.3.0) (2026-04-21)
+
+### ✨ Features
+
+* Add React Native Harness tests and CI workflow ([#30](https://github.com/aparedes/react-native-nitro-image-pipeline/issues/30)) ([64880e1](https://github.com/aparedes/react-native-nitro-image-pipeline/commit/64880e1190f3d553c39c02305b3bd73db6b4dd72))
+* Bump nitrogen and react-native-nitro-modules to 0.35.4 ([#31](https://github.com/aparedes/react-native-nitro-image-pipeline/issues/31)) ([315c375](https://github.com/aparedes/react-native-nitro-image-pipeline/commit/315c3753e21d119b57bfc0f5ef4042670d118161))
+
 ## [0.2.0](https://github.com/aparedes/react-native-nitro-image-pipeline/compare/v0.1.1...v0.2.0) (2026-04-06)
 
 ### ✨ Features
