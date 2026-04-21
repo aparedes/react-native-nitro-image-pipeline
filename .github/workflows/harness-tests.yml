@@ -19,6 +19,8 @@ on:
       - 'example/__tests__/**'
       - 'example/.harness/**'
       - '.github/workflows/harness-tests.yml'
+      - 'package.json'
+      - 'example/package.json'
   workflow_dispatch:
 
 concurrency:
