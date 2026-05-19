@@ -81,7 +81,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO | xcpretty
 
       - name: Run Harness Tests
-        uses: callstackincubator/react-native-harness@v1.1.0
+        uses: callstackincubator/react-native-harness@v1.2.0
         with:
           runner: iphone-17
           app: ${{ github.workspace }}/example/ios/build/Build/Products/Debug-iphonesimulator/NitroImagePipelineExample.app
