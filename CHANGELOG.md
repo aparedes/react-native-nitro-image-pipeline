@@ -1,3 +1,9 @@
+## [0.3.1](https://github.com/aparedes/react-native-nitro-image-pipeline/compare/v0.3.0...v0.3.1) (2026-07-06)
+
+### 🛠️ Other changes
+
+* bump GitHub Actions to Node 24 runtime versions ([#57](https://github.com/aparedes/react-native-nitro-image-pipeline/issues/57)) ([efe5e87](https://github.com/aparedes/react-native-nitro-image-pipeline/commit/efe5e875c3a57c2931b9a292fa268d444f3d5d13))
+
 ## [0.3.0](https://github.com/aparedes/react-native-nitro-image-pipeline/compare/v0.2.0...v0.3.0) (2026-04-21)
 
 ### ✨ Features
