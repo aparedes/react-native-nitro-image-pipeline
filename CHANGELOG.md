@@ -1,3 +1,9 @@
+## [0.3.2](https://github.com/aparedes/react-native-nitro-image-pipeline/compare/v0.3.1...v0.3.2) (2026-07-06)
+
+### 🛠️ Other changes
+
+* trigger release after fixing npm publish token ([#58](https://github.com/aparedes/react-native-nitro-image-pipeline/issues/58)) ([89b2a95](https://github.com/aparedes/react-native-nitro-image-pipeline/commit/89b2a9509ba09e08b6d19a5a682c36c65a7b489d))
+
 ## [0.3.1](https://github.com/aparedes/react-native-nitro-image-pipeline/compare/v0.3.0...v0.3.1) (2026-07-06)
 
 ### 🛠️ Other changes
