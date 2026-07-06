@@ -32,7 +32,7 @@ jobs:
     name: Harness Tests (iOS)
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
 
       - name: Setup Xcode
@@ -51,7 +51,7 @@ jobs:
           working-directory: example/ios
 
       - name: Cache CocoaPods
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cocoapods/repos
@@ -81,7 +81,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO | xcpretty
 
       - name: Run Harness Tests
-        uses: callstackincubator/react-native-harness@v1.1.0
+        uses: callstackincubator/react-native-harness@v1.2.0
         with:
           runner: iphone-17
           app: ${{ github.workspace }}/example/ios/build/Build/Products/Debug-iphonesimulator/NitroImagePipelineExample.app
@@ -91,7 +91,7 @@ jobs:
     name: Harness Tests (Android)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
 
       - name: Enable KVM
@@ -111,7 +111,7 @@ jobs:
           cache: 'gradle'
 
       - name: Cache Gradle
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.gradle/caches
