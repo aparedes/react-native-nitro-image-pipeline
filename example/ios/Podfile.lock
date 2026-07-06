@@ -49,7 +49,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - NitroImagePipeline (0.2.0):
+  - NitroImagePipeline (0.3.0):
     - hermes-engine
     - NitroImage
     - NitroModules
@@ -74,7 +74,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - NitroModules (0.35.2):
+  - NitroModules (0.35.4):
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -1956,7 +1956,7 @@ DEPENDENCIES:
   - hermes-engine (from `../../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
   - NitroImage (from `../../node_modules/react-native-nitro-image`)
   - NitroImagePipeline (from `../..`)
-  - NitroModules (from `../../node_modules/react-native-nitro-modules`)
+  - NitroModules (from `../node_modules/react-native-nitro-modules`)
   - RCTDeprecation (from `../../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation`)
   - RCTRequired (from `../../node_modules/react-native/Libraries/Required`)
   - RCTSwiftUI (from `../../node_modules/react-native/ReactApple/RCTSwiftUI`)
@@ -2044,7 +2044,7 @@ EXTERNAL SOURCES:
   NitroImagePipeline:
     :path: "../.."
   NitroModules:
-    :path: "../../node_modules/react-native-nitro-modules"
+    :path: "../node_modules/react-native-nitro-modules"
   RCTDeprecation:
     :path: "../../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation"
   RCTRequired:
@@ -2195,8 +2195,8 @@ SPEC CHECKSUMS:
   HarnessUI: 96f33d0bfee248e7012bcf337c7d0980504b23cf
   hermes-engine: 30d98b8a64c13d77dc223c4a008d4375b9eaf053
   NitroImage: 9d69b4452fe608321ed1281a3daedc22ff8a7338
-  NitroImagePipeline: a309421458a6a62712f87f0868d98215c2b6c8ed
-  NitroModules: 76063cb7bc1a21cf46d11b25abfcf1759bf0be47
+  NitroImagePipeline: 7db3cfd936eac6717ab330f8ed0c2fd0b9a9d763
+  NitroModules: f45159491c5a0e7161685a301b1c6c11440b3ab1
   RCTDeprecation: af44b104091a34482596cd9bd7e8d90c4e9b4bd7
   RCTRequired: bb77b070f75f53398ce43c0aaaa58337cebe2bf6
   RCTSwiftUI: afc0a0a635860da1040a0b894bfd529da06d7810
@@ -2272,4 +2272,4 @@ SPEC CHECKSUMS:
 
 PODFILE CHECKSUM: 8c8fc80fdb1246a72f5fec2fbfe2f2e362b261ee
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.16.2
