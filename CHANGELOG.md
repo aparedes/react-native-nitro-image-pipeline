@@ -1,3 +1,9 @@
+## [0.3.3](https://github.com/aparedes/react-native-nitro-image-pipeline/compare/v0.3.2...v0.3.3) (2026-07-12)
+
+### 🐛 Bug Fixes
+
+* **ios:** only apply blur/cornerRadius processors when requested ([#60](https://github.com/aparedes/react-native-nitro-image-pipeline/issues/60)) ([6dace2f](https://github.com/aparedes/react-native-nitro-image-pipeline/commit/6dace2f1d6c65d97cada5d3fb828e4d9ffa8908c))
+
 ## [0.3.2](https://github.com/aparedes/react-native-nitro-image-pipeline/compare/v0.3.1...v0.3.2) (2026-07-06)
 
 ### 🛠️ Other changes
