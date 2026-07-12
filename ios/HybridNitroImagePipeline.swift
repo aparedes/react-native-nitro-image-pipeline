@@ -65,12 +65,18 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
             default:      []
             }
 
+            var processors: [any ImageProcessing] = []
+            if let blur = options?.blur, blur > 0 {
+                processors.append(.gaussianBlur(radius: Int(blur)))
+            }
+            if let cornerRadius = options?.cornerRadius, cornerRadius > 0 {
+                processors.append(.roundedCorners(radius: cornerRadius))
+            }
+
             let imgRequest = ImageRequest(
                 url: URL(string: url),
-                processors: [
-                    .gaussianBlur(radius: Int(options?.blur ?? 0)),
-                    .roundedCorners(radius: options?.cornerRadius ?? 0)
-                ], options: cacheOptions
+                processors: processors,
+                options: cacheOptions
             )
 
             let image = try await ImagePipeline.shared.image(for: imgRequest)
