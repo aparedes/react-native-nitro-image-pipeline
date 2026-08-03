@@ -15,7 +15,7 @@ namespace margelo::nitro::nitroimagepipeline {
   using namespace facebook;
 
   /**
-   * The C++ JNI bridge between the C++ enum "CacheOption" and the the Kotlin enum "CacheOption".
+   * The C++ JNI bridge between the C++ enum "CacheOption" and the Kotlin enum "CacheOption".
    */
   struct JCacheOption final: public jni::JavaClass<JCacheOption> {
   public:

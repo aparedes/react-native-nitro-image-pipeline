@@ -10,6 +10,7 @@ package com.margelo.nitro.nitroimagepipeline
 import androidx.annotation.Keep
 import com.facebook.jni.HybridData
 import com.facebook.proguard.annotations.DoNotStrip
+import dalvik.annotation.optimization.FastNative
 import com.margelo.nitro.image.HybridImageSpec
 import com.margelo.nitro.core.Promise
 import com.margelo.nitro.core.HybridObject
@@ -60,6 +61,7 @@ abstract class HybridNitroImagePipelineSpec: HybridObject() {
   @Keep
   protected open class CxxPart(javaPart: HybridNitroImagePipelineSpec): HybridObject.CxxPart(javaPart) {
     // C++ JHybridNitroImagePipelineSpec::CxxPart::initHybrid(...)
+    @FastNative
     external override fun initHybrid(): HybridData
   }
   override fun createCxxPart(): CxxPart {

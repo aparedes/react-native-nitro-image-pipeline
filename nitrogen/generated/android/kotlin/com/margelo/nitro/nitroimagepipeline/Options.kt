@@ -9,6 +9,7 @@ package com.margelo.nitro.nitroimagepipeline
 
 import androidx.annotation.Keep
 import com.facebook.proguard.annotations.DoNotStrip
+import java.util.Objects
 
 
 /**
@@ -28,6 +29,22 @@ data class Options(
   val cornerRadius: Double?
 ) {
   /* primary constructor */
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is Options) return false
+    return Objects.deepEquals(this.blur, other.blur)
+      && Objects.deepEquals(this.cache, other.cache)
+      && Objects.deepEquals(this.cornerRadius, other.cornerRadius)
+  }
+
+  override fun hashCode(): Int {
+    return arrayOf<Any?>(
+      blur,
+      cache,
+      cornerRadius
+    ).contentDeepHashCode()
+  }
 
   companion object {
     /**

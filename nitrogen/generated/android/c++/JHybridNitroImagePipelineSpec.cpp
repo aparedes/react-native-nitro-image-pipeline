@@ -94,16 +94,16 @@ namespace margelo::nitro::nitroimagepipeline {
   }
   std::shared_ptr<Promise<void>> JHybridNitroImagePipelineSpec::preLoadImages(const std::vector<std::string>& urls) {
     static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JArrayClass<jni::JString>> /* urls */)>("preLoadImages");
-    auto __result = method(_javaPart, [&]() {
-      size_t __size = urls.size();
+    auto __result = method(_javaPart, [&](auto&& __input) {
+      size_t __size = __input.size();
       jni::local_ref<jni::JArrayClass<jni::JString>> __array = jni::JArrayClass<jni::JString>::newArray(__size);
       for (size_t __i = 0; __i < __size; __i++) {
-        const auto& __element = urls[__i];
+        const auto& __element = __input[__i];
         auto __elementJni = jni::make_jstring(__element);
         __array->setElement(__i, *__elementJni);
       }
       return __array;
-    }());
+    }(urls));
     return [&]() {
       auto __promise = Promise<void>::create();
       __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& /* unit */) {
