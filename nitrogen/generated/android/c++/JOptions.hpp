@@ -19,7 +19,7 @@ namespace margelo::nitro::nitroimagepipeline {
   using namespace facebook;
 
   /**
-   * The C++ JNI bridge between the C++ struct "Options" and the the Kotlin data class "Options".
+   * The C++ JNI bridge between the C++ struct "Options" and the Kotlin data class "Options".
    */
   struct JOptions final: public jni::JavaClass<JOptions> {
   public:
