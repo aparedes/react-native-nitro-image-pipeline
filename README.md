@@ -48,7 +48,7 @@ import { useImage } from 'react-native-nitro-image-pipeline';
 function MyComponent() {
   const { image, error } = useImage({
     url: 'https://example.com/photo.jpg',
-    blur: 4,
+    blur: 4, // Gaussian sigma in source pixels — same result on iOS and Android
     cornerRadius: 12,
   });
 
@@ -67,7 +67,7 @@ import { NitroImagePipeline } from 'react-native-nitro-image-pipeline';
 
 // Load an image with options
 const image = await NitroImagePipeline.loadImage('https://example.com/photo.jpg', {
-  blur: 4,
+  blur: 4, // Gaussian sigma in source pixels — see "Blur units"
   cornerRadius: 12,
   cache: 'disk',
 });
@@ -96,7 +96,7 @@ Loads an image from a URL and returns a `Promise<Image>`.
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `blur` | `number` | `0` | Gaussian blur radius applied at load time |
+| `blur` | `number` | `0` | Gaussian blur strength applied at load time — see [Blur units](#blur-units) |
 | `cornerRadius` | `number` | `0` | Corner radius in points |
 | `cache` | `'memory' \| 'disk' \| 'none'` | platform default | Caching strategy |
 
@@ -110,11 +110,65 @@ Prefetches multiple images into the cache. Returns `Promise<void>`.
 
 ### `gaussianBlur(image, radius)`
 
-Applies a Gaussian blur to an existing `Image` object. Returns `Promise<Image>`.
+Applies a Gaussian blur to an existing `Image` object. Returns `Promise<Image>`. `radius` uses the
+same unit as the `blur` option — see [Blur units](#blur-units).
+
+### Blur units
+
+`blur` (and `gaussianBlur`'s `radius`) is the **standard deviation (sigma) of the Gaussian, in
+source-image pixels**. The same value on the same source file produces the same result on iOS and
+Android — the platforms are calibrated against each other rather than each exposing its native
+backend's own idea of "radius".
+
+```ts
+// ~11px of blur on both platforms, whatever the device
+await NitroImagePipeline.loadImage(url, { blur: 11 });
+```
+
+Two things follow from the unit being *source* pixels:
+
+- Blur is measured against the image's own resolution, not the size it is displayed at. A 4000px
+  photo at `blur: 11` looks subtler than a 400px thumbnail at `blur: 11`. To keep a feed visually
+  consistent, scale the value with the source width.
+- Coming from React Native's `<Image blurRadius={n} />`? That halves its input internally, so
+  `blurRadius={n}` ≈ `blur: n / 2`. RN's value is also density-scaled on Android and not on iOS,
+  which is why the two never quite matched there.
+
+Values below ~1 are smaller than the smallest kernel either backend can build and are effectively a
+no-op. There is no upper bound.
+
+Implementation: iOS runs three Accelerate box-convolution passes sized to hit the requested sigma
+(the standard three-box Gaussian approximation, accurate to a few percent); Android uses
+RenderScript's true Gaussian, downscaling first when sigma exceeds the single-pass ceiling of
+~10.6px and compensating the radius so the result is unchanged. Both clamp at the edges, so blurred
+images keep their borders instead of fading out.
 
 ### `clearCache()`
 
 Removes all cached images from memory and disk. Returns `Promise<void>` that resolves once both caches are cleared.
+
+## Upgrading from 0.3.x
+
+`blur` and `gaussianBlur(image, radius)` changed meaning in 1.0. They used to hand the number
+straight to each platform's native blur, and the two platforms disagreed about what it meant; now
+both read it as a Gaussian sigma in source-image pixels (see [Blur units](#blur-units)).
+
+| | what `blur: n` did in 0.3.x | what it does in 1.0 |
+|---|---|---|
+| iOS | fed `n` to `CIGaussianBlur(inputRadius:)`, measured at `sigma ≈ 1.18 × n` | `sigma = n` |
+| Android | RenderScript on a copy downscaled to 512px, so strength scaled with the source resolution: `sigma ≈ (0.4n + 0.6) × max(w, h) / 512` | `sigma = n`, resolution-independent |
+
+To keep the look you had:
+
+- **iOS:** multiply your old value by ~1.18 (`blur: 10` → `blur: 12`).
+- **Android:** there is no single factor — the old result depended on the source image's
+  resolution. Re-tune against iOS, which the two platforms now agree with.
+
+Also changed:
+
+- `blur` above 25 used to reject the promise on Android. Sigma is now unbounded.
+- Fractional values used to be truncated to whole numbers on iOS. They are honoured now.
+- Blurred images used to fade out at the borders on iOS. Edges are clamped on both platforms now.
 
 ## Credits
 

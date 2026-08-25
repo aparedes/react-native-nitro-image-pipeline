@@ -11,7 +11,6 @@ import NitroImage
 import Nuke
 
 import UIKit
-import CoreImage
 
 private class HybridImage: HybridImageSpec, NativeImage {
     let uiImage: UIImage
@@ -101,9 +100,6 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
 
     private static let sharedPrefetcher = ImagePrefetcher(pipeline: sharedPipeline)
 
-    // CIContext is expensive to create; Apple recommends reusing one.
-    private static let ciContext = CIContext()
-
     private var pipeline: ImagePipeline { Self.sharedPipeline }
     private var prefetcher: ImagePrefetcher { Self.sharedPrefetcher }
 
@@ -122,7 +118,7 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
 
             var processors: [any ImageProcessing] = []
             if let blur = options?.blur, blur > 0 {
-                processors.append(.gaussianBlur(radius: Int(blur)))
+                processors.append(GaussianBlurProcessor(sigma: blur))
             }
             if let cornerRadius = options?.cornerRadius, cornerRadius > 0 {
                 processors.append(.roundedCorners(radius: cornerRadius))
@@ -168,22 +164,11 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
                 throw RuntimeError.error(withMessage: "Unsupported image type")
             }
 
-            let uiImage = nativeImage.uiImage
-
-            guard let ciImage = CIImage(image: uiImage) else {
-                throw RuntimeError.error(withMessage: "Failed to read image data")
-            }
-
-            let filter = CIFilter(name: "CIGaussianBlur")!
-            filter.setValue(ciImage, forKey: kCIInputImageKey)
-            filter.setValue(radius, forKey: kCIInputRadiusKey)
-
-            guard let output = filter.outputImage,
-                  let cgImage = Self.ciContext.createCGImage(output, from: ciImage.extent) else {
+            guard let blurred = GaussianBlur.apply(to: nativeImage.uiImage, sigma: radius) else {
                 throw RuntimeError.error(withMessage: "Failed to apply gaussian blur")
             }
 
-            return HybridImage(uiImage: UIImage(cgImage: cgImage))
+            return HybridImage(uiImage: blurred)
         }
     }
 

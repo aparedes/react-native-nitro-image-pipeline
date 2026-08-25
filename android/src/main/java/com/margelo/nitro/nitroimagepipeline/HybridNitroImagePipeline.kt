@@ -105,10 +105,15 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
   override fun gaussianBlur(image: HybridImageSpec, radius: Double): Promise<HybridImageSpec> =
       Promise.async {
         val hybridImage = image as? HybridImage ?: throw Error("Image is not a HybridImage")
-        val clampedRadius = radius.toFloat().coerceIn(0.01f, 25f)
-        val blurred =
-            BlurTransformation(context, clampedRadius).transform(hybridImage.bitmap, Size.ORIGINAL)
-        HybridImage(blurred)
+        // `radius` is a Gaussian sigma in source-image pixels — see BlurTransformation.
+        val sigma = radius.toFloat()
+        if (sigma <= 0f) {
+          hybridImage
+        } else {
+          val blurred =
+              BlurTransformation(context, sigma).transform(hybridImage.bitmap, Size.ORIGINAL)
+          HybridImage(blurred)
+        }
       }
 
   override fun clearCache(): Promise<Unit> = Promise.async {

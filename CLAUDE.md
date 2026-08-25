@@ -23,6 +23,9 @@ bun run build
 # Run codegen (nitrogen → build → post-script)
 bun run codegen
 
+# Verify the blur kernel (macOS + Xcode; runs in the iOS CI job)
+bun run verify:blur
+
 # Clean all generated/build artifacts
 bun run clean
 ```
@@ -69,6 +72,10 @@ lib/   ← compiled JS/TS outputs (commonjs, module, typedefs)
 | File | Purpose |
 |------|---------|
 | `src/specs/nitro-image-toolkit.nitro.ts` | API contract — defines all methods/properties |
+| `ios/GaussianBlur.swift` | iOS blur kernel (Accelerate) — no UIKit/Nuke, so `scripts/verify-blur.swift` can compile it on the host |
+| `ios/GaussianBlurProcessor.swift` | UIImage + Nuke `ImageProcessing` plumbing around that kernel |
+| `scripts/verify-blur.swift` | Host-side blur checks, run by `bun run verify:blur` and in CI |
+| `android/.../transform/BlurTransformation.kt` | Android blur kernel (RenderScript) as a Coil `Transformation` |
 | `src/index.ts` | Library entry point, creates the HybridObject |
 | `nitro.json` | Nitrogen codegen config (namespace, module names, language targets) |
 | `NitroImagePipeline.podspec` | iOS CocoaPods spec — do not manually add source files; nitrogen autolinking handles it |
@@ -77,6 +84,26 @@ lib/   ← compiled JS/TS outputs (commonjs, module, typedefs)
 | `.oxlint/react-native-plugin.mjs` | Vendored React Native lint rules — oxlint has no native `react-native` plugin |
 | `lefthook.yml` | Git hooks — pre-commit formats/lints staged files, pre-push runs the full checks |
 | `.swiftlint.yml` | SwiftLint config (excludes `nitrogen/generated`, Pods, build output) |
+
+### Blur is a cross-platform contract
+
+`blur` (and `gaussianBlur`'s `radius`) is the **standard deviation (sigma) of the Gaussian, in
+source-image pixels**, and the two platforms are calibrated to agree on it. Neither side may pass
+the value to its native blur unchanged:
+
+- iOS (`ios/GaussianBlur.swift`) runs three `vImageBoxConvolve_ARGB8888` passes whose widths are
+  solved for the requested sigma. `CIGaussianBlur` is deliberately not used — its `inputRadius`
+  measures ≈ `1.18 × sigma` and it fades image borders.
+- Android (`transform/BlurTransformation.kt`) inverts RenderScript's `sigma = 0.4 × radius + 0.6`
+  and, because `radius` caps at 25, blurs a downscaled copy for sigma above ~10.6px — compensating
+  the radius so the result is unchanged.
+
+Both clamp at the edges rather than sampling past them: vImage via `kvImageEdgeExtend`, RenderScript
+via `std::max/min` on the sample coordinate (see `OneVU4` in AOSP's blur). That is what keeps blurred
+images from fading out at their borders.
+
+Changing either kernel means re-checking both against the same sigma — `bun run verify:blur` covers
+the iOS side.
 
 ### Nitro Modules Concepts
 
