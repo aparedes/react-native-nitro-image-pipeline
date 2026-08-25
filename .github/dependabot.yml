@@ -40,6 +40,12 @@ updates:
       - 'typescript'
       - 'nitrogen'
 
+    ignore:
+      # v10+ of this preset requires conventional-changelog-writer@9, which
+      # @semantic-release/release-notes-generator does not ship yet.
+      - dependency-name: 'conventional-changelog-conventionalcommits'
+        update-types: ['version-update:semver-major']
+
     groups:
       react-native-cli:
         patterns:
