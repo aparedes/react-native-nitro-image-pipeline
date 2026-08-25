@@ -22,12 +22,11 @@ import com.margelo.nitro.core.Promise
 import com.margelo.nitro.image.HybridImage
 import com.margelo.nitro.image.HybridImageSpec
 import com.margelo.nitro.nitroimagepipeline.transform.BlurTransformation
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okio.Path.Companion.toOkioPath
 import org.chromium.net.CronetEngine
@@ -112,10 +111,12 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
         HybridImage(blurred)
       }
 
-  override fun clearCache() {
+  override fun clearCache(): Promise<Unit> = Promise.async {
     imageLoader.memoryCache?.clear()
-    // DiskCache.clear() does file I/O; keep it off the calling (JS) thread.
-    CoroutineScope(Dispatchers.IO).launch { imageLoader.diskCache?.clear() }
+    // DiskCache.clear() does file I/O; keep it off the JS thread but await
+    // completion so callers can rely on the cache being empty, and so an
+    // IOException rejects the promise instead of crashing the process.
+    withContext(Dispatchers.IO) { imageLoader.diskCache?.clear() }
   }
 
   companion object {

@@ -1,8 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Image } from 'react-native-nitro-image';
 import { NitroModules } from 'react-native-nitro-modules';
 
-import type { NitroImagePipeline as NitroImagePipelineSpec } from './specs/nitro-image-toolkit.nitro';
+import type {
+  CacheOption,
+  NitroImagePipeline as NitroImagePipelineSpec,
+  Options,
+} from './specs/nitro-image-toolkit.nitro';
+
+export type { CacheOption, Options };
 
 export const NitroImagePipeline =
   NitroModules.createHybridObject<NitroImagePipelineSpec>('NitroImagePipeline');
@@ -41,16 +47,23 @@ export function useImage({
   url: string;
   blur?: number;
   cornerRadius?: number;
-  cache?: 'memory' | 'disk' | 'none';
+  cache?: CacheOption;
 }): Result {
   const [image, setImage] = useState<Result>({
     image: undefined,
     error: undefined,
   });
+  const loadedUrlRef = useRef(url);
 
   useEffect(() => {
     let cancelled = false;
-    setImage({ image: undefined, error: undefined });
+    // Only reset to the loading state when the URL changes; for same-URL
+    // param tweaks (blur/cornerRadius/cache) keep showing the current image
+    // until the new variant resolves, to avoid flashing empty.
+    if (loadedUrlRef.current !== url) {
+      loadedUrlRef.current = url;
+      setImage({ image: undefined, error: undefined });
+    }
 
     (async () => {
       try {

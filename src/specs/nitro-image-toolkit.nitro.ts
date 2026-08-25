@@ -1,8 +1,12 @@
 import type { Image } from 'react-native-nitro-image';
 import type { HybridObject } from 'react-native-nitro-modules';
 
-type CacheOption = 'memory' | 'disk' | 'none';
-type Options = { blur?: number; cache?: CacheOption; cornerRadius?: number };
+export type CacheOption = 'memory' | 'disk' | 'none';
+export type Options = {
+  blur?: number;
+  cache?: CacheOption;
+  cornerRadius?: number;
+};
 
 export interface NitroImagePipeline
   extends HybridObject<{ ios: 'swift'; android: 'kotlin' }> {
@@ -12,5 +16,5 @@ export interface NitroImagePipeline
   gaussianBlur(image: Image, radius: number): Promise<Image>;
   // Future: brightness, saturation, tint, etc.
 
-  clearCache(): void;
+  clearCache(): Promise<void>;
 }
