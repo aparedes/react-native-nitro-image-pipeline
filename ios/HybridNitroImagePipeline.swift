@@ -16,6 +16,10 @@ import CoreImage
 private class HybridImage: HybridImageSpec, NativeImage {
     let uiImage: UIImage
 
+    // PNG encoding is expensive; encode once and reuse for both
+    // toArrayBuffer() and toBase64().
+    private lazy var pngData: Data? = uiImage.pngData()
+
     init(uiImage: UIImage) {
         self.uiImage = uiImage
         super.init()
@@ -30,14 +34,14 @@ private class HybridImage: HybridImageSpec, NativeImage {
     }
 
     func toArrayBuffer() throws -> ArrayBuffer {
-        guard let data = uiImage.pngData() else {
+        guard let data = pngData else {
             throw RuntimeError.error(withMessage: "Failed to encode image to PNG")
         }
         return try ArrayBuffer.copy(data: data)
     }
 
     func toBase64() throws -> String {
-        guard let data = uiImage.pngData() else {
+        guard let data = pngData else {
             throw RuntimeError.error(withMessage: "Failed to encode image")
         }
 
@@ -50,14 +54,32 @@ private class HybridImage: HybridImageSpec, NativeImage {
 }
 
 class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
-    private let prefetcher = ImagePrefetcher()
+    // A private pipeline (instead of mutating ImagePipeline.shared) so the
+    // prefetcher and loadImage read/write the exact same caches, and other
+    // Nuke users in the host app are left untouched.
+    private let pipeline: ImagePipeline
+    private let prefetcher: ImagePrefetcher
+
+    // CIContext is expensive to create; Apple recommends reusing one.
+    private static let ciContext = CIContext()
 
     override init() {
-        ImagePipeline.shared = ImagePipeline(configuration: .withDataCache)
+        var configuration = ImagePipeline.Configuration.withDataCache
+        // Store processed (blurred/rounded) variants on disk too, not just
+        // the original download, so they survive memory eviction and restarts.
+        configuration.dataCachePolicy = .automatic
+        let pipeline = ImagePipeline(configuration: configuration)
+        self.pipeline = pipeline
+        self.prefetcher = ImagePrefetcher(pipeline: pipeline)
+        super.init()
     }
 
     func loadImage(url: String, options: Options?) throws -> Promise<any HybridImageSpec> {
         return Promise.async {
+            guard let imageUrl = URL(string: url) else {
+                throw RuntimeError.error(withMessage: "Invalid URL: \(url)")
+            }
+
             let cacheOptions: ImageRequest.Options = switch options?.cache {
             case .memory: [.disableDiskCache]
             case .disk:   [.disableMemoryCache]
@@ -74,12 +96,12 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
             }
 
             let imgRequest = ImageRequest(
-                url: URL(string: url),
+                url: imageUrl,
                 processors: processors,
                 options: cacheOptions
             )
 
-            let image = try await ImagePipeline.shared.image(for: imgRequest)
+            let image = try await self.pipeline.image(for: imgRequest)
             return HybridImage(uiImage: image)
         }
     }
@@ -102,7 +124,7 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
     }
 
     func clearCache() throws {
-        ImagePipeline.shared.cache.removeAll()
+        pipeline.cache.removeAll()
     }
 
     func gaussianBlur(image: any HybridImageSpec, radius: Double) throws -> Promise<any HybridImageSpec> {
@@ -113,17 +135,20 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
 
             let uiImage = nativeImage.uiImage
 
-            let ciImage = CIImage(image: uiImage)
+            guard let ciImage = CIImage(image: uiImage) else {
+                throw RuntimeError.error(withMessage: "Failed to read image data")
+            }
 
             let filter = CIFilter(name: "CIGaussianBlur")!
             filter.setValue(ciImage, forKey: kCIInputImageKey)
             filter.setValue(radius, forKey: kCIInputRadiusKey)
 
-            let context = CIContext()
-            let output = filter.outputImage
-            let cgImage = context.createCGImage(output!, from: ciImage!.extent)
+            guard let output = filter.outputImage,
+                  let cgImage = Self.ciContext.createCGImage(output, from: ciImage.extent) else {
+                throw RuntimeError.error(withMessage: "Failed to apply gaussian blur")
+            }
 
-            return HybridImage(uiImage: UIImage(cgImage: cgImage!))
+            return HybridImage(uiImage: UIImage(cgImage: cgImage))
         }
     }
 

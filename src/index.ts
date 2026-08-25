@@ -36,10 +36,12 @@ export function useImage({
   url,
   blur = 0,
   cornerRadius = 0,
+  cache,
 }: {
   url: string;
   blur?: number;
   cornerRadius?: number;
+  cache?: 'memory' | 'disk' | 'none';
 }): Result {
   const [image, setImage] = useState<Result>({
     image: undefined,
@@ -47,20 +49,32 @@ export function useImage({
   });
 
   useEffect(() => {
+    let cancelled = false;
+    setImage({ image: undefined, error: undefined });
+
     (async () => {
       try {
         const result = await NitroImagePipeline.loadImage(url, {
           blur,
           cornerRadius,
+          cache,
         });
 
-        setImage({ image: result, error: undefined });
+        if (!cancelled) {
+          setImage({ image: result, error: undefined });
+        }
       } catch (e) {
         const error = e instanceof Error ? e : new Error(`${e}`);
-        setImage({ image: undefined, error: error });
+        if (!cancelled) {
+          setImage({ image: undefined, error: error });
+        }
       }
     })();
-  }, [url, blur]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [url, blur, cornerRadius, cache]);
 
   return image;
 }

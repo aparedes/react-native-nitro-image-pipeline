@@ -22,6 +22,12 @@ import com.margelo.nitro.core.Promise
 import com.margelo.nitro.image.HybridImage
 import com.margelo.nitro.image.HybridImageSpec
 import com.margelo.nitro.nitroimagepipeline.transform.BlurTransformation
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okio.Path.Companion.toOkioPath
 import org.chromium.net.CronetEngine
@@ -30,29 +36,8 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
   private val context
     get() = NitroModules.applicationContext as Context
 
-  private val okHttpClient: OkHttpClient by lazy {
-    val builder = OkHttpClient.Builder()
-    try {
-      val cronetEngine = CronetEngine.Builder(context).build()
-      builder.addInterceptor(CronetInterceptor.newBuilder(cronetEngine).build())
-    } catch (_: Exception) {
-      // Cronet unavailable (no GMS or unsupported device) — use plain OkHttp
-    }
-    builder.build()
-  }
-
-  private val imageLoader: ImageLoader by lazy {
-    ImageLoader.Builder(context)
-        .components { add(OkHttpNetworkFetcherFactory(callFactory = okHttpClient)) }
-        .memoryCache { MemoryCache.Builder().maxSizePercent(context, 0.25).build() }
-        .diskCache {
-          DiskCache.Builder()
-              .directory(context.cacheDir.resolve("nitro_image_cache").toOkioPath())
-              .maxSizeBytes(256L * 1024 * 1024)
-              .build()
-        }
-        .build()
-  }
+  private val imageLoader: ImageLoader
+    get() = getOrCreateImageLoader(context)
 
   override fun loadImage(url: String, options: Options?): Promise<HybridImageSpec> = Promise.async {
     val blur = options?.blur?.toFloat() ?: 0f
@@ -60,11 +45,6 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
     val transformations = buildList {
       if (blur > 0f) add(BlurTransformation(context, blur))
       if (cornerRadius > 0f) add(RoundedCornersTransformation(cornerRadius))
-    }
-    val memoryCacheKey = buildString {
-      append(url)
-      if (blur > 0f) append("_blur$blur")
-      if (cornerRadius > 0f) append("_corner$cornerRadius")
     }
     val request =
         ImageRequest.Builder(context)
@@ -87,7 +67,6 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
               }
             }
             .allowHardware(true)
-            .memoryCacheKey(memoryCacheKey)
             .transformations(transformations)
             .build()
 
@@ -111,10 +90,17 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
   }
 
   override fun preLoadImages(urls: Array<String>): Promise<Unit> = Promise.async {
-    for (url in urls) {
-      val request = ImageRequest.Builder(context).data(url).build()
-      imageLoader.execute(request)
+    coroutineScope {
+      urls
+          .map { url ->
+            async {
+              val request = ImageRequest.Builder(context).data(url).build()
+              imageLoader.execute(request)
+            }
+          }
+          .awaitAll()
     }
+    Unit
   }
 
   override fun gaussianBlur(image: HybridImageSpec, radius: Double): Promise<HybridImageSpec> =
@@ -128,6 +114,44 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
 
   override fun clearCache() {
     imageLoader.memoryCache?.clear()
-    imageLoader.diskCache?.clear()
+    // DiskCache.clear() does file I/O; keep it off the calling (JS) thread.
+    CoroutineScope(Dispatchers.IO).launch { imageLoader.diskCache?.clear() }
+  }
+
+  companion object {
+    // Coil requires a single DiskCache instance per directory, so the loader
+    // must be shared across all HybridNitroImagePipeline instances.
+    @Volatile private var sharedImageLoader: ImageLoader? = null
+
+    private fun getOrCreateImageLoader(context: Context): ImageLoader =
+        sharedImageLoader
+            ?: synchronized(this) {
+              sharedImageLoader ?: createImageLoader(context).also { sharedImageLoader = it }
+            }
+
+    private fun createImageLoader(context: Context): ImageLoader {
+      val okHttpClient =
+          OkHttpClient.Builder()
+              .apply {
+                try {
+                  val cronetEngine = CronetEngine.Builder(context).build()
+                  addInterceptor(CronetInterceptor.newBuilder(cronetEngine).build())
+                } catch (_: Exception) {
+                  // Cronet unavailable (no GMS or unsupported device) — use plain OkHttp
+                }
+              }
+              .build()
+
+      return ImageLoader.Builder(context)
+          .components { add(OkHttpNetworkFetcherFactory(callFactory = okHttpClient)) }
+          .memoryCache { MemoryCache.Builder().maxSizePercent(context, 0.25).build() }
+          .diskCache {
+            DiskCache.Builder()
+                .directory(context.cacheDir.resolve("nitro_image_cache").toOkioPath())
+                .maxSizeBytes(256L * 1024 * 1024)
+                .build()
+          }
+          .build()
+    }
   }
 }
