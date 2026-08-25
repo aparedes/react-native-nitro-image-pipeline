@@ -1,3 +1,54 @@
+## [1.0.0](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v0.3.5...v1.0.0) (2026-08-25)
+
+### ⚠ BREAKING CHANGES
+
+* `blur` and `gaussianBlur`'s `radius` are now a Gaussian sigma
+in source-image pixels rather than each platform's native radius. On iOS,
+multiply previous values by ~1.18 to keep the same look; on Android the old
+result depended on the source image's resolution, so values need re-tuning.
+See "Upgrading from 0.3.x" in the README.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* Update Podfile.lock
+
+* fix(ios): avoid inferred min(by:) chain that Swift 6.2 cannot type-check
+
+Xcode 26.3 fails the pod build with "type of expression is ambiguous" on
+boxSizes' map/min(by:) chain. It type-checks in isolation — the verify:blur
+step compiles the same file on the same toolchain and passes — but inside the
+pod target, with Nuke, NitroModules and UIKit imported, the solver has far more
+'-' and abs overloads to consider and gives up.
+
+Rewrite the candidate search and the standard-deviation helper as plain loops
+with explicit Double annotations, so there is no overload search left to do.
+Same output: the candidate closest to the requested sigma still wins, ties
+still go to the first. Give verify-blur.swift's zip/reduce chains the same
+treatment before they hit the same wall.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* fix(ios): use .magnitude instead of abs() in the blur kernel
+
+Nitro's C++ interop brings std::abs overloads into the pod target, and Swift
+6.2 (Xcode 26.3) reports "ambiguous use of 'abs'" there. It resolves fine on
+6.4, and on any toolchain when the file is compiled alone, which is why neither
+local builds nor the verify:blur step caught it.
+
+`.magnitude` is a property on Double, so there is no overload set to resolve.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+### ✨ Features
+
+* normalize blur to a Gaussian sigma in source pixels ([#68](https://github.com/[secure]/react-native-nitro-image-pipeline/issues/68)) ([018d0a8](https://github.com/[secure]/react-native-nitro-image-pipeline/commit/018d0a8faf1b1f5cb2970510e6732bfc80770005))
+
+### 🛠️ Other changes
+
+* **ci:** upgrade workflow actions and pin bun to >=1.4.0 ([#66](https://github.com/[secure]/react-native-nitro-image-pipeline/issues/66)) ([d075a87](https://github.com/[secure]/react-native-nitro-image-pipeline/commit/d075a87270c7c0aaa32527e848d1111b21b6b142))
+* **deps:** pin conventional-changelog-conventionalcommits to v9 ([#69](https://github.com/[secure]/react-native-nitro-image-pipeline/issues/69)) ([6da7f1a](https://github.com/[secure]/react-native-nitro-image-pipeline/commit/6da7f1a707ac438f25e2e42df999f548d46ed7f4))
+* replace Biome with oxlint + oxfmt, add lefthook hooks ([#67](https://github.com/[secure]/react-native-nitro-image-pipeline/issues/67)) ([643f359](https://github.com/[secure]/react-native-nitro-image-pipeline/commit/643f3590e4b9935b02551362e6a130fab281779a))
+
 ## [0.3.5](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v0.3.4...v0.3.5) (2026-08-25)
 
 ## [0.3.4](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v0.3.3...v0.3.4) (2026-08-03)
