@@ -1,5 +1,11 @@
 # react-native-nitro-toolkit — Implementation Plan
 
+> [!NOTE]
+> Historical document: this is the original pre-implementation plan, kept for context. The package
+> shipped as `react-native-nitro-image-pipeline` and the design moved on — the two-tier cache API
+> below was replaced by Nuke/Coil, and the blur no longer uses `CIGaussianBlur` or the AndroidX
+> Toolkit. See [README.md](./README.md) for the current API and blur semantics.
+
 A Nitro Module that provides image processing utilities (blur, brightness, etc.) with a two-tier cache system, built on top of `react-native-nitro-image`.
 
 ## Overview
