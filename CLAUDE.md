@@ -53,7 +53,7 @@ lib/   ← compiled JS/TS outputs (commonjs, module, typedefs)
 
 ### Development Workflow
 
-1. **Modify the spec** in `src/specs/nitro-image-pipeline.nitro.ts` (TypeScript interface)
+1. **Modify the spec** in `src/specs/nitro-image-toolkit.nitro.ts` (TypeScript interface)
 2. **Run codegen**: `bun run codegen` — regenerates all bridge code in `nitrogen/`
 3. **Implement native**: update `ios/HybridNitroImagePipeline.swift` and `android/.../HybridNitroImagePipeline.kt` to match the new spec
 4. **Build**: `bun run build` compiles TypeScript
@@ -62,7 +62,7 @@ lib/   ← compiled JS/TS outputs (commonjs, module, typedefs)
 
 | File | Purpose |
 |------|---------|
-| `src/specs/nitro-image-pipeline.nitro.ts` | API contract — defines all methods/properties |
+| `src/specs/nitro-image-toolkit.nitro.ts` | API contract — defines all methods/properties |
 | `src/index.ts` | Library entry point, creates the HybridObject |
 | `nitro.json` | Nitrogen codegen config (namespace, module names, language targets) |
 | `NitroImagePipeline.podspec` | iOS CocoaPods spec — do not manually add source files; nitrogen autolinking handles it |

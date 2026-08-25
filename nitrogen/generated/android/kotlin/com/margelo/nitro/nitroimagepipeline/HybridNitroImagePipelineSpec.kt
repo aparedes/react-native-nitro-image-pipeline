@@ -49,7 +49,7 @@ abstract class HybridNitroImagePipelineSpec: HybridObject() {
   
   @DoNotStrip
   @Keep
-  abstract fun clearCache(): Unit
+  abstract fun clearCache(): Promise<Unit>
 
   // Default implementation of `HybridObject.toString()`
   override fun toString(): String {

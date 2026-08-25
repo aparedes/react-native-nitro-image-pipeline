@@ -110,11 +110,13 @@ namespace margelo::nitro::nitroimagepipeline {
       auto __value = std::move(__result.value());
       return __value;
     }
-    inline void clearCache() override {
+    inline std::shared_ptr<Promise<void>> clearCache() override {
       auto __result = _swiftPart.clearCache();
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }
+      auto __value = std::move(__result.value());
+      return __value;
     }
 
   private:

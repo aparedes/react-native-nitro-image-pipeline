@@ -16,9 +16,44 @@ import CoreImage
 private class HybridImage: HybridImageSpec, NativeImage {
     let uiImage: UIImage
 
+    // PNG encoding is expensive; encode once and reuse for both
+    // toArrayBuffer() and toBase64(). Guarded by a lock (lazy var is not
+    // thread-safe) and dropped on memory pressure so a JS-retained image
+    // doesn't pin its encoding forever.
+    private let pngLock = NSLock()
+    private var cachedPngData: Data?
+    private var memoryWarningObserver: (any NSObjectProtocol)?
+
     init(uiImage: UIImage) {
         self.uiImage = uiImage
         super.init()
+        memoryWarningObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.didReceiveMemoryWarningNotification,
+            object: nil,
+            queue: nil
+        ) { [weak self] _ in
+            guard let self else { return }
+            self.pngLock.lock()
+            self.cachedPngData = nil
+            self.pngLock.unlock()
+        }
+    }
+
+    deinit {
+        if let memoryWarningObserver {
+            NotificationCenter.default.removeObserver(memoryWarningObserver)
+        }
+    }
+
+    private func pngData() -> Data? {
+        pngLock.lock()
+        defer { pngLock.unlock() }
+        if let cachedPngData {
+            return cachedPngData
+        }
+        let data = uiImage.pngData()
+        cachedPngData = data
+        return data
     }
 
     var width: Double {
@@ -30,14 +65,14 @@ private class HybridImage: HybridImageSpec, NativeImage {
     }
 
     func toArrayBuffer() throws -> ArrayBuffer {
-        guard let data = uiImage.pngData() else {
+        guard let data = pngData() else {
             throw RuntimeError.error(withMessage: "Failed to encode image to PNG")
         }
         return try ArrayBuffer.copy(data: data)
     }
 
     func toBase64() throws -> String {
-        guard let data = uiImage.pngData() else {
+        guard let data = pngData() else {
             throw RuntimeError.error(withMessage: "Failed to encode image")
         }
 
@@ -50,14 +85,34 @@ private class HybridImage: HybridImageSpec, NativeImage {
 }
 
 class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
-    private let prefetcher = ImagePrefetcher()
+    // One shared pipeline (instead of mutating ImagePipeline.shared) so the
+    // prefetcher and loadImage read/write the exact same caches, other Nuke
+    // users in the host app are left untouched, and repeated instantiation
+    // (e.g. Metro reloads) never puts two DataCache instances on the same
+    // directory.
+    private static let sharedPipeline: ImagePipeline = {
+        var configuration = ImagePipeline.Configuration.withDataCache
+        // Store processed (blurred/rounded) variants on disk in addition to
+        // the original download, so they survive memory eviction and
+        // restarts without dropping the original for other variants.
+        configuration.dataCachePolicy = .storeAll
+        return ImagePipeline(configuration: configuration)
+    }()
 
-    override init() {
-        ImagePipeline.shared = ImagePipeline(configuration: .withDataCache)
-    }
+    private static let sharedPrefetcher = ImagePrefetcher(pipeline: sharedPipeline)
+
+    // CIContext is expensive to create; Apple recommends reusing one.
+    private static let ciContext = CIContext()
+
+    private var pipeline: ImagePipeline { Self.sharedPipeline }
+    private var prefetcher: ImagePrefetcher { Self.sharedPrefetcher }
 
     func loadImage(url: String, options: Options?) throws -> Promise<any HybridImageSpec> {
         return Promise.async {
+            guard let imageUrl = URL(string: url) else {
+                throw RuntimeError.error(withMessage: "Invalid URL: \(url)")
+            }
+
             let cacheOptions: ImageRequest.Options = switch options?.cache {
             case .memory: [.disableDiskCache]
             case .disk:   [.disableMemoryCache]
@@ -74,12 +129,12 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
             }
 
             let imgRequest = ImageRequest(
-                url: URL(string: url),
+                url: imageUrl,
                 processors: processors,
                 options: cacheOptions
             )
 
-            let image = try await ImagePipeline.shared.image(for: imgRequest)
+            let image = try await self.pipeline.image(for: imgRequest)
             return HybridImage(uiImage: image)
         }
     }
@@ -101,8 +156,10 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
         }
     }
 
-    func clearCache() throws {
-        ImagePipeline.shared.cache.removeAll()
+    func clearCache() throws -> Promise<Void> {
+        return Promise.async {
+            self.pipeline.cache.removeAll()
+        }
     }
 
     func gaussianBlur(image: any HybridImageSpec, radius: Double) throws -> Promise<any HybridImageSpec> {
@@ -113,17 +170,20 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
 
             let uiImage = nativeImage.uiImage
 
-            let ciImage = CIImage(image: uiImage)
+            guard let ciImage = CIImage(image: uiImage) else {
+                throw RuntimeError.error(withMessage: "Failed to read image data")
+            }
 
             let filter = CIFilter(name: "CIGaussianBlur")!
             filter.setValue(ciImage, forKey: kCIInputImageKey)
             filter.setValue(radius, forKey: kCIInputRadiusKey)
 
-            let context = CIContext()
-            let output = filter.outputImage
-            let cgImage = context.createCGImage(output!, from: ciImage!.extent)
+            guard let output = filter.outputImage,
+                  let cgImage = Self.ciContext.createCGImage(output, from: ciImage.extent) else {
+                throw RuntimeError.error(withMessage: "Failed to apply gaussian blur")
+            }
 
-            return HybridImage(uiImage: UIImage(cgImage: cgImage!))
+            return HybridImage(uiImage: UIImage(cgImage: cgImage))
         }
     }
 

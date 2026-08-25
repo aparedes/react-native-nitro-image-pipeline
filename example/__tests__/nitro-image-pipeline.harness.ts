@@ -5,8 +5,8 @@ const VALID_URL = 'https://picsum.photos/id/3/200/200';
 const INVALID_URL = 'https://not-a-real-url.invalid/image.jpg';
 
 describe('NitroImagePipeline', () => {
-  beforeAll(() => {
-    NitroImagePipeline.clearCache();
+  beforeAll(async () => {
+    await NitroImagePipeline.clearCache();
   });
 
   it('loads an image from a valid URL', async () => {
@@ -66,8 +66,8 @@ describe('NitroImagePipeline', () => {
     expect(blurred).toBeDefined();
   });
 
-  it('clears cache without throwing', () => {
-    expect(() => NitroImagePipeline.clearCache()).not.toThrow();
+  it('clears cache without throwing', async () => {
+    await expect(NitroImagePipeline.clearCache()).resolves.toBeUndefined();
   });
 
   it('rejects with an error for an invalid URL', async () => {

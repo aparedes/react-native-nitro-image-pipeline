@@ -85,7 +85,7 @@ await NitroImagePipeline.preLoadImages([
 const blurred = await NitroImagePipeline.gaussianBlur(image, 10);
 
 // Clear the image cache
-NitroImagePipeline.clearCache();
+await NitroImagePipeline.clearCache();
 ```
 
 ## API Reference
@@ -114,7 +114,7 @@ Applies a Gaussian blur to an existing `Image` object. Returns `Promise<Image>`.
 
 ### `clearCache()`
 
-Removes all cached images from memory and disk.
+Removes all cached images from memory and disk. Returns `Promise<void>` that resolves once both caches are cleared.
 
 ## Credits
 
