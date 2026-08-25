@@ -102,16 +102,31 @@ enum GaussianBlur {
         lower = min(max(lower, 1), Int(UInt32.max) - 2)
         let upper = lower + 2
 
-        return (0...passes)
-            .map { lowerCount in
-                (0..<passes).map { UInt32($0 < lowerCount ? lower : upper) }
+        // Written as a plain loop rather than map/min(by:): the inferred
+        // version tripped "type of expression is ambiguous" on Swift 6.2.
+        var best: [UInt32] = []
+        var bestError: Double = .infinity
+        for lowerCount in 0...passes {
+            var candidate: [UInt32] = []
+            for pass in 0..<passes {
+                candidate.append(UInt32(pass < lowerCount ? lower : upper))
             }
-            .min { abs(standardDeviation(of: $0) - sigma) < abs(standardDeviation(of: $1) - sigma) }!
+            let error: Double = abs(standardDeviation(of: candidate) - sigma)
+            if error < bestError {
+                bestError = error
+                best = candidate
+            }
+        }
+        return best
     }
 
     /// The standard deviation three box blurs of the given widths add up to.
     private static func standardDeviation(of boxes: [UInt32]) -> Double {
-        let variance = boxes.reduce(0.0) { $0 + Double($1) * Double($1) - 1 } / 12
-        return variance.squareRoot()
+        var sum: Double = 0
+        for box in boxes {
+            let width = Double(box)
+            sum += width * width - 1
+        }
+        return (sum / 12).squareRoot()
     }
 }

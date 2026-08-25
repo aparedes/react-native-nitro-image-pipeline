@@ -102,27 +102,37 @@ struct VerifyBlur {
         let blurred = blur(edge, sigma: sigma)
         let row = size / 2
 
-        var positions: [Double] = []
-        var weights: [Double] = []
+        // Plain loops rather than zip/reduce chains: heavily inferred
+        // expressions have tripped "type of expression is ambiguous" on older
+        // Swift compilers than the one this is developed against.
+        var totalWeight: Double = 0
+        var weightedSum: Double = 0
+        var samples: [(position: Double, weight: Double)] = []
         for column in 0..<(blurred.width - 1) {
             let here = Double(blurred.pixel(column: column, row: row).red)
             let next = Double(blurred.pixel(column: column + 1, row: row).red)
-            positions.append(Double(column) + 0.5)
-            weights.append(here - next)
+            let position = Double(column) + 0.5
+            let weight = here - next
+            samples.append((position: position, weight: weight))
+            totalWeight += weight
+            weightedSum += position * weight
         }
 
-        let total = weights.reduce(0, +)
-        let mean = zip(positions, weights).reduce(0) { $0 + $1.0 * $1.1 } / total
-        let variance = zip(positions, weights).reduce(0) {
-            $0 + ($1.0 - mean) * ($1.0 - mean) * $1.1
-        } / total
+        let mean: Double = weightedSum / totalWeight
+        var variance: Double = 0
+        for sample in samples {
+            let offset = sample.position - mean
+            variance += offset * offset * sample.weight
+        }
+        variance /= totalWeight
         return variance.squareRoot()
     }
 
     static func checkSigmaIsHonoured() {
         print("Requested sigma vs. measured sigma of a blurred step edge:")
         print("     sigma            boxes     measured        err")
-        for sigma in [1.0, 2, 3, 5, 8, 11, 20, 40] {
+        let targets: [Double] = [1, 2, 3, 5, 8, 11, 20, 40]
+        for sigma in targets {
             let boxes = GaussianBlur.boxSizes(forSigma: sigma)
             let measured = measuredSigma(forSigma: sigma)
             print(String(
