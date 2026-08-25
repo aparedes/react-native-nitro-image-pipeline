@@ -1,0 +1,70 @@
+# Git hooks — https://lefthook.dev
+#
+# Installed automatically by `bun install` (the lefthook npm package runs
+# `lefthook install` on postinstall). Skip a run with `LEFTHOOK=0 git commit`.
+#
+# ktfmt and swiftlint are not npm packages; jobs needing them are skipped when
+# the tool is missing rather than failing the commit:
+#   brew install ktfmt swiftlint
+
+pre-commit:
+  parallel: true
+  jobs:
+    - name: oxfmt
+      glob:
+        - '*.js'
+        - '*.jsx'
+        - '*.ts'
+        - '*.tsx'
+        - '*.json'
+      exclude:
+        - 'nitrogen/generated/**'
+        - 'lib/**'
+      run: bunx oxfmt {staged_files}
+      stage_fixed: true
+
+    - name: oxlint
+      glob:
+        - '*.js'
+        - '*.jsx'
+        - '*.ts'
+        - '*.tsx'
+      exclude:
+        - 'nitrogen/generated/**'
+        - 'lib/**'
+      run: bunx oxlint --deny-warnings {staged_files}
+
+    - name: ktfmt
+      glob: '*.kt'
+      exclude:
+        - 'nitrogen/generated/**'
+      run: ktfmt {staged_files}
+      stage_fixed: true
+      skip:
+        - run: '! command -v ktfmt'
+
+    - name: swiftlint
+      glob: '*.swift'
+      exclude:
+        - 'nitrogen/generated/**'
+      run: scripts/hooks/swiftlint.sh {staged_files}
+
+pre-push:
+  parallel: true
+  jobs:
+    - name: oxlint
+      run: bunx oxlint --deny-warnings
+
+    - name: oxfmt
+      run: bunx oxfmt --check
+
+    - name: typecheck
+      run: bun run typecheck
+
+    - name: ktfmt
+      run: ktfmt --dry-run --set-exit-if-changed android/src example/android/app/src
+      skip:
+        - run: '! command -v ktfmt'
+
+    - name: swiftlint
+      run: scripts/hooks/swiftlint.sh
