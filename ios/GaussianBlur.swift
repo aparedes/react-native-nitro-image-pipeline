@@ -111,7 +111,10 @@ enum GaussianBlur {
             for pass in 0..<passes {
                 candidate.append(UInt32(pass < lowerCount ? lower : upper))
             }
-            let error: Double = abs(standardDeviation(of: candidate) - sigma)
+            // `.magnitude` rather than `abs()`: Nitro's C++ interop puts
+            // std::abs overloads in scope, and Swift 6.2 calls the resulting
+            // `abs` ambiguous when this file is compiled as part of the pod.
+            let error: Double = (standardDeviation(of: candidate) - sigma).magnitude
             if error < bestError {
                 bestError = error
                 best = candidate

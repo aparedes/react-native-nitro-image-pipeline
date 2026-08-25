@@ -142,7 +142,7 @@ struct VerifyBlur {
             // Box widths are odd integers, so sigma lands on a coarse grid;
             // half a pixel is the worst that quantisation can cost.
             check(
-                abs(measured - sigma) <= 0.5,
+                (measured - sigma).magnitude <= 0.5,
                 "sigma \(sigma): measured \(measured), off by more than 0.5px"
             )
         }
@@ -167,9 +167,9 @@ struct VerifyBlur {
                 // Blurring a constant image gives back that same constant
                 // image; anything else means the kernel mixed in what lies
                 // outside it.
-                if abs(Int(pixel.red) - Int(solid.red)) > 1
-                    || abs(Int(pixel.green) - Int(solid.green)) > 1
-                    || abs(Int(pixel.blue) - Int(solid.blue)) > 1 {
+                if (Int(pixel.red) - Int(solid.red)).magnitude > 1
+                    || (Int(pixel.green) - Int(solid.green)).magnitude > 1
+                    || (Int(pixel.blue) - Int(solid.blue)).magnitude > 1 {
                     faded += 1
                 }
             }
