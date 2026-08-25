@@ -16,6 +16,7 @@ on:
       - '**/nitrogen/generated/ios/**'
       - 'cpp/**'
       - 'ios/**'
+      - 'scripts/verify-blur.swift'
       - '**/Podfile.lock'
       - '**/bun.lock'
       - '**/*.podspec'
@@ -31,6 +32,7 @@ on:
       - '**/nitrogen/generated/ios/**'
       - 'cpp/**'
       - 'ios/**'
+      - 'scripts/verify-blur.swift'
       - '**/Podfile.lock'
       - '**/bun.lock'
       - '**/*.podspec'
@@ -61,6 +63,11 @@ jobs:
 
       - name: Install dependencies (bun)
         run: bun install
+
+      # Cheap (no Pods needed) and guards the cross-platform blur contract:
+      # sigma is honoured, and blurred images keep opaque edges.
+      - name: Verify blur kernel
+        run: bun run verify:blur
 
       - name: Setup Ruby (bundle)
         uses: ruby/setup-ruby@v1

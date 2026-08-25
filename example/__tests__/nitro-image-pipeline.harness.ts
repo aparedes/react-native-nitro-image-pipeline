@@ -19,6 +19,12 @@ describe('NitroImagePipeline', () => {
     expect(image).toBeDefined();
   });
 
+  it('applies a large blur without throwing', async () => {
+    // sigma is unbounded now; Android used to reject anything over 25.
+    const image = await NitroImagePipeline.loadImage(VALID_URL, { blur: 40 });
+    expect(image).toBeDefined();
+  });
+
   it('applies cornerRadius option', async () => {
     const image = await NitroImagePipeline.loadImage(VALID_URL, {
       cornerRadius: 10,
@@ -64,6 +70,15 @@ describe('NitroImagePipeline', () => {
     const image = await NitroImagePipeline.loadImage(VALID_URL);
     const blurred = await NitroImagePipeline.gaussianBlur(image, 3);
     expect(blurred).toBeDefined();
+  });
+
+  it('keeps the source dimensions when blurring', async () => {
+    const image = await NitroImagePipeline.loadImage(VALID_URL);
+    // A large sigma makes Android blur a downscaled copy internally; the
+    // result still has to come back at the original size.
+    const blurred = await NitroImagePipeline.gaussianBlur(image, 30);
+    expect(blurred.width).toBe(image.width);
+    expect(blurred.height).toBe(image.height);
   });
 
   it('clears cache without throwing', async () => {

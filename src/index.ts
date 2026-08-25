@@ -45,6 +45,11 @@ export function useImage({
   cache,
 }: {
   url: string;
+  /**
+   * Gaussian blur strength, as the standard deviation (sigma) of the blur in
+   * source-image pixels. Matches across iOS and Android; roughly half of
+   * React Native's `blurRadius`.
+   */
   blur?: number;
   cornerRadius?: number;
   cache?: CacheOption;
