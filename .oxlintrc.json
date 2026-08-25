@@ -1,0 +1,64 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["import", "typescript", "unicorn", "react", "jsx-a11y", "jest"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "perf": "warn",
+    "pedantic": "off",
+    "style": "off"
+  },
+  "env": {
+    "builtin": true,
+    "es2024": true,
+    "node": true,
+    "jest": true
+  },
+  "rules": {
+    "react/react-in-jsx-scope": "off",
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "error",
+    "react/no-unstable-nested-components": "error",
+    "react/no-array-index-key": "warn",
+    "react/jsx-no-useless-fragment": "warn",
+    "import/no-cycle": "error",
+    "import/no-duplicates": "error",
+    "react-native/no-unused-styles": "error",
+    "react-native/no-single-element-style-arrays": "error",
+    "react-native/no-inline-styles": "warn",
+    "react-native/no-color-literals": "warn"
+  },
+  "ignorePatterns": [
+    "lib/**",
+    "nitrogen/generated/**",
+    "example/ios/**",
+    "example/android/**",
+    "example/vendor/**"
+  ],
+  "overrides": [
+    {
+      "files": ["src/**"],
+      "rules": {
+        "import/no-nodejs-modules": "error"
+      }
+    },
+    {
+      "files": ["example/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
+      "rules": {
+        "typescript/no-explicit-any": "off"
+      }
+    },
+    {
+      "files": [
+        "**/*.config.js",
+        "**/*.config.mjs",
+        "**/metro.config.js",
+        "example/index.js"
+      ],
+      "rules": {
+        "import/no-nodejs-modules": "off"
+      }
+    }
+  ],
+  "jsPlugins": ["./.oxlint/react-native-plugin.mjs"]
+}

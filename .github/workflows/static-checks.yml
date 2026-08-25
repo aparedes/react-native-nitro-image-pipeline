@@ -1,0 +1,55 @@
+name: Static Checks
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/static-checks.yml'
+      - '**/*.ts'
+      - '**/*.tsx'
+      - '**/*.js'
+      - '**/*.jsx'
+      - '**/*.json'
+      - '.oxlintrc.json'
+      - '.oxfmtrc.json'
+      - '**/bun.lock'
+  pull_request:
+    paths:
+      - '.github/workflows/static-checks.yml'
+      - '**/*.ts'
+      - '**/*.tsx'
+      - '**/*.js'
+      - '**/*.jsx'
+      - '**/*.json'
+      - '.oxlintrc.json'
+      - '.oxfmtrc.json'
+      - '**/bun.lock'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-checks:
+    name: Lint, Format & Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies (bun)
+        run: bun install --frozen-lockfile
+
+      - name: Lint (oxlint)
+        run: bunx oxlint --deny-warnings
+
+      - name: Check formatting (oxfmt)
+        run: bunx oxfmt --check
+
+      - name: Typecheck
+        run: bun run typecheck
