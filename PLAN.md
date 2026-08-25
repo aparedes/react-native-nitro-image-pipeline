@@ -17,18 +17,32 @@ Use `npx nitrogen@latest init react-native-nitro-toolkit` to generate the projec
 
 ### Tooling ✅
 
-Prettier and ESLint (`@react-native` config) have been replaced with **Biome** (`@biomejs/biome`).
+Prettier and ESLint (`@react-native` config) have been replaced with **oxlint** + **oxfmt**.
 
-Config (`biome.json`):
+Config (`.oxfmtrc.json`):
 - 2-space indent, single quotes, double quotes for JSX, trailing commas, semicolons
-- Import sorting via `assist.actions.source.organizeImports`
-- `useExhaustiveDependencies` included in recommended rules
+- Import sorting via `sortImports`
+
+Config (`.oxlintrc.json`):
+- `correctness` errors; `suspicious` and `perf` warn
+- Plugins: `import`, `typescript`, `unicorn`, `react`, `jsx-a11y`, `jest`
+- React Native rules (`no-unused-styles`, `no-inline-styles`, `no-color-literals`,
+  `no-single-element-style-arrays`) come from a vendored oxlint JS plugin at
+  `.oxlint/react-native-plugin.mjs` — oxlint has no native `react-native` plugin, and
+  `eslint-plugin-react-native` would pull the whole ESLint runtime back in as a peer dep
+- `import/no-nodejs-modules` is an error in `src/**` so Node builtins can't leak into the RN bundle
 
 Scripts:
-- `bun run lint` → `biome check .`
-- `bun run format` → `biome format --write .`
+- `bun run lint` → `oxlint && oxfmt --check`
+- `bun run lint:fix` → `oxlint --fix && oxfmt`
+- `bun run format` → `oxfmt`
 
 Zed format-on-save configured via `.zed/settings.json`.
+
+Git hooks via **lefthook** (`lefthook.yml`), installed automatically by `bun install`:
+- pre-commit: `oxfmt` + `ktfmt` (auto-fix and re-stage), `oxlint --deny-warnings`, `swiftlint --strict`
+- pre-push: all of the above repo-wide, plus `tsc --noEmit`
+- `ktfmt`/`swiftlint` come from Homebrew; their jobs skip when the tool isn't installed
 
 ### nitro.json
 
@@ -350,7 +364,7 @@ function BlurredAvatar({ url }: { url: string }) {
 ## 6. Build Order
 
 1. **Scaffold:** `npx nitrogen@latest init react-native-nitro-toolkit`
-2. **Tooling:** ✅ Biome replaces Prettier + ESLint
+2. **Tooling:** ✅ oxlint + oxfmt replace Prettier + ESLint
 3. **Dependencies:** Add `react-native-nitro-image` to podspec, gradle, and package.json
 3. **Spec:** Write `ImageToolkit.nitro.ts`, run `npx nitrogen`
 4. ✅ **HybridImage constructors verified:** `HybridImage.init(uiImage:)` (iOS) and `HybridImage(bitmap:)` (Android) are public. Cast to `HybridImage`, not `NativeImage` (`NativeImage` is a protocol, `HybridImage` is the concrete class).

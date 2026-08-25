@@ -11,6 +11,12 @@ bun install
 # Type-check TypeScript
 bun run typecheck
 
+# Lint + check formatting (oxlint + oxfmt)
+bun run lint
+
+# Auto-fix lint issues and format
+bun run lint:fix
+
 # Build the library (typecheck + bob build)
 bun run build
 
@@ -67,6 +73,10 @@ lib/   ← compiled JS/TS outputs (commonjs, module, typedefs)
 | `nitro.json` | Nitrogen codegen config (namespace, module names, language targets) |
 | `NitroImagePipeline.podspec` | iOS CocoaPods spec — do not manually add source files; nitrogen autolinking handles it |
 | `android/CMakeLists.txt` | C++ build config — includes nitrogen-generated cmake |
+| `.oxlintrc.json` / `.oxfmtrc.json` | Lint and format config (oxlint + oxfmt) |
+| `.oxlint/react-native-plugin.mjs` | Vendored React Native lint rules — oxlint has no native `react-native` plugin |
+| `lefthook.yml` | Git hooks — pre-commit formats/lints staged files, pre-push runs the full checks |
+| `.swiftlint.yml` | SwiftLint config (excludes `nitrogen/generated`, Pods, build output) |
 
 ### Nitro Modules Concepts
 
@@ -74,12 +84,24 @@ lib/   ← compiled JS/TS outputs (commonjs, module, typedefs)
 - **nitrogen**: CLI code generator that reads the `.nitro.ts` spec and outputs platform-specific bridge code. Run via `bun run codegen`.
 - **react-native-nitro-modules**: The runtime package that must be a peer dependency of consuming apps.
 
+## Git Hooks
+
+`bun install` installs [lefthook](https://lefthook.dev) hooks automatically.
+
+- **pre-commit** (staged files only): `oxfmt` and `ktfmt` format and re-stage; `oxlint --deny-warnings` and `swiftlint --strict` block the commit on failure.
+- **pre-push**: the above across the whole repo, plus `tsc --noEmit`.
+
+`ktfmt` and `swiftlint` are not npm packages — install them with `brew install ktfmt swiftlint`. Jobs needing a missing tool are skipped, not failed. Bypass a run with `LEFTHOOK=0 git commit`.
+
+Kotlin uses ktfmt's default **Meta** style (2-space blocks, 4-space continuations), which is what the existing sources already follow.
+
 ## Requirements
 
 - React Native v0.76.0+ (v0.78.0+ for Nitro Views)
 - Node 18.0.0+
 - Bun (package manager)
 - NDK 27.1.12297006 (Android)
+- ktfmt + swiftlint for the native lint hooks (`brew install ktfmt swiftlint`)
 
 ## Release
 

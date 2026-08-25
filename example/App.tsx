@@ -22,15 +22,15 @@ function App({ img2 }: { img2: Promise<Image> }): React.JSX.Element {
       <Text style={styles.text} onPress={() => setBlur((b) => b + 10)}>
         {'hello'}
       </Text>
-      {image.image && (
-        <NitroImage image={image.image} style={{ width: 300, height: 200 }} />
-      )}
-      {image2 && (
-        <NitroImage image={image2} style={{ width: 300, height: 200 }} />
-      )}
+      {image.image && <NitroImage image={image.image} style={styles.image} />}
+      {image2 && <NitroImage image={image2} style={styles.image} />}
     </View>
   );
 }
+
+const colors = {
+  text: 'green',
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -40,7 +40,11 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 40,
-    color: 'green',
+    color: colors.text,
+  },
+  image: {
+    width: 300,
+    height: 200,
   },
 });
 

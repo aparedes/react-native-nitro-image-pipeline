@@ -1,0 +1,17 @@
+included:
+  - ios
+  - example/ios/NitroImagePipelineExample
+
+excluded:
+  - nitrogen/generated
+  - example/ios/Pods
+  - example/ios/build
+  - lib
+  - node_modules
+
+# Nitro's generated bridge headers push a few call sites past the default width.
+line_length:
+  warning: 120
+  error: 200
+  ignores_comments: true
+  ignores_urls: true

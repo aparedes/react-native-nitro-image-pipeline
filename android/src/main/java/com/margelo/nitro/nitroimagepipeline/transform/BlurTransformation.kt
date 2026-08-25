@@ -34,7 +34,9 @@ class BlurTransformation(
     val autoSampling = (maxOf(input.width, input.height) / 512f).coerceAtLeast(sampling)
     val scaledWidth = (input.width / autoSampling).toInt().coerceAtLeast(1)
     val scaledHeight = (input.height / autoSampling).toInt().coerceAtLeast(1)
-    val softwareInput = if (input.config == Bitmap.Config.HARDWARE) input.copy(Bitmap.Config.ARGB_8888, false) else input
+    val softwareInput =
+        if (input.config == Bitmap.Config.HARDWARE) input.copy(Bitmap.Config.ARGB_8888, false)
+        else input
     val softwareConfig = softwareInput.config ?: Bitmap.Config.ARGB_8888
 
     val output = Bitmap.createBitmap(scaledWidth, scaledHeight, softwareConfig)

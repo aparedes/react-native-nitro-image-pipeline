@@ -8,8 +8,10 @@ export type Options = {
   cornerRadius?: number;
 };
 
-export interface NitroImagePipeline
-  extends HybridObject<{ ios: 'swift'; android: 'kotlin' }> {
+export interface NitroImagePipeline extends HybridObject<{
+  ios: 'swift';
+  android: 'kotlin';
+}> {
   loadImage(url: string, options?: Options): Promise<Image>;
   preLoadImage(url: string): Promise<void>;
   preLoadImages(urls: string[]): Promise<void>;
