@@ -11,6 +11,11 @@ export default {
   entryPoint: './index.js',
   appRegistryComponentName: 'NitroImagePipelineExample',
 
+  // Every suite here does live network fetches (picsum.photos) on a freshly
+  // booted CI simulator; the first cold fetch (DNS + TLS + redirect) can
+  // exceed the 5s default, so give network-bound tests more headroom.
+  testTimeout: 30000,
+
   runners: [
     androidPlatform({
       name: 'medium_phone_api_36.1',
