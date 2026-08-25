@@ -30,9 +30,13 @@
 
 // Forward declaration of `CacheOption` to properly resolve imports.
 namespace margelo::nitro::nitroimagepipeline { enum class CacheOption; }
+// Forward declaration of `CornerRadii` to properly resolve imports.
+namespace margelo::nitro::nitroimagepipeline { struct CornerRadii; }
 
 #include <optional>
 #include "CacheOption.hpp"
+#include "CornerRadii.hpp"
+#include <variant>
 
 namespace margelo::nitro::nitroimagepipeline {
 
@@ -43,11 +47,11 @@ namespace margelo::nitro::nitroimagepipeline {
   public:
     std::optional<double> blur     SWIFT_PRIVATE;
     std::optional<CacheOption> cache     SWIFT_PRIVATE;
-    std::optional<double> cornerRadius     SWIFT_PRIVATE;
+    std::optional<std::variant<double, CornerRadii>> cornerRadius     SWIFT_PRIVATE;
 
   public:
     Options() = default;
-    explicit Options(std::optional<double> blur, std::optional<CacheOption> cache, std::optional<double> cornerRadius): blur(blur), cache(cache), cornerRadius(cornerRadius) {}
+    explicit Options(std::optional<double> blur, std::optional<CacheOption> cache, std::optional<std::variant<double, CornerRadii>> cornerRadius): blur(blur), cache(cache), cornerRadius(cornerRadius) {}
 
   public:
     friend bool operator==(const Options& lhs, const Options& rhs) = default;
@@ -65,14 +69,14 @@ namespace margelo::nitro {
       return margelo::nitro::nitroimagepipeline::Options(
         JSIConverter<std::optional<double>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "blur"))),
         JSIConverter<std::optional<margelo::nitro::nitroimagepipeline::CacheOption>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "cache"))),
-        JSIConverter<std::optional<double>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "cornerRadius")))
+        JSIConverter<std::optional<std::variant<double, margelo::nitro::nitroimagepipeline::CornerRadii>>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "cornerRadius")))
       );
     }
     static inline jsi::Value toJSI(jsi::Runtime& runtime, const margelo::nitro::nitroimagepipeline::Options& arg) {
       jsi::Object obj(runtime);
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "blur"), JSIConverter<std::optional<double>>::toJSI(runtime, arg.blur));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "cache"), JSIConverter<std::optional<margelo::nitro::nitroimagepipeline::CacheOption>>::toJSI(runtime, arg.cache));
-      obj.setProperty(runtime, PropNameIDCache::get(runtime, "cornerRadius"), JSIConverter<std::optional<double>>::toJSI(runtime, arg.cornerRadius));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "cornerRadius"), JSIConverter<std::optional<std::variant<double, margelo::nitro::nitroimagepipeline::CornerRadii>>>::toJSI(runtime, arg.cornerRadius));
       return obj;
     }
     static inline bool canConvert(jsi::Runtime& runtime, const jsi::Value& value) {
@@ -85,7 +89,7 @@ namespace margelo::nitro {
       }
       if (!JSIConverter<std::optional<double>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "blur")))) return false;
       if (!JSIConverter<std::optional<margelo::nitro::nitroimagepipeline::CacheOption>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "cache")))) return false;
-      if (!JSIConverter<std::optional<double>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "cornerRadius")))) return false;
+      if (!JSIConverter<std::optional<std::variant<double, margelo::nitro::nitroimagepipeline::CornerRadii>>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "cornerRadius")))) return false;
       return true;
     }
   };

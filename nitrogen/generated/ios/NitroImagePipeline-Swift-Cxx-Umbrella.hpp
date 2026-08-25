@@ -10,6 +10,8 @@
 // Forward declarations of C++ defined types
 // Forward declaration of `CacheOption` to properly resolve imports.
 namespace margelo::nitro::nitroimagepipeline { enum class CacheOption; }
+// Forward declaration of `CornerRadii` to properly resolve imports.
+namespace margelo::nitro::nitroimagepipeline { struct CornerRadii; }
 // Forward declaration of `HybridImageSpec` to properly resolve imports.
 namespace margelo::nitro::image { class HybridImageSpec; }
 // Forward declaration of `HybridNitroImagePipelineSpec` to properly resolve imports.
@@ -19,6 +21,7 @@ namespace margelo::nitro::nitroimagepipeline { struct Options; }
 
 // Include C++ defined types
 #include "CacheOption.hpp"
+#include "CornerRadii.hpp"
 #include "HybridNitroImagePipelineSpec.hpp"
 #include "Options.hpp"
 #include <NitroImage/HybridImageSpec.hpp>
@@ -28,6 +31,7 @@ namespace margelo::nitro::nitroimagepipeline { struct Options; }
 #include <memory>
 #include <optional>
 #include <string>
+#include <variant>
 #include <vector>
 
 // C++ helpers for Swift

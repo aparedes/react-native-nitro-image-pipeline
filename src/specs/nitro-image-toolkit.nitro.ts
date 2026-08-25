@@ -2,6 +2,17 @@ import type { Image } from 'react-native-nitro-image';
 import type { HybridObject } from 'react-native-nitro-modules';
 
 export type CacheOption = 'memory' | 'disk' | 'none';
+
+/**
+ * Independent corner radii in points. Omitted corners stay square.
+ */
+export interface CornerRadii {
+  topLeft?: number;
+  topRight?: number;
+  bottomLeft?: number;
+  bottomRight?: number;
+}
+
 export type Options = {
   /**
    * Gaussian blur strength, given as the standard deviation (sigma) of the
@@ -14,7 +25,15 @@ export type Options = {
    */
   blur?: number;
   cache?: CacheOption;
-  cornerRadius?: number;
+  /**
+   * Corner radius in points, baked into the loaded bitmap. Pass a single
+   * number to round all four corners uniformly, or a {@linkcode CornerRadii}
+   * object to round each corner independently (e.g. a "ticket" shape with
+   * larger bottom corners).
+   *
+   * @default 0 (square corners)
+   */
+  cornerRadius?: number | CornerRadii;
 };
 
 export interface NitroImagePipeline extends HybridObject<{

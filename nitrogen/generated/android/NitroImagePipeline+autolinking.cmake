@@ -36,6 +36,7 @@ target_sources(
   ../nitrogen/generated/shared/c++/HybridNitroImagePipelineSpec.cpp
   # Android-specific Nitrogen C++ sources
   ../nitrogen/generated/android/c++/JHybridNitroImagePipelineSpec.cpp
+  ../nitrogen/generated/android/c++/JVariant_Double_CornerRadii.cpp
 )
 
 # From node_modules/react-native/ReactAndroid/cmake-utils/folly-flags.cmake

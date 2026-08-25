@@ -40,10 +40,23 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
 
   override fun loadImage(url: String, options: Options?): Promise<HybridImageSpec> = Promise.async {
     val blur = options?.blur?.toFloat() ?: 0f
-    val cornerRadius = options?.cornerRadius?.toFloat() ?: 0f
     val transformations = buildList {
       if (blur > 0f) add(BlurTransformation(context, blur))
-      if (cornerRadius > 0f) add(RoundedCornersTransformation(cornerRadius))
+      options?.cornerRadius?.match(
+          first = { radius ->
+            if (radius > 0.0) add(RoundedCornersTransformation(radius.toFloat()))
+          },
+          second = { radii ->
+            // RoundedCornersTransformation rejects negative radii; treat them as square.
+            val topLeft = (radii.topLeft?.toFloat() ?: 0f).coerceAtLeast(0f)
+            val topRight = (radii.topRight?.toFloat() ?: 0f).coerceAtLeast(0f)
+            val bottomLeft = (radii.bottomLeft?.toFloat() ?: 0f).coerceAtLeast(0f)
+            val bottomRight = (radii.bottomRight?.toFloat() ?: 0f).coerceAtLeast(0f)
+            if (topLeft > 0f || topRight > 0f || bottomLeft > 0f || bottomRight > 0f) {
+              add(RoundedCornersTransformation(topLeft, topRight, bottomLeft, bottomRight))
+            }
+          },
+      )
     }
     val request =
         ImageRequest.Builder(context)
