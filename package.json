@@ -1,6 +1,6 @@
 {
   "name": "react-native-nitro-image-pipeline",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "High-performance image loading, caching, and processing for React Native, built with Nitro Modules",
   "main": "./lib/commonjs/index.js",
   "module": "./lib/module/index.js",

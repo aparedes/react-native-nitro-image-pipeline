@@ -1,3 +1,9 @@
+## [1.1.0](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v1.0.0...v1.1.0) (2026-08-26)
+
+### ✨ Features
+
+* support per-corner cornerRadius in loadImage ([#75](https://github.com/[secure]/react-native-nitro-image-pipeline/issues/75)) ([8894aa7](https://github.com/[secure]/react-native-nitro-image-pipeline/commit/8894aa75036b5350ab775aa38a76c9371652f92b))
+
 ## [1.0.0](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v0.3.5...v1.0.0) (2026-08-25)
 
 ### ⚠ BREAKING CHANGES
