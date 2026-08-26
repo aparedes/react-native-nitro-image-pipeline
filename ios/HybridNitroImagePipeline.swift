@@ -117,6 +117,17 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
             }
 
             var processors: [any ImageProcessing] = []
+            // Resize first: blur sigma and corner radii are defined in pixels
+            // of the bitmap they run on, so they must see the final size.
+            if let resize = options?.resize, resize.width > 0, resize.height > 0 {
+                processors.append(ImageProcessors.Resize(
+                    size: CGSize(width: resize.width, height: resize.height),
+                    unit: .pixels,
+                    contentMode: .aspectFill,
+                    crop: true,
+                    upscale: true
+                ))
+            }
             if let blur = options?.blur, blur > 0 {
                 processors.append(GaussianBlurProcessor(sigma: blur))
             }

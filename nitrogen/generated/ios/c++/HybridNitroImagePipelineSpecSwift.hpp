@@ -20,6 +20,8 @@ namespace margelo::nitro::nitroimagepipeline { struct Options; }
 namespace margelo::nitro::nitroimagepipeline { enum class CacheOption; }
 // Forward declaration of `CornerRadii` to properly resolve imports.
 namespace margelo::nitro::nitroimagepipeline { struct CornerRadii; }
+// Forward declaration of `ResizeOptions` to properly resolve imports.
+namespace margelo::nitro::nitroimagepipeline { struct ResizeOptions; }
 
 #include <memory>
 #include <NitroImage/HybridImageSpec.hpp>
@@ -30,6 +32,7 @@ namespace margelo::nitro::nitroimagepipeline { struct CornerRadii; }
 #include "CacheOption.hpp"
 #include "CornerRadii.hpp"
 #include <variant>
+#include "ResizeOptions.hpp"
 #include <vector>
 
 #include "NitroImagePipeline-Swift-Cxx-Umbrella.hpp"

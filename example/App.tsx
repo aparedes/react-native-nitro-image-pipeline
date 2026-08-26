@@ -1,6 +1,6 @@
 import type React from 'react';
 import { Suspense, use, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { PixelRatio, StyleSheet, Text, View } from 'react-native';
 import { type Image, NitroImage } from 'react-native-nitro-image';
 import {
   NitroImagePipeline,
@@ -11,15 +11,21 @@ function App({ img2 }: { img2: Promise<Image> }): React.JSX.Element {
   console.log('app');
   const image2 = use(img2);
   const [blur, setBlur] = useState(0);
+  // resize/cornerRadius are in pixels of the produced bitmap; multiply the
+  // display size (styles.image, in points) by the screen scale so the ticket
+  // corners come out at 24pt/80pt on screen instead of vanishing into the
+  // 5000px-wide source.
+  const px = PixelRatio.get();
   const image = useImage({
     url: 'https://picsum.photos/id/3/5000/3333',
     blur: blur,
+    resize: { width: 300 * px, height: 200 * px },
     // "Ticket" shape: per-corner radii baked into the bitmap
     cornerRadius: {
-      topLeft: 24,
-      topRight: 24,
-      bottomLeft: 80,
-      bottomRight: 80,
+      topLeft: 24 * px,
+      topRight: 24 * px,
+      bottomLeft: 80 * px,
+      bottomRight: 80 * px,
     },
   });
 

@@ -10,7 +10,7 @@ A high-performance image loading, caching, and processing library for React Nati
 
 - Load remote images with built-in memory and disk caching
 - Prefetch single or multiple images in the background
-- Apply Gaussian blur and rounded corners (uniform or per-corner) at load time
+- Resize (aspect-fill, center-crop) and apply Gaussian blur and rounded corners (uniform or per-corner) at load time
 - Apply Gaussian blur to already-loaded images
 - Clear the image cache on demand
 - `useImage` hook for declarative image loading in components
@@ -46,10 +46,14 @@ The simplest way to load an image in a component:
 import { useImage } from 'react-native-nitro-image-pipeline';
 
 function MyComponent() {
+  const px = PixelRatio.get();
   const { image, error } = useImage({
     url: 'https://example.com/photo.jpg',
-    blur: 4, // Gaussian sigma in source pixels — same result on iOS and Android
-    cornerRadius: 12,
+    blur: 4, // Gaussian sigma in bitmap pixels — same result on iOS and Android
+    // Resize to the size you display (points × screen scale) so the corner
+    // radii apply 1:1 to what you see instead of the full-resolution source.
+    resize: { width: 300 * px, height: 200 * px },
+    cornerRadius: 12 * px,
   });
 
   if (error) return <Text>Failed to load image</Text>;
@@ -65,9 +69,12 @@ function MyComponent() {
 ```ts
 import { NitroImagePipeline } from 'react-native-nitro-image-pipeline';
 
-// Load an image with options
+// Load an image with options. resize and cornerRadius are in pixels of the
+// produced bitmap: without resize, the radius applies to the full-resolution
+// source and shrinks along with it when displayed small.
 const image = await NitroImagePipeline.loadImage('https://example.com/photo.jpg', {
-  blur: 4, // Gaussian sigma in source pixels — see "Blur units"
+  blur: 4, // Gaussian sigma in bitmap pixels — see "Blur units"
+  resize: { width: 600, height: 400 }, // aspect-fill + center-crop, exact output size
   cornerRadius: 12,
   cache: 'disk',
 });
@@ -75,6 +82,7 @@ const image = await NitroImagePipeline.loadImage('https://example.com/photo.jpg'
 // Per-corner radii — e.g. a "ticket" shape with larger bottom corners.
 // The rounding is baked into the bitmap, so no view-layer masking is needed.
 const ticket = await NitroImagePipeline.loadImage('https://example.com/photo.jpg', {
+  resize: { width: 600, height: 400 },
   cornerRadius: { topLeft: 24, topRight: 24, bottomLeft: 48, bottomRight: 48 },
 });
 
@@ -103,7 +111,8 @@ Loads an image from a URL and returns a `Promise<Image>`.
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `blur` | `number` | `0` | Gaussian blur strength applied at load time — see [Blur units](#blur-units) |
-| `cornerRadius` | `number \| CornerRadii` | `0` | Corner radius in points — a single number for all four corners, or `{ topLeft?, topRight?, bottomLeft?, bottomRight? }` for independent per-corner radii (omitted corners stay square) |
+| `resize` | `{ width, height }` | source size | Target bitmap size in pixels. Scales to fill and center-crops (CSS `object-fit: cover`, upscaling if needed) before `blur`/`cornerRadius` run, so their pixel units refer to this final size. Typically your display size in points × `PixelRatio.get()` |
+| `cornerRadius` | `number \| CornerRadii` | `0` | Corner radius in pixels of the produced bitmap — a single number for all four corners, or `{ topLeft?, topRight?, bottomLeft?, bottomRight? }` for independent per-corner radii (omitted corners stay square). Pair with `resize` for radii that match your layout |
 | `cache` | `'memory' \| 'disk' \| 'none'` | platform default | Caching strategy |
 
 ### `preLoadImage(url)`

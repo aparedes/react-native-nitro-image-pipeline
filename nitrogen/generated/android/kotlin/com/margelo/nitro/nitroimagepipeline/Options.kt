@@ -26,7 +26,10 @@ data class Options(
   val cache: CacheOption?,
   @DoNotStrip
   @Keep
-  val cornerRadius: Variant_Double_CornerRadii?
+  val cornerRadius: Variant_Double_CornerRadii?,
+  @DoNotStrip
+  @Keep
+  val resize: ResizeOptions?
 ) {
   /* primary constructor */
 
@@ -36,13 +39,15 @@ data class Options(
     return Objects.deepEquals(this.blur, other.blur)
       && Objects.deepEquals(this.cache, other.cache)
       && Objects.deepEquals(this.cornerRadius, other.cornerRadius)
+      && Objects.deepEquals(this.resize, other.resize)
   }
 
   override fun hashCode(): Int {
     return arrayOf<Any?>(
       blur,
       cache,
-      cornerRadius
+      cornerRadius,
+      resize
     ).contentDeepHashCode()
   }
 
@@ -54,8 +59,8 @@ data class Options(
     @Keep
     @Suppress("unused")
     @JvmStatic
-    private fun fromCpp(blur: Double?, cache: CacheOption?, cornerRadius: Variant_Double_CornerRadii?): Options {
-      return Options(blur, cache, cornerRadius)
+    private fun fromCpp(blur: Double?, cache: CacheOption?, cornerRadius: Variant_Double_CornerRadii?, resize: ResizeOptions?): Options {
+      return Options(blur, cache, cornerRadius, resize)
     }
   }
 }

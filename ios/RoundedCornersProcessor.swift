@@ -12,8 +12,11 @@ import Foundation
 import Nuke
 import UIKit
 
-/// Nuke processor that rounds each corner with its own radius (in points,
-/// like `ImageProcessors.RoundedCorners` with `unit: .points`).
+/// Nuke processor that rounds each corner with its own radius, measured in
+/// pixels of the bitmap it receives (like `ImageProcessors.RoundedCorners`
+/// with `unit: .points` on the scale-1 images the pipeline decodes). Runs
+/// after `ImageProcessors.Resize` when `Options.resize` is set, so the radii
+/// refer to the final output size.
 struct RoundedCornersProcessor: ImageProcessing {
     let topLeft: CGFloat
     let topRight: CGFloat
