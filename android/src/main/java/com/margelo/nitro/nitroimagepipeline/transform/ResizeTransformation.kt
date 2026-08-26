@@ -31,8 +31,7 @@ class ResizeTransformation(
         else input
     if (softwareInput.width == width && softwareInput.height == height) return softwareInput
 
-    val scale =
-        max(width.toFloat() / softwareInput.width, height.toFloat() / softwareInput.height)
+    val scale = max(width.toFloat() / softwareInput.width, height.toFloat() / softwareInput.height)
     val matrix =
         Matrix().apply {
           setScale(scale, scale)
