@@ -86,7 +86,8 @@
     "react-native-nitro-image": "0.15.1"
   },
   "overrides": {
-    "lodash-es": "4.17.21"
+    "lodash-es": "4.17.21",
+    "typescript": "7.0.2"
   },
   "react-native-builder-bob": {
     "source": "src",

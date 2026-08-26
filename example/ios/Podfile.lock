@@ -49,7 +49,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - NitroImagePipeline (0.3.5):
+  - NitroImagePipeline (1.2.1):
     - hermes-engine
     - NitroImage
     - NitroModules
@@ -2195,7 +2195,7 @@ SPEC CHECKSUMS:
   HarnessUI: 49e834528776a74985c2a7d85afac5b9f00ed337
   hermes-engine: 30d98b8a64c13d77dc223c4a008d4375b9eaf053
   NitroImage: cdd62812a99c9ccbd578f7cb7d6113717fe5a944
-  NitroImagePipeline: 5fb3a59538c2b0cca9f5df600a91e8329e22b8ca
+  NitroImagePipeline: de1ace059bf8d7ff1d57bcd11c15e57aca8407da
   NitroModules: cea4512d24ff3b88b6eef8804783ef8246f94eb0
   RCTDeprecation: af44b104091a34482596cd9bd7e8d90c4e9b4bd7
   RCTRequired: bb77b070f75f53398ce43c0aaaa58337cebe2bf6
