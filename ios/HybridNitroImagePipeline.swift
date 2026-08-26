@@ -103,52 +103,68 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
     private var pipeline: ImagePipeline { Self.sharedPipeline }
     private var prefetcher: ImagePrefetcher { Self.sharedPrefetcher }
 
+    private static func cacheOptions(for cache: CacheOption?) -> ImageRequest.Options {
+        switch cache {
+        case .memory: [.disableDiskCache]
+        case .disk:   [.disableMemoryCache]
+        case .none?:  [.disableDiskCache, .disableMemoryCache]
+        default:      []
+        }
+    }
+
+    /// The processor that bakes `cornerRadius` into the bitmap, or `nil` when
+    /// no corner is actually rounded.
+    private static func cornerRadiusProcessor(
+        for cornerRadius: Variant_Double_CornerRadii?
+    ) -> (any ImageProcessing)? {
+        switch cornerRadius {
+        case .first(let radius):
+            guard radius > 0 else { return nil }
+            // `unit: .pixels` is required: Nuke defaults to `.points`, which
+            // multiplies the radius by the screen scale. The radius is
+            // documented — and implemented on Android and in
+            // RoundedCornersProcessor — as bitmap pixels.
+            return ImageProcessors.RoundedCorners(radius: radius, unit: .pixels)
+        case .second(let radii):
+            let roundedCorners = RoundedCornersProcessor(radii: radii)
+            return roundedCorners.hasRounding ? roundedCorners : nil
+        case nil:
+            return nil
+        }
+    }
+
+    private static func processors(for options: Options?) -> [any ImageProcessing] {
+        var processors: [any ImageProcessing] = []
+        // Resize first: blur sigma and corner radii are defined in pixels
+        // of the bitmap they run on, so they must see the final size.
+        if let resize = options?.resize, resize.width > 0, resize.height > 0 {
+            processors.append(ImageProcessors.Resize(
+                size: CGSize(width: resize.width, height: resize.height),
+                unit: .pixels,
+                contentMode: .aspectFill,
+                crop: true,
+                upscale: true
+            ))
+        }
+        if let blur = options?.blur, blur > 0 {
+            processors.append(GaussianBlurProcessor(sigma: blur))
+        }
+        if let roundedCorners = cornerRadiusProcessor(for: options?.cornerRadius) {
+            processors.append(roundedCorners)
+        }
+        return processors
+    }
+
     func loadImage(url: String, options: Options?) throws -> Promise<any HybridImageSpec> {
         return Promise.async {
             guard let imageUrl = URL(string: url) else {
                 throw RuntimeError.error(withMessage: "Invalid URL: \(url)")
             }
 
-            let cacheOptions: ImageRequest.Options = switch options?.cache {
-            case .memory: [.disableDiskCache]
-            case .disk:   [.disableMemoryCache]
-            case .none?:  [.disableDiskCache, .disableMemoryCache]
-            default:      []
-            }
-
-            var processors: [any ImageProcessing] = []
-            // Resize first: blur sigma and corner radii are defined in pixels
-            // of the bitmap they run on, so they must see the final size.
-            if let resize = options?.resize, resize.width > 0, resize.height > 0 {
-                processors.append(ImageProcessors.Resize(
-                    size: CGSize(width: resize.width, height: resize.height),
-                    unit: .pixels,
-                    contentMode: .aspectFill,
-                    crop: true,
-                    upscale: true
-                ))
-            }
-            if let blur = options?.blur, blur > 0 {
-                processors.append(GaussianBlurProcessor(sigma: blur))
-            }
-            switch options?.cornerRadius {
-            case .first(let radius):
-                if radius > 0 {
-                    processors.append(.roundedCorners(radius: radius))
-                }
-            case .second(let radii):
-                let roundedCorners = RoundedCornersProcessor(radii: radii)
-                if roundedCorners.hasRounding {
-                    processors.append(roundedCorners)
-                }
-            case nil:
-                break
-            }
-
             let imgRequest = ImageRequest(
                 url: imageUrl,
-                processors: processors,
-                options: cacheOptions
+                processors: Self.processors(for: options),
+                options: Self.cacheOptions(for: options?.cache)
             )
 
             let image = try await self.pipeline.image(for: imgRequest)
