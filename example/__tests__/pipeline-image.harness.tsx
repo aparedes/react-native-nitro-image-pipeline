@@ -10,6 +10,13 @@ const styles = StyleSheet.create({
   fixed: { width: 100, height: 50 },
   container: { width: 200 },
   half: { width: '50%', aspectRatio: 2 },
+  rounded: { width: 100, height: 50, borderRadius: 12 },
+  perCorner: {
+    width: 100,
+    height: 50,
+    borderTopLeftRadius: 20,
+    borderBottomRightRadius: 30,
+  },
 });
 
 describe('PipelineImage', () => {
@@ -68,6 +75,55 @@ describe('PipelineImage', () => {
         url={VALID_URL}
         style={styles.fixed}
         cornerRadius={12}
+        onLoad={(img) => {
+          loaded = img;
+        }}
+      />,
+    );
+    await waitFor(() => expect(loaded).toBeDefined());
+    expect(loaded?.width).toBe(px(100));
+    expect(loaded?.height).toBe(px(50));
+  });
+
+  it('derives cornerRadius from style.borderRadius when the prop is omitted', async () => {
+    let loaded: Image | undefined;
+    await render(
+      <PipelineImage
+        url={VALID_URL}
+        style={styles.rounded}
+        onLoad={(img) => {
+          loaded = img;
+        }}
+      />,
+    );
+    await waitFor(() => expect(loaded).toBeDefined());
+    expect(loaded?.width).toBe(px(100));
+    expect(loaded?.height).toBe(px(50));
+  });
+
+  it('derives per-corner radii from style border*Radius properties', async () => {
+    let loaded: Image | undefined;
+    await render(
+      <PipelineImage
+        url={VALID_URL}
+        style={styles.perCorner}
+        onLoad={(img) => {
+          loaded = img;
+        }}
+      />,
+    );
+    await waitFor(() => expect(loaded).toBeDefined());
+    expect(loaded?.width).toBe(px(100));
+    expect(loaded?.height).toBe(px(50));
+  });
+
+  it('lets an explicit cornerRadius prop override style.borderRadius', async () => {
+    let loaded: Image | undefined;
+    await render(
+      <PipelineImage
+        url={VALID_URL}
+        style={styles.rounded}
+        cornerRadius={0}
         onLoad={(img) => {
           loaded = img;
         }}

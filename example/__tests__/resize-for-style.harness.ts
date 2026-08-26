@@ -1,6 +1,7 @@
 import { PixelRatio, StyleSheet } from 'react-native';
 import { describe, expect, it } from 'react-native-harness';
 import {
+  cornerRadiusForStyle,
   resizeForLayout,
   resizeForStyle,
 } from 'react-native-nitro-image-pipeline';
@@ -12,6 +13,10 @@ const styles = StyleSheet.create({
   override: { width: 150 },
   percentWidth: { width: '50%', height: 100 },
   widthOnly: { width: 300 },
+  uniformRadius: { borderRadius: 12 },
+  perCornerRadius: { borderTopLeftRadius: 20, borderBottomRightRadius: 30 },
+  mixedRadius: { borderRadius: 8, borderTopLeftRadius: 20 },
+  percentRadius: { borderRadius: '50%' },
 });
 
 describe('resizeForStyle', () => {
@@ -51,5 +56,37 @@ describe('resizeForLayout', () => {
     const result = resizeForLayout(33.33, 10.5);
     expect(Number.isInteger(result?.width)).toBe(true);
     expect(Number.isInteger(result?.height)).toBe(true);
+  });
+});
+
+describe('cornerRadiusForStyle', () => {
+  it('returns a uniform number for borderRadius alone', () => {
+    expect(cornerRadiusForStyle(styles.uniformRadius)).toBe(12);
+  });
+
+  it('returns per-corner radii, leaving unset corners square', () => {
+    expect(cornerRadiusForStyle(styles.perCornerRadius)).toEqual({
+      topLeft: 20,
+      topRight: undefined,
+      bottomLeft: undefined,
+      bottomRight: 30,
+    });
+  });
+
+  it('lets a per-corner property override borderRadius for that corner', () => {
+    expect(cornerRadiusForStyle(styles.mixedRadius)).toEqual({
+      topLeft: 20,
+      topRight: 8,
+      bottomLeft: 8,
+      bottomRight: 8,
+    });
+  });
+
+  it('returns undefined when no radius is set', () => {
+    expect(cornerRadiusForStyle(styles.base)).toBeUndefined();
+  });
+
+  it('ignores a percentage borderRadius', () => {
+    expect(cornerRadiusForStyle(styles.percentRadius)).toBeUndefined();
   });
 });

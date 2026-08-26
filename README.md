@@ -51,20 +51,25 @@ function MyComponent() {
       url="https://example.com/photo.jpg"
       style={styles.photo} // bitmap is sized to this layout × PixelRatio.get()
       blur={2} // points, like style
-      cornerRadius={12} // points, like style.borderRadius
     />
   );
 }
 
-const styles = StyleSheet.create({ photo: { width: 300, height: 200 } });
+const styles = StyleSheet.create({
+  photo: { width: 300, height: 200, borderRadius: 12 }, // baked into the bitmap
+});
 ```
 
 Numeric `width`/`height` in `style` load immediately; percentage or flex-based sizes wait for the
 first `onLayout` before fetching, so the full-size image is never requested just to be squeezed
-into a small view. `blur` and `cornerRadius` are in points **on this component only** — they're
-converted to bitmap pixels internally, unlike the pixel-based values used everywhere else in this
-library. `onLoad`/`onError` callbacks are supported, and every other prop (`resizeMode`,
-`recyclingKey`, `testID`, …) is passed straight through to `NativeNitroImage`.
+into a small view. `blur` is in points **on this component only** — it's converted to bitmap
+pixels internally, unlike the pixel-based values used everywhere else in this library.
+`cornerRadius` works the same way, but if you don't pass it, it's derived instead from `style`'s
+`borderRadius` (or the per-corner `borderTopLeftRadius`/etc. properties, e.g. a "ticket" shape) —
+so a style that already rounds the view rounds the bitmap too, with no separate prop. Pass
+`cornerRadius` explicitly to override that. `onLoad`/`onError` callbacks are supported, and every
+other prop (`resizeMode`, `recyclingKey`, `testID`, …) is passed straight through to
+`NativeNitroImage`.
 
 ### `useImage` hook
 
@@ -152,9 +157,9 @@ Loads an image from a URL and returns a `Promise<Image>`.
 | Prop | Type | Default | Description |
 |---|---|---|---|
 | `url` | `string` | — | Image URL to load |
-| `style` | `StyleProp<ViewStyle>` | — | Layout style; also determines the resize target (see [`resizeForStyle`](#resizeforstyle-style--resizeforlayoutwidth-height)) |
+| `style` | `StyleProp<ViewStyle>` | — | Layout style; also determines the resize target (see [`resizeForStyle`](#resizeforstyle-style--resizeforlayoutwidth-height)) and, if `cornerRadius` is omitted, the corner radius (see [`cornerRadiusForStyle`](#cornerradiusforstylestyle)) |
 | `blur` | `number` | `0` | Gaussian blur strength, in **points** (converted to bitmap pixels internally) |
-| `cornerRadius` | `number \| CornerRadii` | `0` | Corner radius, in **points** (converted to bitmap pixels internally) |
+| `cornerRadius` | `number \| CornerRadii` | derived from `style` | Corner radius, in **points** (converted to bitmap pixels internally). When omitted, derived from `style`'s `borderRadius`/`borderTopLeftRadius`/etc.; square if neither is set |
 | `cache` | `'memory' \| 'disk' \| 'none'` | platform default | Caching strategy |
 | `onLoad` | `(image: Image) => void` | — | Called when the image finishes loading |
 | `onError` | `(error: Error) => void` | — | Called if loading fails |
@@ -167,6 +172,15 @@ Converts a layout size in points to a bitmap `resize` option in pixels. Returns
 `{ width, height }` in whole pixels via `PixelRatio.getPixelSizeForLayoutSize`, or `undefined` for
 non-numeric sizes (e.g. `'100%'`, `undefined`) — `resizeForStyle` reads `style.width`/`style.height`,
 `resizeForLayout` takes explicit numbers.
+
+### `cornerRadiusForStyle(style)`
+
+Converts a view style's `borderRadius`/`borderTopLeftRadius`/`borderTopRightRadius`/
+`borderBottomLeftRadius`/`borderBottomRightRadius` (in points) into a `cornerRadius` option — a
+plain number for uniform `borderRadius` alone, or a `CornerRadii` object once any per-corner
+property is set (falling back to `borderRadius` for the corners left unset). Returns `undefined`
+when none are set. This is what `<PipelineImage>` uses internally when its `cornerRadius` prop is
+omitted.
 
 ### `preLoadImage(url)`
 

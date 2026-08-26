@@ -1,6 +1,10 @@
 export { NitroImagePipeline } from './NitroImagePipeline';
 export { PipelineImage, type PipelineImageProps } from './PipelineImage';
-export { resizeForLayout, resizeForStyle } from './resizeForStyle';
+export {
+  cornerRadiusForStyle,
+  resizeForLayout,
+  resizeForStyle,
+} from './resizeForStyle';
 export type {
   CacheOption,
   CornerRadii,

@@ -6,7 +6,11 @@ import {
 } from 'react-native';
 import { type Image, NativeNitroImage } from 'react-native-nitro-image';
 
-import { resizeForLayout, resizeForStyle } from './resizeForStyle';
+import {
+  cornerRadiusForStyle,
+  resizeForLayout,
+  resizeForStyle,
+} from './resizeForStyle';
 import type {
   CacheOption,
   CornerRadii,
@@ -29,10 +33,14 @@ export interface PipelineImageProps extends Omit<NativeImageProps, 'image'> {
    */
   blur?: number;
   /**
-   * Corner radius in **points**, like `style.borderRadius` — a single number
-   * or per-corner radii. Converted to bitmap pixels with `PixelRatio.get()`
-   * and baked into the bitmap at the display size.
-   * @default 0
+   * Corner radius in **points** — a single number or per-corner radii.
+   * Converted to bitmap pixels with `PixelRatio.get()` and baked into the
+   * bitmap at the display size.
+   *
+   * When omitted, it's derived from `style`'s `borderRadius` /
+   * `borderTopLeftRadius` / `borderTopRightRadius` / `borderBottomLeftRadius`
+   * / `borderBottomRightRadius` instead — set this prop to override that.
+   * @default undefined (derived from `style`, or square corners if unset there)
    */
   cornerRadius?: number | CornerRadii;
   cache?: CacheOption;
@@ -70,7 +78,9 @@ function scaleRadius(
  * A numeric `width`/`height` in `style` starts loading immediately; otherwise
  * (`'50%'`, `flex`, `aspectRatio`, …) loading waits for the first `onLayout`.
  * If the layout size later changes, a new variant is loaded and swapped in
- * without flashing.
+ * without flashing. Without an explicit `cornerRadius` prop, `style`'s
+ * `borderRadius`-family properties are baked into the bitmap instead — no
+ * separate view-layer rounding needed.
  * @example
  * ```tsx
  * <PipelineImage
@@ -83,7 +93,7 @@ function scaleRadius(
 export function PipelineImage({
   url,
   blur = 0,
-  cornerRadius = 0,
+  cornerRadius,
   cache,
   onLoad,
   onError,
@@ -99,11 +109,14 @@ export function PipelineImage({
   // A numeric style is what the caller declared, so it wins and starts the
   // request a frame earlier; the measured layout is the fallback.
   const resize = styleSize ?? layoutSize;
+  // Same precedence: an explicit prop wins over what style implies.
+  const effectiveCornerRadius =
+    cornerRadius ?? cornerRadiusForStyle(style) ?? 0;
 
   const { image, error } = useImage({
     url,
     blur: blur * scale,
-    cornerRadius: scaleRadius(cornerRadius, scale),
+    cornerRadius: scaleRadius(effectiveCornerRadius, scale),
     cache,
     resize,
     enabled: resize !== undefined,
