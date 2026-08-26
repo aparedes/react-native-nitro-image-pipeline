@@ -38,31 +38,63 @@ bun add react-native-nitro-image-pipeline react-native-nitro-modules react-nativ
 
 ## Usage
 
+### `<PipelineImage>` component
+
+The zero-math way to load an image in a component — no manual `PixelRatio` conversions:
+
+```tsx
+import { PipelineImage } from 'react-native-nitro-image-pipeline';
+
+function MyComponent() {
+  return (
+    <PipelineImage
+      url="https://example.com/photo.jpg"
+      style={styles.photo} // bitmap is sized to this layout × PixelRatio.get()
+      blur={2} // points, like style
+      cornerRadius={12} // points, like style.borderRadius
+    />
+  );
+}
+
+const styles = StyleSheet.create({ photo: { width: 300, height: 200 } });
+```
+
+Numeric `width`/`height` in `style` load immediately; percentage or flex-based sizes wait for the
+first `onLayout` before fetching, so the full-size image is never requested just to be squeezed
+into a small view. `blur` and `cornerRadius` are in points **on this component only** — they're
+converted to bitmap pixels internally, unlike the pixel-based values used everywhere else in this
+library. `onLoad`/`onError` callbacks are supported, and every other prop (`resizeMode`,
+`recyclingKey`, `testID`, …) is passed straight through to `NativeNitroImage`.
+
 ### `useImage` hook
 
 The simplest way to load an image in a component:
 
 ```tsx
-import { useImage } from 'react-native-nitro-image-pipeline';
+import { PixelRatio, useImage, resizeForStyle } from 'react-native-nitro-image-pipeline';
 
 function MyComponent() {
-  const px = PixelRatio.get();
   const { image, error } = useImage({
     url: 'https://example.com/photo.jpg',
     blur: 4, // Gaussian sigma in bitmap pixels — same result on iOS and Android
     // Resize to the size you display (points × screen scale) so the corner
     // radii apply 1:1 to what you see instead of the full-resolution source.
-    resize: { width: 300 * px, height: 200 * px },
-    cornerRadius: 12 * px,
+    resize: resizeForStyle(styles.image), // display size × PixelRatio.get()
+    cornerRadius: 12 * PixelRatio.get(), // bitmap pixels
   });
 
   if (error) return <Text>Failed to load image</Text>;
   if (!image) return <ActivityIndicator />;
 
   // use `image` with react-native-nitro-image
-  return <NitroImage source={image} />;
+  return <NitroImage image={image} style={styles.image} />;
 }
+
+const styles = StyleSheet.create({ image: { width: 300, height: 200 } });
 ```
+
+Pass `enabled: false` to defer the request — used internally by `<PipelineImage>` to wait for
+layout before it has a size to resize to.
 
 ### Direct API
 
@@ -114,6 +146,27 @@ Loads an image from a URL and returns a `Promise<Image>`.
 | `resize` | `{ width, height }` | source size | Target bitmap size in pixels. Scales to fill and center-crops (CSS `object-fit: cover`, upscaling if needed) before `blur`/`cornerRadius` run, so their pixel units refer to this final size. Typically your display size in points × `PixelRatio.get()` |
 | `cornerRadius` | `number \| CornerRadii` | `0` | Corner radius in pixels of the produced bitmap — a single number for all four corners, or `{ topLeft?, topRight?, bottomLeft?, bottomRight? }` for independent per-corner radii (omitted corners stay square). Pair with `resize` for radii that match your layout |
 | `cache` | `'memory' \| 'disk' \| 'none'` | platform default | Caching strategy |
+
+### `<PipelineImage>`
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `url` | `string` | — | Image URL to load |
+| `style` | `StyleProp<ViewStyle>` | — | Layout style; also determines the resize target (see [`resizeForStyle`](#resizeforstyle-style--resizeforlayoutwidth-height)) |
+| `blur` | `number` | `0` | Gaussian blur strength, in **points** (converted to bitmap pixels internally) |
+| `cornerRadius` | `number \| CornerRadii` | `0` | Corner radius, in **points** (converted to bitmap pixels internally) |
+| `cache` | `'memory' \| 'disk' \| 'none'` | platform default | Caching strategy |
+| `onLoad` | `(image: Image) => void` | — | Called when the image finishes loading |
+| `onError` | `(error: Error) => void` | — | Called if loading fails |
+| `onLayout` | `(event: LayoutChangeEvent) => void` | — | Standard `View` layout callback; also drives the deferred resize for non-numeric sizes |
+| `…NativeNitroImage props` | — | — | Everything else (`resizeMode`, `recyclingKey`, `testID`, …) is passed through to `NativeNitroImage` |
+
+### `resizeForStyle(style)` / `resizeForLayout(width, height)`
+
+Converts a layout size in points to a bitmap `resize` option in pixels. Returns
+`{ width, height }` in whole pixels via `PixelRatio.getPixelSizeForLayoutSize`, or `undefined` for
+non-numeric sizes (e.g. `'100%'`, `undefined`) — `resizeForStyle` reads `style.width`/`style.height`,
+`resizeForLayout` takes explicit numbers.
 
 ### `preLoadImage(url)`
 
