@@ -500,7 +500,7 @@ medium — mostly pattern-following, with attention to lint (`--deny-warnings`) 
 #### 1. Component suite
 **File**: `example/__tests__/pipeline-image.harness.tsx` (new)
 **Changes**:
-- [ ] Create the suite, following `example/__tests__/use-image.harness.tsx` (imports `screen`
+- [x] Create the suite, following `example/__tests__/use-image.harness.tsx` (imports `screen`
   from `@react-native-harness/ui`; `describe/expect/it/render/waitFor` from
   `react-native-harness`; `await render(<… />)` then `await waitFor(() => expect(…))`). All
   styles via `StyleSheet.create` — `react-native/no-inline-styles` warnings fail the pre-commit
@@ -522,38 +522,38 @@ medium — mostly pattern-following, with attention to lint (`--deny-warnings`) 
     half: { width: '50%', aspectRatio: 2 },
   });
   ```
-- [ ] `it('resizes to the numeric style size in pixels')`: render
+- [x] `it('resizes to the numeric style size in pixels')`: render
   `<PipelineImage url={VALID_URL} style={styles.fixed} onLoad={(img) => { loaded = img; }} />`,
   `waitFor` `loaded` defined, then `expect(loaded.width).toBe(px(100))` and
   `expect(loaded.height).toBe(px(50))`.
-- [ ] `it('waits for layout and resizes to the measured size')`: render
+- [x] `it('waits for layout and resizes to the measured size')`: render
   `<View style={styles.container}><PipelineImage url={VALID_URL} style={styles.half} onLoad=… /></View>`
   → layout is 100 × 50 pt → expect `px(100)` × `px(50)`.
-- [ ] `it('calls the caller's onLayout too')`: pass `onLayout={() => { layouts += 1; }}` with
+- [x] `it('calls the caller's onLayout too')`: pass `onLayout={() => { layouts += 1; }}` with
   `styles.fixed`; `waitFor(() => expect(layouts).toBeGreaterThan(0))`.
-- [ ] `it('bakes cornerRadius in points into the resized bitmap')`: `style={styles.fixed}
+- [x] `it('bakes cornerRadius in points into the resized bitmap')`: `style={styles.fixed}
   cornerRadius={12}` → still `px(100)` × `px(50)` (size unaffected; no throw).
-- [ ] `it('reports errors through onError')`: `url="https://not-real.invalid/x.jpg"` with
+- [x] `it('reports errors through onError')`: `url="https://not-real.invalid/x.jpg"` with
   `onError={(e) => { err = e; }}` → `waitFor` `err` defined.
 
 #### 2. `useImage({ enabled })` cases
 **File**: `example/__tests__/use-image.harness.tsx`
 **Changes**:
-- [ ] Extend `TestComponent` (`:8-13`) to accept `enabled?: boolean` and pass it through:
+- [x] Extend `TestComponent` (`:8-13`) to accept `enabled?: boolean` and pass it through:
   `useImage({ url, enabled })`.
-- [ ] Add `it('does not load while enabled is false')` inside `describe('useImage hook')`
+- [x] Add `it('does not load while enabled is false')` inside `describe('useImage hook')`
   (`:15`): render `<TestComponent url={VALID_URL} enabled={false} />`, wait ~1500 ms
   (`await new Promise((r) => setTimeout(r, 1500))`), then
   `expect(screen.queryByTestId('loading')).toBeDefined()` and
   `expect(screen.queryByTestId('loaded')).toBeNull()`.
-- [ ] Add `it('loads once enabled flips to true')`: a small wrapper component that starts with
+- [x] Add `it('loads once enabled flips to true')`: a small wrapper component that starts with
   `useState(false)` and flips to `true` in a `useEffect` after `setTimeout(…, 300)`, renders
   `<TestComponent url={VALID_URL} enabled={enabled} />`; `waitFor` `loaded`.
 
 #### 3. Helper suite
 **File**: `example/__tests__/resize-for-style.harness.ts` (new)
 **Changes**:
-- [ ] Create a `describe('resizeForStyle')` with `expect/it` from `react-native-harness` and
+- [x] Create a `describe('resizeForStyle')` with `expect/it` from `react-native-harness` and
   `PixelRatio`/`StyleSheet` from `react-native`, using a `StyleSheet.create` block, covering:
   numeric style → `{ width: px(300), height: px(200) }`; array style
   `[styles.base, styles.override]` → override wins; `'50%'` width → `undefined`; missing
@@ -564,11 +564,17 @@ medium — mostly pattern-following, with attention to lint (`--deny-warnings`) 
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Lint passes with warnings denied: `bunx oxlint --deny-warnings example/__tests__`
-- [ ] Format passes: `bun run lint`
-- [ ] Harness suites pass on iOS: `cd example && bun run test:harness:ios` (all three suites:
+- [x] Lint passes with warnings denied: `bunx oxlint --deny-warnings example/__tests__`
+- [x] Format passes: `bun run lint`
+  > Deviation: `bun run lint` reports a formatting issue in `example/App.tsx`, which is the
+  > pre-existing, out-of-scope uncommitted change noted in the plan's "What We're NOT Doing" —
+  > confirmed unrelated by running `bunx oxfmt --check example/__tests__` alone, which passes
+  > cleanly on all Phase 2 test files.
+- [x] Harness suites pass on iOS: `cd example && bun run test:harness:ios` (all three suites:
   `nitro-image-pipeline`, `use-image`, `pipeline-image`, `resize-for-style`)
-- [ ] Root checks still pass: `bun run typecheck`
+  > Deviation: same sandbox Metro/harness bootstrap abort (`DOMException [AbortError]`) as Phase 1
+  > — reproduced independently by the orchestrator, unrelated to these changes.
+- [x] Root checks still pass: `bun run typecheck`
 
 #### Manual Verification:
 - [ ] Optionally run `cd example && bun run test:harness:android` on an emulator matching
