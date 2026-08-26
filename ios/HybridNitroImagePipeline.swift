@@ -134,7 +134,11 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
             switch options?.cornerRadius {
             case .first(let radius):
                 if radius > 0 {
-                    processors.append(.roundedCorners(radius: radius))
+                    // `unit: .pixels` is required: Nuke defaults to `.points`,
+                    // which multiplies the radius by the screen scale. The
+                    // radius is documented — and implemented on Android and in
+                    // RoundedCornersProcessor — as bitmap pixels.
+                    processors.append(.roundedCorners(radius: radius, unit: .pixels))
                 }
             case .second(let radii):
                 let roundedCorners = RoundedCornersProcessor(radii: radii)
