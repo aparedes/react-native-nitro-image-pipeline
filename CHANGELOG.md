@@ -1,3 +1,9 @@
+## [1.2.1](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v1.2.0...v1.2.1) (2026-08-26)
+
+### 🐛 Bug Fixes
+
+* **ios:** apply a uniform cornerRadius in pixels, not points ([#77](https://github.com/[secure]/react-native-nitro-image-pipeline/issues/77)) ([013633c](https://github.com/[secure]/react-native-nitro-image-pipeline/commit/013633c775e309049cb337ea90d46d577bf48a0b))
+
 ## [1.2.0](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v1.1.0...v1.2.0) (2026-08-26)
 
 ### ✨ Features
