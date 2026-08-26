@@ -14,7 +14,9 @@
 #include "CornerRadii.hpp"
 #include "JCacheOption.hpp"
 #include "JCornerRadii.hpp"
+#include "JResizeOptions.hpp"
 #include "JVariant_Double_CornerRadii.hpp"
+#include "ResizeOptions.hpp"
 #include <optional>
 #include <variant>
 
@@ -43,10 +45,13 @@ namespace margelo::nitro::nitroimagepipeline {
       jni::local_ref<JCacheOption> cache = this->getFieldValue(fieldCache);
       static const auto fieldCornerRadius = clazz->getField<JVariant_Double_CornerRadii>("cornerRadius");
       jni::local_ref<JVariant_Double_CornerRadii> cornerRadius = this->getFieldValue(fieldCornerRadius);
+      static const auto fieldResize = clazz->getField<JResizeOptions>("resize");
+      jni::local_ref<JResizeOptions> resize = this->getFieldValue(fieldResize);
       return Options(
         blur != nullptr ? std::make_optional(blur->value()) : std::nullopt,
         cache != nullptr ? std::make_optional(cache->toCpp()) : std::nullopt,
-        cornerRadius != nullptr ? std::make_optional(cornerRadius->toCpp()) : std::nullopt
+        cornerRadius != nullptr ? std::make_optional(cornerRadius->toCpp()) : std::nullopt,
+        resize != nullptr ? std::make_optional(resize->toCpp()) : std::nullopt
       );
     }
 
@@ -56,14 +61,15 @@ namespace margelo::nitro::nitroimagepipeline {
      */
     [[maybe_unused]]
     static jni::local_ref<JOptions::javaobject> fromCpp(const Options& value) {
-      using JSignature = JOptions(jni::alias_ref<jni::JDouble>, jni::alias_ref<JCacheOption>, jni::alias_ref<JVariant_Double_CornerRadii>);
+      using JSignature = JOptions(jni::alias_ref<jni::JDouble>, jni::alias_ref<JCacheOption>, jni::alias_ref<JVariant_Double_CornerRadii>, jni::alias_ref<JResizeOptions>);
       static const auto clazz = javaClassStatic();
       static const auto create = clazz->getStaticMethod<JSignature>("fromCpp");
       return create(
         clazz,
         value.blur.has_value() ? jni::JDouble::valueOf(value.blur.value()) : nullptr,
         value.cache.has_value() ? JCacheOption::fromCpp(value.cache.value()) : nullptr,
-        value.cornerRadius.has_value() ? JVariant_Double_CornerRadii::fromCpp(value.cornerRadius.value()) : nullptr
+        value.cornerRadius.has_value() ? JVariant_Double_CornerRadii::fromCpp(value.cornerRadius.value()) : nullptr,
+        value.resize.has_value() ? JResizeOptions::fromCpp(value.resize.value()) : nullptr
       );
     }
   };

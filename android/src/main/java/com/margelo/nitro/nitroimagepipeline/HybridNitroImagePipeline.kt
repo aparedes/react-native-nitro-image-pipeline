@@ -14,6 +14,7 @@ import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import coil3.request.allowHardware
 import coil3.request.transformations
+import coil3.size.Scale
 import coil3.size.Size
 import coil3.transform.RoundedCornersTransformation
 import com.google.net.cronet.okhttptransport.CronetInterceptor
@@ -22,6 +23,8 @@ import com.margelo.nitro.core.Promise
 import com.margelo.nitro.image.HybridImage
 import com.margelo.nitro.image.HybridImageSpec
 import com.margelo.nitro.nitroimagepipeline.transform.BlurTransformation
+import com.margelo.nitro.nitroimagepipeline.transform.ResizeTransformation
+import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -40,7 +43,16 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
 
   override fun loadImage(url: String, options: Options?): Promise<HybridImageSpec> = Promise.async {
     val blur = options?.blur?.toFloat() ?: 0f
+    val resize =
+        options?.resize?.let { r ->
+          val width = r.width.roundToInt()
+          val height = r.height.roundToInt()
+          if (width > 0 && height > 0) width to height else null
+        }
     val transformations = buildList {
+      // Resize first: blur sigma and corner radii are in pixels of the bitmap
+      // they run on, so they must see the final size.
+      resize?.let { (width, height) -> add(ResizeTransformation(width, height)) }
       if (blur > 0f) add(BlurTransformation(context, blur))
       options?.cornerRadius?.match(
           first = { radius ->
@@ -76,6 +88,13 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
                   diskCachePolicy(CachePolicy.DISABLED)
                 }
                 null -> Unit // Coil defaults: both enabled
+              }
+              // Ask the decoder for the target size so a large source is
+              // subsampled near it instead of decoded at full resolution;
+              // ResizeTransformation then makes the size exact.
+              resize?.let { (width, height) ->
+                size(width, height)
+                scale(Scale.FILL)
               }
             }
             .allowHardware(true)

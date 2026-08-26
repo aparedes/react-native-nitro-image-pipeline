@@ -7,9 +7,10 @@ import type {
   CornerRadii,
   NitroImagePipeline as NitroImagePipelineSpec,
   Options,
+  ResizeOptions,
 } from './specs/nitro-image-toolkit.nitro';
 
-export type { CacheOption, CornerRadii, Options };
+export type { CacheOption, CornerRadii, Options, ResizeOptions };
 
 export const NitroImagePipeline =
   NitroModules.createHybridObject<NitroImagePipelineSpec>('NitroImagePipeline');
@@ -43,21 +44,29 @@ export function useImage({
   url,
   blur = 0,
   cornerRadius = 0,
+  resize,
   cache,
 }: {
   url: string;
   /**
    * Gaussian blur strength, as the standard deviation (sigma) of the blur in
-   * source-image pixels. Matches across iOS and Android; roughly half of
-   * React Native's `blurRadius`.
+   * source-image pixels (of the resized bitmap when `resize` is set). Matches
+   * across iOS and Android; roughly half of React Native's `blurRadius`.
    */
   blur?: number;
   /**
-   * Corner radius in points, baked into the loaded bitmap. Pass a single
-   * number for uniform rounding, or per-corner radii (inline object literals
-   * are fine — the hook compares the radii by value, not identity).
+   * Corner radius in pixels of the loaded bitmap. Pass a single number for
+   * uniform rounding, or per-corner radii (inline object literals are fine —
+   * the hook compares the radii by value, not identity). Pair with `resize`
+   * so the radii apply at the size you display instead of the source size.
    */
   cornerRadius?: number | CornerRadii;
+  /**
+   * Resize the bitmap to exactly this size in pixels (aspect-fill,
+   * center-crop) before blur/rounding. Typically your display size in points
+   * multiplied by `PixelRatio.get()`. Inline object literals are fine.
+   */
+  resize?: ResizeOptions;
   cache?: CacheOption;
 }): Result {
   const [image, setImage] = useState<Result>({
@@ -76,6 +85,8 @@ export function useImage({
     bottomLeft = 0,
     bottomRight = 0,
   } = isUniformRadius ? {} : cornerRadius;
+  const resizeWidth = resize?.width ?? 0;
+  const resizeHeight = resize?.height ?? 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -94,6 +105,10 @@ export function useImage({
           cornerRadius: isUniformRadius
             ? uniformRadius
             : { topLeft, topRight, bottomLeft, bottomRight },
+          resize:
+            resizeWidth > 0 && resizeHeight > 0
+              ? { width: resizeWidth, height: resizeHeight }
+              : undefined,
           cache,
         });
 
@@ -120,6 +135,8 @@ export function useImage({
     topRight,
     bottomLeft,
     bottomRight,
+    resizeWidth,
+    resizeHeight,
     cache,
   ]);
 

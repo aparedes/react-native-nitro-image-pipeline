@@ -18,12 +18,15 @@ namespace margelo::nitro::image { class HybridImageSpec; }
 namespace margelo::nitro::nitroimagepipeline { class HybridNitroImagePipelineSpec; }
 // Forward declaration of `Options` to properly resolve imports.
 namespace margelo::nitro::nitroimagepipeline { struct Options; }
+// Forward declaration of `ResizeOptions` to properly resolve imports.
+namespace margelo::nitro::nitroimagepipeline { struct ResizeOptions; }
 
 // Include C++ defined types
 #include "CacheOption.hpp"
 #include "CornerRadii.hpp"
 #include "HybridNitroImagePipelineSpec.hpp"
 #include "Options.hpp"
+#include "ResizeOptions.hpp"
 #include <NitroImage/HybridImageSpec.hpp>
 #include <NitroModules/Promise.hpp>
 #include <NitroModules/Result.hpp>

@@ -18,6 +18,8 @@ namespace margelo::nitro::image { class HybridImageSpec; }
 namespace margelo::nitro::nitroimagepipeline { class HybridNitroImagePipelineSpec; }
 // Forward declaration of `Options` to properly resolve imports.
 namespace margelo::nitro::nitroimagepipeline { struct Options; }
+// Forward declaration of `ResizeOptions` to properly resolve imports.
+namespace margelo::nitro::nitroimagepipeline { struct ResizeOptions; }
 
 // Forward declarations of Swift defined types
 // Forward declaration of `HybridImageSpec_cxx` to properly resolve imports.
@@ -30,6 +32,7 @@ namespace NitroImagePipeline { class HybridNitroImagePipelineSpec_cxx; }
 #include "CornerRadii.hpp"
 #include "HybridNitroImagePipelineSpec.hpp"
 #include "Options.hpp"
+#include "ResizeOptions.hpp"
 #include <NitroImage/HybridImageSpec.hpp>
 #include <NitroModules/Promise.hpp>
 #include <NitroModules/PromiseHolder.hpp>
@@ -187,6 +190,21 @@ namespace margelo::nitro::nitroimagepipeline::bridge::swift {
     return optional.has_value();
   }
   inline std::variant<double, CornerRadii> get_std__optional_std__variant_double__CornerRadii__(const std::optional<std::variant<double, CornerRadii>>& optional) noexcept {
+    return optional.value();
+  }
+  
+  // pragma MARK: std::optional<ResizeOptions>
+  /**
+   * Specialized version of `std::optional<ResizeOptions>`.
+   */
+  using std__optional_ResizeOptions_ = std::optional<ResizeOptions>;
+  inline std::optional<ResizeOptions> create_std__optional_ResizeOptions_(const ResizeOptions& value) noexcept {
+    return std::optional<ResizeOptions>(value);
+  }
+  inline bool has_value_std__optional_ResizeOptions_(const std::optional<ResizeOptions>& optional) noexcept {
+    return optional.has_value();
+  }
+  inline ResizeOptions get_std__optional_ResizeOptions_(const std::optional<ResizeOptions>& optional) noexcept {
     return optional.value();
   }
   

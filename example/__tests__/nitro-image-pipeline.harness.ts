@@ -32,6 +32,37 @@ describe('NitroImagePipeline', () => {
     expect(image).toBeDefined();
   });
 
+  it('resizes to the exact requested pixel size', async () => {
+    const image = await NitroImagePipeline.loadImage(VALID_URL, {
+      resize: { width: 120, height: 80 },
+    });
+    expect(image.width).toBe(120);
+    expect(image.height).toBe(80);
+  });
+
+  it('upscales smaller sources when resizing', async () => {
+    // Source is 200×200; aspect-fill must upscale to cover 300×400.
+    const image = await NitroImagePipeline.loadImage(VALID_URL, {
+      resize: { width: 300, height: 400 },
+    });
+    expect(image.width).toBe(300);
+    expect(image.height).toBe(400);
+  });
+
+  it('applies cornerRadius in resized-bitmap pixels', async () => {
+    const image = await NitroImagePipeline.loadImage(VALID_URL, {
+      resize: { width: 120, height: 80 },
+      cornerRadius: {
+        topLeft: 12,
+        topRight: 12,
+        bottomLeft: 40,
+        bottomRight: 40,
+      },
+    });
+    expect(image.width).toBe(120);
+    expect(image.height).toBe(80);
+  });
+
   it('respects cache: none', async () => {
     const image = await NitroImagePipeline.loadImage(VALID_URL, {
       cache: 'none',

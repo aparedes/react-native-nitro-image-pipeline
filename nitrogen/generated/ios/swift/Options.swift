@@ -18,7 +18,7 @@ public extension Options {
   /**
    * Create a new instance of `Options`.
    */
-  init(blur: Double?, cache: CacheOption?, cornerRadius: Variant_Double_CornerRadii?) {
+  init(blur: Double?, cache: CacheOption?, cornerRadius: Variant_Double_CornerRadii?, resize: ResizeOptions?) {
     self.init({ () -> bridge.std__optional_double_ in
       if let __unwrappedValue = blur {
         return bridge.create_std__optional_double_(__unwrappedValue)
@@ -41,6 +41,12 @@ public extension Options {
               return bridge.create_std__variant_double__CornerRadii_(__value)
           }
         }().variant)
+      } else {
+        return .init()
+      }
+    }(), { () -> bridge.std__optional_ResizeOptions_ in
+      if let __unwrappedValue = resize {
+        return bridge.create_std__optional_ResizeOptions_(__unwrappedValue)
       } else {
         return .init()
       }
@@ -86,5 +92,10 @@ public extension Options {
         return nil
       }
     }()
+  }
+  
+  @inline(__always)
+  var resize: ResizeOptions? {
+    return self.__resize.value
   }
 }
