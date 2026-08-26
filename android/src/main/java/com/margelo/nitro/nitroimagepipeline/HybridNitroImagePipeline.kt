@@ -54,21 +54,23 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
       // they run on, so they must see the final size.
       resize?.let { (width, height) -> add(ResizeTransformation(width, height)) }
       if (blur > 0f) add(BlurTransformation(context, blur))
-      options?.cornerRadius?.match(
-          first = { radius ->
-            if (radius > 0.0) add(RoundedCornersTransformation(radius.toFloat()))
-          },
-          second = { radii ->
-            // RoundedCornersTransformation rejects negative radii; treat them as square.
-            val topLeft = (radii.topLeft?.toFloat() ?: 0f).coerceAtLeast(0f)
-            val topRight = (radii.topRight?.toFloat() ?: 0f).coerceAtLeast(0f)
-            val bottomLeft = (radii.bottomLeft?.toFloat() ?: 0f).coerceAtLeast(0f)
-            val bottomRight = (radii.bottomRight?.toFloat() ?: 0f).coerceAtLeast(0f)
-            if (topLeft > 0f || topRight > 0f || bottomLeft > 0f || bottomRight > 0f) {
-              add(RoundedCornersTransformation(topLeft, topRight, bottomLeft, bottomRight))
-            }
-          },
-      )
+      options
+          ?.cornerRadius
+          ?.match(
+              first = { radius ->
+                if (radius > 0.0) add(RoundedCornersTransformation(radius.toFloat()))
+              },
+              second = { radii ->
+                // RoundedCornersTransformation rejects negative radii; treat them as square.
+                val topLeft = (radii.topLeft?.toFloat() ?: 0f).coerceAtLeast(0f)
+                val topRight = (radii.topRight?.toFloat() ?: 0f).coerceAtLeast(0f)
+                val bottomLeft = (radii.bottomLeft?.toFloat() ?: 0f).coerceAtLeast(0f)
+                val bottomRight = (radii.bottomRight?.toFloat() ?: 0f).coerceAtLeast(0f)
+                if (topLeft > 0f || topRight > 0f || bottomLeft > 0f || bottomRight > 0f) {
+                  add(RoundedCornersTransformation(topLeft, topRight, bottomLeft, bottomRight))
+                }
+              },
+          )
     }
     val request =
         ImageRequest.Builder(context)
