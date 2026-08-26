@@ -78,7 +78,7 @@ struct RoundedCornersProcessor: ImageProcessing {
             (rect.width, topLeft + topRight),
             (rect.width, bottomLeft + bottomRight),
             (rect.height, topLeft + bottomLeft),
-            (rect.height, topRight + bottomRight),
+            (rect.height, topRight + bottomRight)
         ] where pair > edge {
             scale = min(scale, edge / pair)
         }
