@@ -26,7 +26,7 @@ data class Options(
   val cache: CacheOption?,
   @DoNotStrip
   @Keep
-  val cornerRadius: Double?
+  val cornerRadius: Variant_Double_CornerRadii?
 ) {
   /* primary constructor */
 
@@ -54,7 +54,7 @@ data class Options(
     @Keep
     @Suppress("unused")
     @JvmStatic
-    private fun fromCpp(blur: Double?, cache: CacheOption?, cornerRadius: Double?): Options {
+    private fun fromCpp(blur: Double?, cache: CacheOption?, cornerRadius: Variant_Double_CornerRadii?): Options {
       return Options(blur, cache, cornerRadius)
     }
   }

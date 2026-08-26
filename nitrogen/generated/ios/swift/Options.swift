@@ -18,7 +18,7 @@ public extension Options {
   /**
    * Create a new instance of `Options`.
    */
-  init(blur: Double?, cache: CacheOption?, cornerRadius: Double?) {
+  init(blur: Double?, cache: CacheOption?, cornerRadius: Variant_Double_CornerRadii?) {
     self.init({ () -> bridge.std__optional_double_ in
       if let __unwrappedValue = blur {
         return bridge.create_std__optional_double_(__unwrappedValue)
@@ -31,9 +31,16 @@ public extension Options {
       } else {
         return .init()
       }
-    }(), { () -> bridge.std__optional_double_ in
+    }(), { () -> bridge.std__optional_std__variant_double__CornerRadii__ in
       if let __unwrappedValue = cornerRadius {
-        return bridge.create_std__optional_double_(__unwrappedValue)
+        return bridge.create_std__optional_std__variant_double__CornerRadii__({ () -> bridge.std__variant_double__CornerRadii_ in
+          switch __unwrappedValue {
+            case .first(let __value):
+              return bridge.create_std__variant_double__CornerRadii_(__value)
+            case .second(let __value):
+              return bridge.create_std__variant_double__CornerRadii_(__value)
+          }
+        }().variant)
       } else {
         return .init()
       }
@@ -58,11 +65,23 @@ public extension Options {
   }
   
   @inline(__always)
-  var cornerRadius: Double? {
-    return { () -> Double? in
-      if bridge.has_value_std__optional_double_(self.__cornerRadius) {
-        let __unwrapped = bridge.get_std__optional_double_(self.__cornerRadius)
-        return __unwrapped
+  var cornerRadius: Variant_Double_CornerRadii? {
+    return { () -> Variant_Double_CornerRadii? in
+      if bridge.has_value_std__optional_std__variant_double__CornerRadii__(self.__cornerRadius) {
+        let __unwrapped = bridge.get_std__optional_std__variant_double__CornerRadii__(self.__cornerRadius)
+        return { () -> Variant_Double_CornerRadii in
+          let __variant = bridge.std__variant_double__CornerRadii_(__unwrapped)
+          switch __variant.index() {
+            case 0:
+              let __actual = __variant.get_0()
+              return .first(__actual)
+            case 1:
+              let __actual = __variant.get_1()
+              return .second(__actual)
+            default:
+              fatalError("Variant can never have index \(__variant.index())!")
+          }
+        }()
       } else {
         return nil
       }

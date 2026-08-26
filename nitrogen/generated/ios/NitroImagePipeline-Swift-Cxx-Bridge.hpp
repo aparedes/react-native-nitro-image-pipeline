@@ -10,6 +10,8 @@
 // Forward declarations of C++ defined types
 // Forward declaration of `CacheOption` to properly resolve imports.
 namespace margelo::nitro::nitroimagepipeline { enum class CacheOption; }
+// Forward declaration of `CornerRadii` to properly resolve imports.
+namespace margelo::nitro::nitroimagepipeline { struct CornerRadii; }
 // Forward declaration of `HybridImageSpec` to properly resolve imports.
 namespace margelo::nitro::image { class HybridImageSpec; }
 // Forward declaration of `HybridNitroImagePipelineSpec` to properly resolve imports.
@@ -25,6 +27,7 @@ namespace NitroImagePipeline { class HybridNitroImagePipelineSpec_cxx; }
 
 // Include C++ defined types
 #include "CacheOption.hpp"
+#include "CornerRadii.hpp"
 #include "HybridNitroImagePipelineSpec.hpp"
 #include "Options.hpp"
 #include <NitroImage/HybridImageSpec.hpp>
@@ -36,6 +39,7 @@ namespace NitroImagePipeline { class HybridNitroImagePipelineSpec_cxx; }
 #include <memory>
 #include <optional>
 #include <string>
+#include <variant>
 #include <vector>
 
 /**
@@ -139,6 +143,50 @@ namespace margelo::nitro::nitroimagepipeline::bridge::swift {
     return optional.has_value();
   }
   inline CacheOption get_std__optional_CacheOption_(const std::optional<CacheOption>& optional) noexcept {
+    return optional.value();
+  }
+  
+  // pragma MARK: std::variant<double, CornerRadii>
+  /**
+   * Wrapper struct for `std::variant<double, CornerRadii>`.
+   * std::variant cannot be used in Swift because of a Swift bug.
+   * Not even specializing it works. So we create a wrapper struct.
+   */
+  struct std__variant_double__CornerRadii_ final {
+    std::variant<double, CornerRadii> variant;
+    std__variant_double__CornerRadii_(std::variant<double, CornerRadii> variant): variant(variant) { }
+    operator std::variant<double, CornerRadii>() const noexcept {
+      return variant;
+    }
+    inline size_t index() const noexcept {
+      return variant.index();
+    }
+    inline double get_0() const noexcept {
+      return std::get<0>(variant);
+    }
+    inline CornerRadii get_1() const noexcept {
+      return std::get<1>(variant);
+    }
+  };
+  inline std__variant_double__CornerRadii_ create_std__variant_double__CornerRadii_(double value) noexcept {
+    return std__variant_double__CornerRadii_(value);
+  }
+  inline std__variant_double__CornerRadii_ create_std__variant_double__CornerRadii_(const CornerRadii& value) noexcept {
+    return std__variant_double__CornerRadii_(value);
+  }
+  
+  // pragma MARK: std::optional<std::variant<double, CornerRadii>>
+  /**
+   * Specialized version of `std::optional<std::variant<double, CornerRadii>>`.
+   */
+  using std__optional_std__variant_double__CornerRadii__ = std::optional<std::variant<double, CornerRadii>>;
+  inline std::optional<std::variant<double, CornerRadii>> create_std__optional_std__variant_double__CornerRadii__(const std::variant<double, CornerRadii>& value) noexcept {
+    return std::optional<std::variant<double, CornerRadii>>(value);
+  }
+  inline bool has_value_std__optional_std__variant_double__CornerRadii__(const std::optional<std::variant<double, CornerRadii>>& optional) noexcept {
+    return optional.has_value();
+  }
+  inline std::variant<double, CornerRadii> get_std__optional_std__variant_double__CornerRadii__(const std::optional<std::variant<double, CornerRadii>>& optional) noexcept {
     return optional.value();
   }
   

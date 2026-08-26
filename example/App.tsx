@@ -14,7 +14,13 @@ function App({ img2 }: { img2: Promise<Image> }): React.JSX.Element {
   const image = useImage({
     url: 'https://picsum.photos/id/3/5000/3333',
     blur: blur,
-    cornerRadius: 80,
+    // "Ticket" shape: per-corner radii baked into the bitmap
+    cornerRadius: {
+      topLeft: 24,
+      topRight: 24,
+      bottomLeft: 80,
+      bottomRight: 80,
+    },
   });
 
   return (

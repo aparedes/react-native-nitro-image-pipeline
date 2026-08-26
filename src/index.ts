@@ -4,11 +4,12 @@ import { NitroModules } from 'react-native-nitro-modules';
 
 import type {
   CacheOption,
+  CornerRadii,
   NitroImagePipeline as NitroImagePipelineSpec,
   Options,
 } from './specs/nitro-image-toolkit.nitro';
 
-export type { CacheOption, Options };
+export type { CacheOption, CornerRadii, Options };
 
 export const NitroImagePipeline =
   NitroModules.createHybridObject<NitroImagePipelineSpec>('NitroImagePipeline');
@@ -51,7 +52,12 @@ export function useImage({
    * React Native's `blurRadius`.
    */
   blur?: number;
-  cornerRadius?: number;
+  /**
+   * Corner radius in points, baked into the loaded bitmap. Pass a single
+   * number for uniform rounding, or per-corner radii (inline object literals
+   * are fine — the hook compares the radii by value, not identity).
+   */
+  cornerRadius?: number | CornerRadii;
   cache?: CacheOption;
 }): Result {
   const [image, setImage] = useState<Result>({
@@ -59,6 +65,17 @@ export function useImage({
     error: undefined,
   });
   const loadedUrlRef = useRef(url);
+
+  // Split the option into primitives so an inline `{ topLeft: 24, ... }`
+  // literal (new identity every render) doesn't re-trigger the effect.
+  const isUniformRadius = typeof cornerRadius === 'number';
+  const uniformRadius = isUniformRadius ? cornerRadius : 0;
+  const {
+    topLeft = 0,
+    topRight = 0,
+    bottomLeft = 0,
+    bottomRight = 0,
+  } = isUniformRadius ? {} : cornerRadius;
 
   useEffect(() => {
     let cancelled = false;
@@ -74,7 +91,9 @@ export function useImage({
       try {
         const result = await NitroImagePipeline.loadImage(url, {
           blur,
-          cornerRadius,
+          cornerRadius: isUniformRadius
+            ? uniformRadius
+            : { topLeft, topRight, bottomLeft, bottomRight },
           cache,
         });
 
@@ -92,7 +111,17 @@ export function useImage({
     return () => {
       cancelled = true;
     };
-  }, [url, blur, cornerRadius, cache]);
+  }, [
+    url,
+    blur,
+    isUniformRadius,
+    uniformRadius,
+    topLeft,
+    topRight,
+    bottomLeft,
+    bottomRight,
+    cache,
+  ]);
 
   return image;
 }

@@ -120,8 +120,18 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
             if let blur = options?.blur, blur > 0 {
                 processors.append(GaussianBlurProcessor(sigma: blur))
             }
-            if let cornerRadius = options?.cornerRadius, cornerRadius > 0 {
-                processors.append(.roundedCorners(radius: cornerRadius))
+            switch options?.cornerRadius {
+            case .first(let radius):
+                if radius > 0 {
+                    processors.append(.roundedCorners(radius: radius))
+                }
+            case .second(let radii):
+                let roundedCorners = RoundedCornersProcessor(radii: radii)
+                if roundedCorners.hasRounding {
+                    processors.append(roundedCorners)
+                }
+            case nil:
+                break
             }
 
             let imgRequest = ImageRequest(

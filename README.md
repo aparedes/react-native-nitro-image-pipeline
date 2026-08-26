@@ -10,7 +10,7 @@ A high-performance image loading, caching, and processing library for React Nati
 
 - Load remote images with built-in memory and disk caching
 - Prefetch single or multiple images in the background
-- Apply Gaussian blur and rounded corners at load time
+- Apply Gaussian blur and rounded corners (uniform or per-corner) at load time
 - Apply Gaussian blur to already-loaded images
 - Clear the image cache on demand
 - `useImage` hook for declarative image loading in components
@@ -72,6 +72,12 @@ const image = await NitroImagePipeline.loadImage('https://example.com/photo.jpg'
   cache: 'disk',
 });
 
+// Per-corner radii — e.g. a "ticket" shape with larger bottom corners.
+// The rounding is baked into the bitmap, so no view-layer masking is needed.
+const ticket = await NitroImagePipeline.loadImage('https://example.com/photo.jpg', {
+  cornerRadius: { topLeft: 24, topRight: 24, bottomLeft: 48, bottomRight: 48 },
+});
+
 // Prefetch a single image
 await NitroImagePipeline.preLoadImage('https://example.com/photo.jpg');
 
@@ -97,7 +103,7 @@ Loads an image from a URL and returns a `Promise<Image>`.
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `blur` | `number` | `0` | Gaussian blur strength applied at load time — see [Blur units](#blur-units) |
-| `cornerRadius` | `number` | `0` | Corner radius in points |
+| `cornerRadius` | `number \| CornerRadii` | `0` | Corner radius in points — a single number for all four corners, or `{ topLeft?, topRight?, bottomLeft?, bottomRight? }` for independent per-corner radii (omitted corners stay square) |
 | `cache` | `'memory' \| 'disk' \| 'none'` | platform default | Caching strategy |
 
 ### `preLoadImage(url)`
