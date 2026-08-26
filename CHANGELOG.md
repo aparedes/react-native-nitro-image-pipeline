@@ -1,3 +1,9 @@
+## [1.2.0](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v1.1.0...v1.2.0) (2026-08-26)
+
+### ✨ Features
+
+* add resize option so cornerRadius applies at display size ([#76](https://github.com/[secure]/react-native-nitro-image-pipeline/issues/76)) ([fc61347](https://github.com/[secure]/react-native-nitro-image-pipeline/commit/fc61347ecadabce7fc6cd8e3a2bf9ed7104a45fc))
+
 ## [1.1.0](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v1.0.0...v1.1.0) (2026-08-26)
 
 ### ✨ Features
