@@ -1,5 +1,9 @@
 export { NitroImagePipeline } from './NitroImagePipeline';
-export { PipelineImage, type PipelineImageProps } from './PipelineImage';
+export {
+  PipelineImage,
+  type PipelineImageProps,
+  type PipelineImageRef,
+} from './PipelineImage';
 export {
   cornerRadiusForStyle,
   resizeForLayout,

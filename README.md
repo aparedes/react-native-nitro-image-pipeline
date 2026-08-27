@@ -71,6 +71,80 @@ so a style that already rounds the view rounds the bitmap too, with no separate 
 other prop (`resizeMode`, `recyclingKey`, `testID`, …) is passed straight through to
 `NativeNitroImage`.
 
+### Animating with `react-native-reanimated`
+
+`<PipelineImage>` forwards its `ref` to the underlying `NativeNitroImage` host view, so it can be
+passed straight to `Animated.createAnimatedComponent` — from
+[react-native-reanimated](https://docs.swmansion.com/react-native-reanimated/) or React Native's
+built-in `Animated`:
+
+```tsx
+import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { PipelineImage } from 'react-native-nitro-image-pipeline';
+
+const AnimatedPipelineImage = Animated.createAnimatedComponent(PipelineImage);
+
+function Photo({ url }: { url: string }) {
+  const pressed = useSharedValue(false);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: withSpring(pressed.value ? 1.1 : 1) }],
+  }));
+
+  return (
+    <AnimatedPipelineImage
+      url={url}
+      entering={FadeIn}
+      style={[styles.photo, animatedStyle]}
+      onTouchStart={() => (pressed.value = true)}
+      onTouchEnd={() => (pressed.value = false)}
+    />
+  );
+}
+
+const styles = StyleSheet.create({ photo: { width: 300, height: 200, borderRadius: 12 } });
+```
+
+Layout animations (`entering`/`exiting`) work as on any animated component, and wrapping a plain
+`<PipelineImage>` in an `Animated.View` is always an option if you'd rather not create one.
+
+Because the pipeline bakes its processing into the bitmap at load time, the props fall into two
+groups — view-layer properties that animate freely, and bitmap properties that don't:
+
+- **`transform` and `opacity`** — the ideal case: they run entirely on the UI thread and never
+  touch the bitmap. Prefer a `scale` transform over animating `width`/`height`.
+- **`width`/`height`** — the animation itself works (Reanimated drives the native view directly),
+  but the bitmap doesn't follow it. With numeric dimensions in `style` (including an animated
+  style's initial values) the bitmap is decoded once at that size and stretched by the view while
+  it animates; with flex/percent sizing the size comes from `onLayout`, which fires repeatedly
+  during the animation and requests a new variant each time. Animate a `scale` transform instead
+  and let the layout settle where it will.
+- **`borderRadius`** — by default the component bakes `style`'s `borderRadius` into the bitmap;
+  an animated radius updates only the view layer, so the baked rounding wins and stays stale. To
+  animate rounding, opt out of baking with `cornerRadius={0}` and round at the view layer instead:
+  `overflow: 'hidden'` plus the animated `borderRadius`.
+- **`blur`** — not animatable. It's a load-time bitmap operation behind an async native call, not
+  a view property, so a changing `blur` re-runs the pipeline per value — far too slow to drive
+  per-frame. To animate blurriness, render the sharp and blurred variants as two stacked
+  `<PipelineImage>`s and cross-fade the blurred one's `opacity` (both share the URL cache, so the
+  second variant loads from the same fetched source):
+
+```tsx
+function BlurFade({ url, blurred }: { url: string; blurred: boolean }) {
+  const blurOpacity = useAnimatedStyle(() => ({
+    opacity: withTiming(blurred ? 1 : 0),
+  }));
+
+  return (
+    <View style={styles.photo}>
+      <PipelineImage url={url} style={StyleSheet.absoluteFill} />
+      <Animated.View style={[StyleSheet.absoluteFill, blurOpacity]}>
+        <PipelineImage url={url} blur={12} style={StyleSheet.absoluteFill} />
+      </Animated.View>
+    </View>
+  );
+}
+```
+
 ### `useImage` hook
 
 The simplest way to load an image in a component:
@@ -164,6 +238,7 @@ Loads an image from a URL and returns a `Promise<Image>`.
 | `onLoad` | `(image: Image) => void` | — | Called when the image finishes loading |
 | `onError` | `(error: Error) => void` | — | Called if loading fails |
 | `onLayout` | `(event: LayoutChangeEvent) => void` | — | Standard `View` layout callback; also drives the deferred resize for non-numeric sizes |
+| `ref` | `Ref<PipelineImageRef>` | — | Forwarded to the underlying `NativeNitroImage` host view — gives access to native-view methods (`measure`, …) and makes the component work with `Animated.createAnimatedComponent` (see [Animating](#animating-with-react-native-reanimated)) |
 | `…NativeNitroImage props` | — | — | Everything else (`resizeMode`, `recyclingKey`, `testID`, …) is passed through to `NativeNitroImage` |
 
 ### `resizeForStyle(style)` / `resizeForLayout(width, height)`
