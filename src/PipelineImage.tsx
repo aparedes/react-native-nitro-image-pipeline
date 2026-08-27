@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import {
+  type ComponentRef,
+  forwardRef,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   type HostComponent,
   type LayoutChangeEvent,
@@ -20,6 +26,13 @@ import { useImage } from './useImage';
 
 type ReactProps<T> = T extends HostComponent<infer P> ? P : never;
 type NativeImageProps = ReactProps<typeof NativeNitroImage>;
+
+/**
+ * The instance `<PipelineImage>` exposes through its `ref` — the underlying
+ * `NativeNitroImage` host view, with the usual native-view methods
+ * (`measure`, …).
+ */
+export type PipelineImageRef = ComponentRef<typeof NativeNitroImage>;
 
 export interface PipelineImageProps extends Omit<NativeImageProps, 'image'> {
   /** URL of the image to load through the pipeline. */
@@ -81,6 +94,10 @@ function scaleRadius(
  * without flashing. Without an explicit `cornerRadius` prop, `style`'s
  * `borderRadius`-family properties are baked into the bitmap instead — no
  * separate view-layer rounding needed.
+ *
+ * The `ref` is forwarded to the underlying `NativeNitroImage` host view, so
+ * the component works with `Animated.createAnimatedComponent` (Reanimated or
+ * React Native's built-in `Animated`).
  * @example
  * ```tsx
  * <PipelineImage
@@ -90,67 +107,77 @@ function scaleRadius(
  * />
  * ```
  */
-export function PipelineImage({
-  url,
-  blur = 0,
-  cornerRadius,
-  cache,
-  onLoad,
-  onError,
-  style,
-  onLayout,
-  ...viewProps
-}: PipelineImageProps) {
-  const scale = PixelRatio.get();
-  const styleSize = resizeForStyle(style);
-  const [layoutSize, setLayoutSize] = useState<ResizeOptions | undefined>(
-    undefined,
-  );
-  // A numeric style is what the caller declared, so it wins and starts the
-  // request a frame earlier; the measured layout is the fallback.
-  const resize = styleSize ?? layoutSize;
-  // Same precedence: an explicit prop wins over what style implies.
-  const effectiveCornerRadius =
-    cornerRadius ?? cornerRadiusForStyle(style) ?? 0;
+export const PipelineImage = forwardRef<PipelineImageRef, PipelineImageProps>(
+  function PipelineImage(
+    {
+      url,
+      blur = 0,
+      cornerRadius,
+      cache,
+      onLoad,
+      onError,
+      style,
+      onLayout,
+      ...viewProps
+    },
+    ref,
+  ) {
+    const scale = PixelRatio.get();
+    const styleSize = resizeForStyle(style);
+    const [layoutSize, setLayoutSize] = useState<ResizeOptions | undefined>(
+      undefined,
+    );
+    // A numeric style is what the caller declared, so it wins and starts the
+    // request a frame earlier; the measured layout is the fallback.
+    const resize = styleSize ?? layoutSize;
+    // Same precedence: an explicit prop wins over what style implies.
+    const effectiveCornerRadius =
+      cornerRadius ?? cornerRadiusForStyle(style) ?? 0;
 
-  const { image, error } = useImage({
-    url,
-    blur: blur * scale,
-    cornerRadius: scaleRadius(effectiveCornerRadius, scale),
-    cache,
-    resize,
-    enabled: resize !== undefined,
-  });
+    const { image, error } = useImage({
+      url,
+      blur: blur * scale,
+      cornerRadius: scaleRadius(effectiveCornerRadius, scale),
+      cache,
+      resize,
+      enabled: resize !== undefined,
+    });
 
-  // Latest callbacks in refs so inline arrow props don't re-fire the effects.
-  const onLoadRef = useRef(onLoad);
-  const onErrorRef = useRef(onError);
-  useEffect(() => {
-    onLoadRef.current = onLoad;
-    onErrorRef.current = onError;
-  });
-  useEffect(() => {
-    if (image) onLoadRef.current?.(image);
-  }, [image]);
-  useEffect(() => {
-    if (error) onErrorRef.current?.(error);
-  }, [error]);
+    // Latest callbacks in refs so inline arrow props don't re-fire the effects.
+    const onLoadRef = useRef(onLoad);
+    const onErrorRef = useRef(onError);
+    useEffect(() => {
+      onLoadRef.current = onLoad;
+      onErrorRef.current = onError;
+    });
+    useEffect(() => {
+      if (image) onLoadRef.current?.(image);
+    }, [image]);
+    useEffect(() => {
+      if (error) onErrorRef.current?.(error);
+    }, [error]);
 
-  const handleLayout = (event: LayoutChangeEvent) => {
-    onLayout?.(event);
-    const { width, height } = event.nativeEvent.layout;
-    const next = resizeForLayout(width, height);
-    // Always record it (even when a numeric style is in charge) so a later
-    // switch to a non-numeric style has a size to fall back on.
-    setLayoutSize((prev) => (sameSize(prev, next) ? prev : next));
-  };
+    const handleLayout = (event: LayoutChangeEvent) => {
+      onLayout?.(event);
+      const { width, height } = event.nativeEvent.layout;
+      const next = resizeForLayout(width, height);
+      // Always record it (even when a numeric style is in charge) so a later
+      // switch to a non-numeric style has a size to fall back on.
+      setLayoutSize((prev) => (sameSize(prev, next) ? prev : next));
+    };
 
-  return (
-    <NativeNitroImage
-      {...viewProps}
-      style={style}
-      onLayout={handleLayout}
-      image={image}
-    />
-  );
-}
+    return (
+      <NativeNitroImage
+        {...viewProps}
+        ref={ref}
+        style={style}
+        onLayout={handleLayout}
+        image={image}
+      />
+    );
+  },
+);
+
+// Reanimated and DevTools read the display name; the forwardRef wrapper
+// would otherwise report as anonymous.
+PipelineImage.displayName = 'PipelineImage';
