@@ -1,3 +1,9 @@
+## [1.3.1](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v1.3.0...v1.3.1) (2026-08-27)
+
+### 🐛 Bug Fixes
+
+* reference the typescript devDependency from overrides ([#81](https://github.com/[secure]/react-native-nitro-image-pipeline/issues/81)) ([15e61ab](https://github.com/[secure]/react-native-nitro-image-pipeline/commit/15e61ab10de46d1c661622d6309d873046f81fbe))
+
 ## [1.3.0](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v1.2.1...v1.3.0) (2026-08-27)
 
 ### ✨ Features
