@@ -1,3 +1,9 @@
+## [1.3.0](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v1.2.1...v1.3.0) (2026-08-27)
+
+### ✨ Features
+
+* forward PipelineImage ref for Animated/Reanimated compatibility ([9e07071](https://github.com/[secure]/react-native-nitro-image-pipeline/commit/9e07071982c50f6e9f2754cf69ffe0230207e84b))
+
 ## [1.2.1](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v1.2.0...v1.2.1) (2026-08-26)
 
 ### 🐛 Bug Fixes
