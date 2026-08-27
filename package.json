@@ -87,7 +87,7 @@
   },
   "overrides": {
     "lodash-es": "4.17.21",
-    "typescript": "7.0.2"
+    "typescript": "$typescript"
   },
   "react-native-builder-bob": {
     "source": "src",
