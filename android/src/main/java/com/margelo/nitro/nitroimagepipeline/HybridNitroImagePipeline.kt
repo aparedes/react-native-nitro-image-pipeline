@@ -157,6 +157,18 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
         }
       }
 
+  override fun setMemoryCacheLimit(bytes: Double) {
+    require(bytes >= 0 && bytes.isFinite()) {
+      "Memory cache limit must be a non-negative, finite number of bytes (got $bytes)"
+    }
+    imageLoader.memoryCache?.apply {
+      maxSize = bytes.toLong()
+      // Setting maxSize only affects future inserts; evict down to it now so
+      // the call frees memory immediately.
+      trimToSize(bytes.toLong())
+    }
+  }
+
   override fun clearCache(): Promise<Unit> = Promise.async {
     imageLoader.memoryCache?.clear()
     // DiskCache.clear() does file I/O; keep it off the JS thread but await

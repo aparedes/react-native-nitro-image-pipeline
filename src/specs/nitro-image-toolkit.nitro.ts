@@ -80,5 +80,16 @@ export interface NitroImagePipeline extends HybridObject<{
   gaussianBlur(image: Image, radius: number): Promise<Image>;
   // Future: brightness, saturation, tint, etc.
 
+  /**
+   * Caps the in-memory cache of decoded bitmaps at `bytes`, evicting
+   * least-recently-used entries immediately if it is currently larger. Pass
+   * `0` to disable in-memory caching entirely (the disk cache still works).
+   *
+   * Defaults: 128 MB on iOS, 25% of the app's memory class on Android. The
+   * cache trades RAM for instant re-display; lower it (or use
+   * `cache: 'disk'` per request) in memory-constrained apps.
+   */
+  setMemoryCacheLimit(bytes: number): void;
+
   clearCache(): Promise<void>;
 }

@@ -228,6 +228,22 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
         }
     }
 
+    func setMemoryCacheLimit(bytes: Double) throws {
+        guard bytes >= 0, bytes.isFinite else {
+            throw RuntimeError.error(
+                withMessage: "Memory cache limit must be a non-negative, finite number of bytes (got \(bytes))"
+            )
+        }
+        guard let cache = pipeline.configuration.imageCache as? ImageCache else { return }
+        // Double(Int.max) rounds up to 2^63, so Int(_:) of the clamped value
+        // would trap; branch instead of min-ing.
+        let limit = bytes >= Double(Int.max) ? Int.max : Int(bytes)
+        cache.costLimit = limit
+        // Setting the limit only affects future inserts; evict down to it now
+        // so the call frees memory immediately.
+        cache.trim(toCost: limit)
+    }
+
     func clearCache() throws -> Promise<Void> {
         return Promise.async {
             self.pipeline.cache.removeAll()

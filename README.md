@@ -306,6 +306,20 @@ RenderScript's true Gaussian, downscaling first when sigma exceeds the single-pa
 ~10.6px and compensating the radius so the result is unchanged. Both clamp at the edges, so blurred
 images keep their borders instead of fading out.
 
+### `setMemoryCacheLimit(bytes)`
+
+Caps the in-memory cache of decoded bitmaps at `bytes`, evicting least-recently-used entries
+immediately if the cache is currently larger. Pass `0` to disable in-memory caching entirely — the
+disk cache keeps working. Synchronous; throws on negative or non-finite values.
+
+```ts
+// Keep at most 32 MB of decoded bitmaps in RAM
+NitroImagePipeline.setMemoryCacheLimit(32 * 1024 * 1024);
+
+// Or opt out of decoded-bitmap caching altogether
+NitroImagePipeline.setMemoryCacheLimit(0);
+```
+
 ### `clearCache()`
 
 Removes all cached images from memory and disk. Returns `Promise<void>` that resolves once both caches are cleared.
@@ -320,12 +334,23 @@ The pipeline is set up so RAM scales with what you display, not with what you do
   48 MP photo decompresses to ~190 MB of bitmap no matter how small you display it.
 - **Prefetching stores bytes, not bitmaps.** `preLoadImage(s)` writes the download to the disk
   cache and skips decoding entirely.
-- **The in-memory cache is capped** (128 MB on iOS, 25% of the app's memory class on Android),
-  holds decoded bitmaps for instant re-display, and evicts least-recently-used entries — also in
-  response to memory warnings and backgrounding. Memory profilers attribute this cache to the app;
-  a plateau at the cap is expected and evictable, not a leak. Use `cache: 'disk'` or
-  `cache: 'none'` on images you know you won't show again soon, and `clearCache()` to drop
-  everything.
+- **The in-memory cache is capped and tunable** (defaults: 128 MB on iOS, 25% of the app's memory
+  class on Android). It holds decoded bitmaps for instant re-display and evicts
+  least-recently-used entries — also in response to memory warnings and backgrounding. Memory
+  profilers attribute this cache to the app; a plateau at the cap is expected and evictable, not a
+  leak. Lower the cap with [`setMemoryCacheLimit`](#setmemorycachelimitbytes), use `cache: 'disk'`
+  or `cache: 'none'` on images you won't show again soon, and `clearCache()` to drop everything.
+- **Coming from a setup with no decoded-image cache** (e.g. loading files you downloaded
+  yourself)? Steady-state RAM will read higher here *by design*: after screens unmount, the cache
+  keeps their bitmaps around for instant re-display. For the old memory profile with the
+  pipeline's features intact, pass `cache: 'disk'` on your requests or call
+  `setMemoryCacheLimit(0)` once — RAM then holds only the images currently referenced, and
+  re-displays decode from the disk cache (cheap, since decodes are subsampled to the target size).
+- **Android + `Image.dispose()`:** only call `dispose()` on images loaded with `cache: 'disk'` /
+  `cache: 'none'` (or with the memory cache disabled). With the memory cache on, the returned
+  image shares its bitmap with the cache, and disposing recycles a bitmap the cache may serve
+  again. Without `dispose()`, images are freed by the JS garbage collector — their bitmap size is
+  reported to it, so unreferenced images do get collected under pressure.
 
 ## Upgrading from 0.3.x
 

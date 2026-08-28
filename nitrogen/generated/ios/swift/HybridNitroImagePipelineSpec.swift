@@ -18,6 +18,7 @@ public protocol HybridNitroImagePipelineSpec_protocol: HybridObject {
   func preLoadImage(url: String) throws -> Promise<Void>
   func preLoadImages(urls: [String]) throws -> Promise<Void>
   func gaussianBlur(image: (any HybridImageSpec), radius: Double) throws -> Promise<(any HybridImageSpec)>
+  func setMemoryCacheLimit(bytes: Double) throws -> Void
   func clearCache() throws -> Promise<Void>
 }
 

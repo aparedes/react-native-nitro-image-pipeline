@@ -58,6 +58,7 @@ namespace margelo::nitro::nitroimagepipeline {
     std::shared_ptr<Promise<void>> preLoadImage(const std::string& url) override;
     std::shared_ptr<Promise<void>> preLoadImages(const std::vector<std::string>& urls) override;
     std::shared_ptr<Promise<std::shared_ptr<margelo::nitro::image::HybridImageSpec>>> gaussianBlur(const std::shared_ptr<margelo::nitro::image::HybridImageSpec>& image, double radius) override;
+    void setMemoryCacheLimit(double bytes) override;
     std::shared_ptr<Promise<void>> clearCache() override;
 
   private:
