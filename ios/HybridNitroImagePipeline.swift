@@ -95,10 +95,28 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
         // the original download, so they survive memory eviction and
         // restarts without dropping the original for other variants.
         configuration.dataCachePolicy = .storeAll
+        // A private, capped memory cache. The default (ImageCache.shared)
+        // sizes itself at 15% of physical RAM — up to 768 MB of decoded
+        // bitmaps on modern devices before anything is evicted, which shows
+        // up as "high RAM usage" even though it is all evictable cache.
+        // 128 MB still holds ~10 full-screen bitmaps or hundreds of list
+        // thumbnails, and the LRU cache keeps trimming itself on memory
+        // warnings and when the app enters the background.
+        configuration.imageCache = ImageCache(
+            costLimit: min(ImageCache.defaultCostLimit, 128 * 1024 * 1024)
+        )
         return ImagePipeline(configuration: configuration)
     }()
 
-    private static let sharedPrefetcher = ImagePrefetcher(pipeline: sharedPipeline)
+    // `.diskCache` stores the downloaded data without decoding it, so
+    // prefetching N URLs costs network + disk I/O instead of N decoded
+    // full-resolution bitmaps parked in the memory cache (the default
+    // `.memoryCache` destination). The image is decoded — at the requested
+    // target size — only when a loadImage actually displays it.
+    private static let sharedPrefetcher = ImagePrefetcher(
+        pipeline: sharedPipeline,
+        destination: .diskCache
+    )
 
     private var pipeline: ImagePipeline { Self.sharedPipeline }
     private var prefetcher: ImagePrefetcher { Self.sharedPrefetcher }
@@ -133,13 +151,21 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
         }
     }
 
+    /// The target size in pixels, or `nil` when no (valid) resize was requested.
+    private static func resizeSize(for options: Options?) -> CGSize? {
+        guard let resize = options?.resize, resize.width > 0, resize.height > 0 else {
+            return nil
+        }
+        return CGSize(width: resize.width, height: resize.height)
+    }
+
     private static func processors(for options: Options?) -> [any ImageProcessing] {
         var processors: [any ImageProcessing] = []
         // Resize first: blur sigma and corner radii are defined in pixels
         // of the bitmap they run on, so they must see the final size.
-        if let resize = options?.resize, resize.width > 0, resize.height > 0 {
+        if let size = resizeSize(for: options) {
             processors.append(ImageProcessors.Resize(
-                size: CGSize(width: resize.width, height: resize.height),
+                size: size,
                 unit: .pixels,
                 contentMode: .aspectFill,
                 crop: true,
@@ -161,11 +187,24 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
                 throw RuntimeError.error(withMessage: "Invalid URL: \(url)")
             }
 
-            let imgRequest = ImageRequest(
+            var imgRequest = ImageRequest(
                 url: imageUrl,
                 processors: Self.processors(for: options),
                 options: Self.cacheOptions(for: options?.cache)
             )
+            // With a target size known, decode near it (aspect-fill, so the
+            // decoded image always covers the target) instead of at full
+            // resolution — a 48 MP photo displayed as a 300 pt card would
+            // otherwise decompress to ~190 MB before Resize shrinks it.
+            // Matches Android, where the request's size() drives subsampling;
+            // the exact size and crop still come from the Resize processor.
+            if let size = Self.resizeSize(for: options) {
+                imgRequest.thumbnail = ImageRequest.ThumbnailOptions(
+                    size: size,
+                    unit: .pixels,
+                    contentMode: .aspectFill
+                )
+            }
 
             let image = try await self.pipeline.image(for: imgRequest)
             return HybridImage(uiImage: image)
