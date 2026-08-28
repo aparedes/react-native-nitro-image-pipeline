@@ -3,8 +3,11 @@ package com.margelo.nitro.nitroimagepipeline
 import android.content.Context
 import androidx.core.graphics.drawable.toBitmap
 import coil3.BitmapImage
+import coil3.ColorImage
 import coil3.DrawableImage
 import coil3.ImageLoader
+import coil3.decode.DecodeResult
+import coil3.decode.Decoder
 import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
@@ -117,21 +120,25 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
     }
   }
 
+  // Preloading warms the disk cache only: the memory cache is skipped and the
+  // decode step is replaced with a no-op (Coil's documented preload pattern),
+  // so prefetching N URLs costs network + disk I/O instead of N full-resolution
+  // bitmaps on the heap. The image is decoded — subsampled to the requested
+  // size — only when a loadImage actually displays it.
+  private fun preloadRequest(url: String): ImageRequest =
+      ImageRequest.Builder(context)
+          .data(url)
+          .memoryCachePolicy(CachePolicy.DISABLED)
+          .decoderFactory { _, _, _ -> Decoder { DecodeResult(ColorImage(), false) } }
+          .build()
+
   override fun preLoadImage(url: String): Promise<Unit> = Promise.async {
-    val request = ImageRequest.Builder(context).data(url).build()
-    imageLoader.execute(request)
+    imageLoader.execute(preloadRequest(url))
   }
 
   override fun preLoadImages(urls: Array<String>): Promise<Unit> = Promise.async {
     coroutineScope {
-      urls
-          .map { url ->
-            async {
-              val request = ImageRequest.Builder(context).data(url).build()
-              imageLoader.execute(request)
-            }
-          }
-          .awaitAll()
+      urls.map { url -> async { imageLoader.execute(preloadRequest(url)) } }.awaitAll()
     }
     Unit
   }

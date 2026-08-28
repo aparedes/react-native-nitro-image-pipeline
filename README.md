@@ -259,11 +259,17 @@ omitted.
 
 ### `preLoadImage(url)`
 
-Prefetches a single image into the cache. Returns `Promise<void>`.
+Prefetches a single image into the **disk cache**, without decoding it. Returns `Promise<void>`.
+
+Prefetching only pays the network and disk I/O cost up front — no bitmap is decoded or held in
+memory, so prefetching a long list of URLs doesn't balloon RAM. The image is decoded (at the
+`resize` target size, when one is given) the first time `loadImage`/`useImage`/`<PipelineImage>`
+actually displays it.
 
 ### `preLoadImages(urls)`
 
-Prefetches multiple images into the cache. Returns `Promise<void>`.
+Prefetches multiple images into the disk cache — same behavior as `preLoadImage`, for a batch.
+Returns `Promise<void>`.
 
 ### `gaussianBlur(image, radius)`
 
@@ -303,6 +309,23 @@ images keep their borders instead of fading out.
 ### `clearCache()`
 
 Removes all cached images from memory and disk. Returns `Promise<void>` that resolves once both caches are cleared.
+
+## Memory usage
+
+The pipeline is set up so RAM scales with what you display, not with what you download:
+
+- **Pass `resize` (or just use `<PipelineImage>`, which derives it from layout).** With a target
+  size known, both platforms decode the source *near that size* instead of at full resolution —
+  iOS via a downsampled thumbnail decode, Android via Coil's subsampling. Without `resize`, a
+  48 MP photo decompresses to ~190 MB of bitmap no matter how small you display it.
+- **Prefetching stores bytes, not bitmaps.** `preLoadImage(s)` writes the download to the disk
+  cache and skips decoding entirely.
+- **The in-memory cache is capped** (128 MB on iOS, 25% of the app's memory class on Android),
+  holds decoded bitmaps for instant re-display, and evicts least-recently-used entries — also in
+  response to memory warnings and backgrounding. Memory profilers attribute this cache to the app;
+  a plateau at the cap is expected and evictable, not a leak. Use `cache: 'disk'` or
+  `cache: 'none'` on images you know you won't show again soon, and `clearCache()` to drop
+  everything.
 
 ## Upgrading from 0.3.x
 
