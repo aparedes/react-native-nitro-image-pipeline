@@ -1,3 +1,9 @@
+## [1.3.2](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v1.3.1...v1.3.2) (2026-08-28)
+
+### 💨 Performance Improvements
+
+* keep RAM proportional to displayed images, not downloads ([ad89c4f](https://github.com/[secure]/react-native-nitro-image-pipeline/commit/ad89c4f85eb001374a36e9328096cbe6480195aa))
+
 ## [1.3.1](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v1.3.0...v1.3.1) (2026-08-27)
 
 ### 🐛 Bug Fixes
