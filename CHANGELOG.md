@@ -1,3 +1,9 @@
+## [1.4.0](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v1.3.2...v1.4.0) (2026-08-28)
+
+### ✨ Features
+
+* add setMemoryCacheLimit for tuning decoded-bitmap RAM ([#83](https://github.com/[secure]/react-native-nitro-image-pipeline/issues/83)) ([474011b](https://github.com/[secure]/react-native-nitro-image-pipeline/commit/474011bf5299b077a83e75c17a14615acbb919a4))
+
 ## [1.3.2](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v1.3.1...v1.3.2) (2026-08-28)
 
 ### 💨 Performance Improvements
