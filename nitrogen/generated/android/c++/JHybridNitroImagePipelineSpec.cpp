@@ -142,6 +142,10 @@ namespace margelo::nitro::nitroimagepipeline {
       return __promise;
     }();
   }
+  void JHybridNitroImagePipelineSpec::setMemoryCacheLimit(double bytes) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void(double /* bytes */)>("setMemoryCacheLimit");
+    method(_javaPart, bytes);
+  }
   std::shared_ptr<Promise<void>> JHybridNitroImagePipelineSpec::clearCache() {
     static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>()>("clearCache");
     auto __result = method(_javaPart);

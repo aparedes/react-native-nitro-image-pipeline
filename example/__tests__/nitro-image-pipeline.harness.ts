@@ -112,6 +112,25 @@ describe('NitroImagePipeline', () => {
     expect(blurred.height).toBe(image.height);
   });
 
+  it('sets a memory cache limit without throwing', () => {
+    expect(() =>
+      NitroImagePipeline.setMemoryCacheLimit(32 * 1024 * 1024),
+    ).not.toThrow();
+    // 0 disables in-memory caching; loads must still work through it.
+    expect(() => NitroImagePipeline.setMemoryCacheLimit(0)).not.toThrow();
+  });
+
+  it('loads images with the memory cache disabled', async () => {
+    NitroImagePipeline.setMemoryCacheLimit(0);
+    const image = await NitroImagePipeline.loadImage(VALID_URL);
+    expect(image).toBeDefined();
+    NitroImagePipeline.setMemoryCacheLimit(128 * 1024 * 1024);
+  });
+
+  it('rejects a negative memory cache limit', () => {
+    expect(() => NitroImagePipeline.setMemoryCacheLimit(-1)).toThrow();
+  });
+
   it('clears cache without throwing', async () => {
     await expect(NitroImagePipeline.clearCache()).resolves.toBeUndefined();
   });

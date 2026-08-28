@@ -18,6 +18,7 @@ namespace margelo::nitro::nitroimagepipeline {
       prototype.registerHybridMethod("preLoadImage", &HybridNitroImagePipelineSpec::preLoadImage);
       prototype.registerHybridMethod("preLoadImages", &HybridNitroImagePipelineSpec::preLoadImages);
       prototype.registerHybridMethod("gaussianBlur", &HybridNitroImagePipelineSpec::gaussianBlur);
+      prototype.registerHybridMethod("setMemoryCacheLimit", &HybridNitroImagePipelineSpec::setMemoryCacheLimit);
       prototype.registerHybridMethod("clearCache", &HybridNitroImagePipelineSpec::clearCache);
     });
   }

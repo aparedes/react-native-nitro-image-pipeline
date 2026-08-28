@@ -117,6 +117,12 @@ namespace margelo::nitro::nitroimagepipeline {
       auto __value = std::move(__result.value());
       return __value;
     }
+    inline void setMemoryCacheLimit(double bytes) override {
+      auto __result = _swiftPart.setMemoryCacheLimit(std::forward<decltype(bytes)>(bytes));
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+    }
     inline std::shared_ptr<Promise<void>> clearCache() override {
       auto __result = _swiftPart.clearCache();
       if (__result.hasError()) [[unlikely]] {

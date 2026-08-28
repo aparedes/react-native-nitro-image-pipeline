@@ -49,6 +49,10 @@ abstract class HybridNitroImagePipelineSpec: HybridObject() {
   
   @DoNotStrip
   @Keep
+  abstract fun setMemoryCacheLimit(bytes: Double): Unit
+  
+  @DoNotStrip
+  @Keep
   abstract fun clearCache(): Promise<Unit>
 
   // Default implementation of `HybridObject.toString()`
