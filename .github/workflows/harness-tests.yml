@@ -1,4 +1,7 @@
-name: Harness Tests
+name: Harness Tests (Android)
+
+# The iOS harness run lives in `ios.yml`, together with the example app
+# build it depends on. Keeping it here meant building that app twice.
 
 permissions:
   contents: read
@@ -28,67 +31,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-ios:
-    name: Harness Tests (iOS)
-    runs-on: macos-26
-    steps:
-      - uses: actions/checkout@v7
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: '>=1.4.0'
-
-      - name: Setup Xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: 26.4
-
-      - name: Install dependencies
-        run: bun install
-
-      - name: Setup Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.2'
-          bundler-cache: true
-          working-directory: example/ios
-
-      - name: Cache CocoaPods
-        uses: actions/cache@v6
-        with:
-          path: |
-            ~/.cocoapods/repos
-            example/ios/Pods
-          key: ${{ runner.os }}-pods-${{ hashFiles('example/ios/Podfile.lock') }}
-          restore-keys: ${{ runner.os }}-pods-
-
-      - name: Install xcpretty
-        run: gem install xcpretty
-
-      - name: Install Pods
-        working-directory: example/ios
-        run: pod install
-
-      - name: Build iOS Simulator App
-        working-directory: example/ios
-        run: |
-          set -o pipefail && xcodebuild \
-            CC=clang CPLUSPLUS=clang++ LD=clang LDPLUSPLUS=clang++ \
-            -derivedDataPath build -UseModernBuildSystem=YES \
-            -workspace NitroImagePipelineExample.xcworkspace \
-            -scheme NitroImagePipelineExample \
-            -sdk iphonesimulator \
-            -configuration Debug \
-            -destination 'platform=iOS Simulator,name=iPhone 17' \
-            build \
-            CODE_SIGNING_ALLOWED=NO | xcpretty
-
-      - name: Run Harness Tests
-        uses: callstackincubator/react-native-harness@v1.2.0
-        with:
-          runner: iphone-17
-          app: ${{ github.workspace }}/example/ios/build/Build/Products/Debug-iphonesimulator/NitroImagePipelineExample.app
-          projectRoot: example
-
   test-android:
     name: Harness Tests (Android)
     runs-on: ubuntu-latest
