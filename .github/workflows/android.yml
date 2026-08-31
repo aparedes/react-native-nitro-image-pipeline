@@ -6,8 +6,9 @@ name: Build & Test Android
 # `reactNativeArchitectures=arm64-v8a`, and the harness job overrode it to
 # x86_64 for the emulator. Everything around the native compile (Gradle
 # configuration, RN codegen, Kotlin, resources, dexing) was duplicated work.
-# One job now builds both ABIs into the single `app-debug.apk` (no `splits` or
-# `abiFilters` are configured) and runs the harness against it.
+# One job now builds into the single `app-debug.apk` (no `splits` or
+# `abiFilters` are configured) and runs the harness against it. See
+# `ANDROID_ABIS` below for which ABIs, and when.
 #
 # The job keeps the name "Harness Tests (Android)" so the existing required
 # status check on `main` keeps resolving. "Build Android Example App" is gone.
@@ -82,6 +83,14 @@ jobs:
       #     including on pull requests, without touching this file
       #   - unchecking the workflow_dispatch input disables it for one manual run
       HARNESS_ENABLED: ${{ vars.RUN_HARNESS_TESTS != 'false' && (github.event_name != 'workflow_dispatch' || github.event.inputs.run_harness_tests == 'true') }}
+      # A pull request only needs the emulator's ABI — nothing here runs on
+      # arm64. But this library ships as source, so consumers compile it for
+      # arm64 themselves, and nothing else verifies that before `release.yml`
+      # is dispatched from `main`. The sources are portable (no intrinsics, no
+      # inline asm); the realistic arm64 breakage is a dependency or NDK bump,
+      # which is exactly what lands on `main`. So: emulator ABI on PRs, both
+      # where it is worth the extra native compile.
+      ANDROID_ABIS: ${{ github.event_name == 'pull_request' && 'x86_64' || 'arm64-v8a,x86_64' }}
     steps:
       - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
@@ -113,12 +122,12 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('example/android/**/*.gradle*') }}
           restore-keys: ${{ runner.os }}-gradle-
 
-      # arm64-v8a is what a real device runs and what `gradle.properties`
-      # defaults to; x86_64 is what the emulator below needs. Both go into one
-      # APK so a single build covers device and emulator.
       - name: Build Android APK
         working-directory: example/android
-        run: ./gradlew assembleDebug --no-daemon --build-cache -PreactNativeArchitectures=arm64-v8a,x86_64
+        run: |
+          echo "Building for: $ANDROID_ABIS"
+          ./gradlew assembleDebug --no-daemon --build-cache \
+            -PreactNativeArchitectures="$ANDROID_ABIS"
 
       - name: Stop Gradle daemon
         working-directory: example/android
