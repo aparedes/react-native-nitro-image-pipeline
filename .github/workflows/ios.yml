@@ -226,6 +226,23 @@ jobs:
           simslim measure "$UDID"
           echo "::endgroup::"
 
+      # The harness suites load their images from here instead of picsum.photos,
+      # which used to fail the build whenever that host had a bad day. Backgrounded,
+      # then polled, so the suites never race the socket.
+      - name: Start fixture server
+        if: env.HARNESS_ENABLED == 'true'
+        run: |
+          bun run fixtures &
+          for _ in $(seq 1 30); do
+            if curl -sf http://localhost:8082/health >/dev/null; then
+              echo "Fixture server up"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::Fixture server did not come up on :8082"
+          exit 1
+
       - name: Run Harness Tests
         if: env.HARNESS_ENABLED == 'true'
         uses: callstackincubator/react-native-harness@v1.2.0

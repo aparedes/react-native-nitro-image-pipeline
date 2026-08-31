@@ -17,6 +17,7 @@
     "release": "semantic-release",
     "build": "bun run typecheck && bob build",
     "codegen": "nitrogen --logLevel=\"debug\" && bun run build",
+    "fixtures": "bun scripts/fixture-server.ts",
     "verify:blur": "swiftc -O -o \"${TMPDIR:-/tmp}/nitro-verify-blur\" scripts/verify-blur.swift ios/GaussianBlur.swift && \"${TMPDIR:-/tmp}/nitro-verify-blur\""
   },
   "keywords": [
