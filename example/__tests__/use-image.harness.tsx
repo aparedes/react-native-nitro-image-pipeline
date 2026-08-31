@@ -4,7 +4,7 @@ import { Text } from 'react-native';
 import { describe, expect, it, render, waitFor } from 'react-native-harness';
 import { useImage } from 'react-native-nitro-image-pipeline';
 
-const VALID_URL = 'https://picsum.photos/id/3/200/200';
+import { GRADIENT_URL as VALID_URL } from './fixture-urls';
 
 function TestComponent({ url, enabled }: { url: string; enabled?: boolean }) {
   const result = useImage({ url, enabled });

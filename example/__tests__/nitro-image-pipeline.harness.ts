@@ -1,8 +1,11 @@
 import { beforeAll, describe, expect, it } from 'react-native-harness';
 import { NitroImagePipeline } from 'react-native-nitro-image-pipeline';
 
-const VALID_URL = 'https://picsum.photos/id/3/200/200';
-const INVALID_URL = 'https://not-a-real-url.invalid/image.jpg';
+import {
+  CHECKER_URL,
+  GRADIENT_URL as VALID_URL,
+  INVALID_URL,
+} from './fixture-urls';
 
 describe('NitroImagePipeline', () => {
   beforeAll(async () => {
@@ -91,7 +94,7 @@ describe('NitroImagePipeline', () => {
   });
 
   it('preloads multiple images', async () => {
-    const urls = [VALID_URL, 'https://picsum.photos/id/10/200/200'];
+    const urls = [VALID_URL, CHECKER_URL];
     await expect(
       NitroImagePipeline.preLoadImages(urls),
     ).resolves.toBeUndefined();
