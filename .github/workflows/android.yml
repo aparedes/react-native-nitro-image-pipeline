@@ -1,0 +1,143 @@
+name: Build & Test Android
+
+# Merged from `android-build.yml` and the `test-android` job of
+# `harness-tests.yml`. Those two each took a runner and ran `assembleDebug`,
+# but on different single ABIs — `gradle.properties` defaults
+# `reactNativeArchitectures=arm64-v8a`, and the harness job overrode it to
+# x86_64 for the emulator. Everything around the native compile (Gradle
+# configuration, RN codegen, Kotlin, resources, dexing) was duplicated work.
+# One job now builds both ABIs into the single `app-debug.apk` (no `splits` or
+# `abiFilters` are configured) and runs the harness against it.
+#
+# The job keeps the name "Harness Tests (Android)" so the existing required
+# status check on `main` keeps resolving. "Build Android Example App" is gone.
+#
+# Set the repository variable RUN_HARNESS_TESTS=false to build without running
+# the harness suite — see the comment on `HARNESS_ENABLED` below.
+#
+# (The push and pull_request path lists are duplicated on purpose — GitHub
+# Actions does not support YAML anchors, so they have to be kept in sync by
+# hand.)
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - main
+      - test/harness-action
+    paths:
+      - '.github/workflows/android.yml'
+      - 'src/**'
+      - 'android/**'
+      - 'cpp/**'
+      - 'example/android/**'
+      - 'example/__tests__/**'
+      - 'example/.harness/**'
+      - 'example/rn-harness.config.mjs'
+      - '**/nitrogen/generated/shared/**'
+      - '**/nitrogen/generated/android/**'
+      - '**/bun.lock'
+      - '**/react-native.config.js'
+      - '**/nitro.json'
+      - 'package.json'
+      - 'example/package.json'
+  pull_request:
+    paths:
+      - '.github/workflows/android.yml'
+      - 'src/**'
+      - 'android/**'
+      - 'cpp/**'
+      - 'example/android/**'
+      - 'example/__tests__/**'
+      - 'example/.harness/**'
+      - 'example/rn-harness.config.mjs'
+      - '**/nitrogen/generated/shared/**'
+      - '**/nitrogen/generated/android/**'
+      - '**/bun.lock'
+      - '**/react-native.config.js'
+      - '**/nitro.json'
+      - 'package.json'
+      - 'example/package.json'
+  workflow_dispatch:
+    inputs:
+      run_harness_tests:
+        description: 'Run the harness suite (uncheck to build only)'
+        type: boolean
+        default: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Harness Tests (Android)
+    runs-on: ubuntu-latest
+    env:
+      # Kill switch. The APK still gets built and the job still goes green;
+      # only the suite is skipped, with a warning annotation on the run.
+      #   - repository variable RUN_HARNESS_TESTS=false disables it everywhere,
+      #     including on pull requests, without touching this file
+      #   - unchecking the workflow_dispatch input disables it for one manual run
+      HARNESS_ENABLED: ${{ vars.RUN_HARNESS_TESTS != 'false' && (github.event_name != 'workflow_dispatch' || github.event.inputs.run_harness_tests == 'true') }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '>=1.4.0'
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Cache Gradle
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('example/android/**/*.gradle*') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      # arm64-v8a is what a real device runs and what `gradle.properties`
+      # defaults to; x86_64 is what the emulator below needs. Both go into one
+      # APK so a single build covers device and emulator.
+      - name: Build Android APK
+        working-directory: example/android
+        run: ./gradlew assembleDebug --no-daemon --build-cache -PreactNativeArchitectures=arm64-v8a,x86_64
+
+      - name: Stop Gradle daemon
+        working-directory: example/android
+        run: ./gradlew --stop
+
+      - name: Run Harness Tests
+        if: env.HARNESS_ENABLED == 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          arch: x86_64
+          target: google_apis
+          avd-name: Medium_Phone_API_36.1
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: |
+            adb reverse tcp:8081 tcp:8081
+            adb install ${{ github.workspace }}/example/android/app/build/outputs/apk/debug/app-debug.apk
+            cd example && bunx react-native-harness --harnessRunner medium_phone_api_36.1
+
+      - name: Note skipped harness tests
+        if: env.HARNESS_ENABLED != 'true'
+        run: echo "::warning title=Harness tests skipped::The Android harness suite did not run (RUN_HARNESS_TESTS is false). The APK was still built."

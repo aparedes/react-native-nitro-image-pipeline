@@ -9,6 +9,9 @@ name: Build & Test iOS
 # The job is still named "Harness Tests (iOS)" so the existing required status
 # check on `main` keeps resolving. "Build iOS Example App" no longer exists.
 #
+# Set the repository variable RUN_HARNESS_TESTS=false to build without running
+# the harness suite — see the comment on `HARNESS_ENABLED` below.
+#
 # (The push and pull_request path lists are duplicated on purpose — GitHub
 # Actions does not support YAML anchors, so they have to be kept in sync by
 # hand.)
@@ -65,6 +68,15 @@ on:
       - 'package.json'
       - 'example/package.json'
   workflow_dispatch:
+    inputs:
+      run_harness_tests:
+        description: 'Run the harness suite (uncheck to build only)'
+        type: boolean
+        default: true
+      slim_simulator:
+        description: 'Slim the simulator with simslim before testing (experiment)'
+        type: boolean
+        default: false
 
 env:
   USE_CCACHE: 1
@@ -77,6 +89,17 @@ jobs:
   build-and-test:
     name: Harness Tests (iOS)
     runs-on: macos-26
+    env:
+      # Kill switch. The app still gets built and the job still goes green;
+      # only the suite is skipped, with a warning annotation on the run.
+      #   - repository variable RUN_HARNESS_TESTS=false disables it everywhere,
+      #     including on pull requests, without touching this file
+      #   - unchecking the workflow_dispatch input disables it for one manual run
+      HARNESS_ENABLED: ${{ vars.RUN_HARNESS_TESTS != 'false' && (github.event_name != 'workflow_dispatch' || github.event.inputs.run_harness_tests == 'true') }}
+      # Off unless asked for: repository variable SLIM_SIMULATOR=true, or the
+      # workflow_dispatch input, so the same job can be dispatched twice and
+      # the two "Run Harness Tests" durations compared.
+      SLIM_SIM: ${{ vars.SLIM_SIMULATOR == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.slim_simulator == 'true') }}
     steps:
       - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
@@ -136,9 +159,69 @@ jobs:
             build \
             CODE_SIGNING_ALLOWED=NO | xcpretty
 
+      # Experiment (off by default): simslim turns off the ~170 background
+      # daemons a simulator boots — Spotlight indexing, photo analysis, Siri,
+      # wallpaper posters — which is the cold-boot noise that makes the first
+      # network fetch slow enough to need testTimeout: 30000. Whether that
+      # actually buys anything on a single-simulator CI job is the open
+      # question; the before/after `measure` output below is the answer.
+      #
+      # This also tests the load-bearing assumption: the harness action boots
+      # the simulator itself, so slimming only carries over if simslim's
+      # per-device overrides survive that boot. The status check after the run
+      # says whether they did.
+      - name: Slim iOS simulator (experiment)
+        if: env.SLIM_SIM == 'true'
+        env:
+          # GitHub's macOS runners are slow enough to blow simslim's default
+          # 10m/2m deadlines mid-reconfigure; its README calls this out.
+          SIMSLIM_BOOT_TIMEOUT: 15m
+          SIMSLIM_SPAWN_TIMEOUT: 5m
+        run: |
+          set -euo pipefail
+          brew install mobai-app/tap/simslim
+
+          # Collected into an array and indexed rather than piped through
+          # `head`, which would SIGPIPE jq and trip `pipefail`.
+          UDID=$(xcrun simctl list devices available --json \
+            | jq -r '[ .devices | to_entries[]
+                       | select(.key | endswith("iOS-26-4"))
+                       | .value[] | select(.name == "iPhone 17") | .udid ]
+                     | first // ""')
+          if [ -z "$UDID" ]; then
+            echo "::error::No iPhone 17 on iOS 26.4 — rn-harness.config.mjs pins that pair."
+            exit 1
+          fi
+          echo "SIMSLIM_UDID=$UDID" >> "$GITHUB_ENV"
+          echo "iPhone 17 (iOS 26.4): $UDID"
+
+          echo "::group::Stock footprint"
+          simslim boot "$UDID"
+          simslim measure "$UDID"
+          echo "::endgroup::"
+
+          echo "::group::Slimming"
+          simslim on "$UDID"
+          echo "::endgroup::"
+
+          echo "::group::Slim footprint"
+          simslim status "$UDID"
+          simslim measure "$UDID"
+          echo "::endgroup::"
+
       - name: Run Harness Tests
+        if: env.HARNESS_ENABLED == 'true'
         uses: callstackincubator/react-native-harness@v1.2.0
         with:
           runner: iphone-17
           app: ${{ github.workspace }}/example/ios/build/Build/Products/Debug-iphonesimulator/NitroImagePipelineExample.app
           projectRoot: example
+
+      # Did the slimming survive the harness action's own boot of the device?
+      - name: Check simulator stayed slim (experiment)
+        if: always() && env.SLIM_SIM == 'true' && env.SIMSLIM_UDID != ''
+        run: simslim status "$SIMSLIM_UDID"
+
+      - name: Note skipped harness tests
+        if: env.HARNESS_ENABLED != 'true'
+        run: echo "::warning title=Harness tests skipped::The iOS harness suite did not run (RUN_HARNESS_TESTS is false). The app was still built."
