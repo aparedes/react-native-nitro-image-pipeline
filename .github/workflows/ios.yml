@@ -113,6 +113,29 @@ jobs:
         with:
           xcode-version: 26.4
 
+      # `simctl boot` returns as soon as the boot *starts*, so the simulator
+      # comes up during `pod install` and `xcodebuild` instead of on the
+      # critical path: the harness action spends ~3m20 of its run booting this
+      # device, against ~2m45 actually running tests. Best-effort — if the
+      # runner has no iPhone 17 on iOS 26.4, let xcodebuild be the one to say
+      # so, since it fails on the same destination a few steps later.
+      - name: Pre-boot iOS simulator
+        run: |
+          set -euo pipefail
+          UDID=$(xcrun simctl list devices available --json \
+            | jq -r '[ .devices | to_entries[]
+                       | select(.key | endswith("iOS-26-4"))
+                       | .value[] | select(.name == "iPhone 17") | .udid ]
+                     | first // ""')
+          if [ -z "$UDID" ]; then
+            echo "::warning title=No simulator to pre-boot::No iPhone 17 on iOS 26.4; leaving the boot to the harness."
+            exit 0
+          fi
+          echo "SIM_UDID=$UDID" >> "$GITHUB_ENV"
+          echo "Booting iPhone 17 (iOS 26.4) in the background: $UDID"
+          # Already-booted is not a failure worth stopping the job for.
+          xcrun simctl boot "$UDID" || true
+
       - name: Install dependencies
         run: bun install
 
@@ -179,24 +202,18 @@ jobs:
           SIMSLIM_SPAWN_TIMEOUT: 5m
         run: |
           set -euo pipefail
-          brew install mobai-app/tap/simslim
-
-          # Collected into an array and indexed rather than piped through
-          # `head`, which would SIGPIPE jq and trip `pipefail`.
-          UDID=$(xcrun simctl list devices available --json \
-            | jq -r '[ .devices | to_entries[]
-                       | select(.key | endswith("iOS-26-4"))
-                       | .value[] | select(.name == "iPhone 17") | .udid ]
-                     | first // ""')
+          UDID="${SIM_UDID:-}"
           if [ -z "$UDID" ]; then
             echo "::error::No iPhone 17 on iOS 26.4 — rn-harness.config.mjs pins that pair."
             exit 1
           fi
+          brew install mobai-app/tap/simslim
           echo "SIMSLIM_UDID=$UDID" >> "$GITHUB_ENV"
           echo "iPhone 17 (iOS 26.4): $UDID"
 
           echo "::group::Stock footprint"
-          simslim boot "$UDID"
+          # Pre-booted during the build; just wait for it to finish coming up.
+          xcrun simctl bootstatus "$UDID" -b
           simslim measure "$UDID"
           echo "::endgroup::"
 
