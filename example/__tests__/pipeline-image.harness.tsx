@@ -3,7 +3,7 @@ import { describe, expect, it, render, waitFor } from 'react-native-harness';
 import type { Image } from 'react-native-nitro-image';
 import { PipelineImage } from 'react-native-nitro-image-pipeline';
 
-const VALID_URL = 'https://picsum.photos/id/3/200/200';
+import { GRADIENT_URL as VALID_URL } from './fixture-urls';
 const px = (points: number) => PixelRatio.getPixelSizeForLayoutSize(points);
 
 const styles = StyleSheet.create({
