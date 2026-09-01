@@ -19,6 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 
@@ -104,9 +105,13 @@ class PipelineImageLoader(
           val request =
               HybridNitroImagePipeline.buildRequest(context, url, pixelOptions(scale, resize))
           val loader = HybridNitroImagePipeline.getOrCreateImageLoader(context)
-          when (val result = loader.execute(request)) {
-            // The coroutine resumes on the main thread and only if still active,
-            // so a dropped view never gets a stale bitmap.
+          val result = loader.execute(request)
+          // Cancellation normally surfaces as a CancellationException at the
+          // suspension point above, but make it explicit: a job that was
+          // dropped or replaced while the result was in flight must never
+          // touch the view.
+          if (!isActive) return@launch
+          when (result) {
             is SuccessResult -> imageView.setImageBitmap(HybridNitroImagePipeline.bitmapOf(result))
             is ErrorResult -> Log.w(TAG, "Failed to load $url", result.throwable)
           }

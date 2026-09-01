@@ -68,8 +68,10 @@ export type Options = {
 /**
  * Options for {@linkcode NitroImagePipeline.createImageLoader}. Unlike
  * {@linkcode Options} (used by `loadImage`, where values are bitmap pixels),
- * everything here is in **points** (density-independent): the loader runs
- * inside a view and converts to pixels natively with the screen scale.
+ * `blur` and `cornerRadius` here are in **points** (density-independent):
+ * the loader runs inside a view and converts to pixels natively with the
+ * screen scale. The one exception is {@linkcode resize}, which stays an
+ * explicit **pixel** size like everywhere else in the library.
  */
 export type ViewOptions = {
   /**
