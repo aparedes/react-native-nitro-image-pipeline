@@ -232,7 +232,12 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
     /** Starts creating the shared loader on a background thread, if it doesn't exist yet. */
     private fun warmUpImageLoader(context: Context) {
       if (sharedImageLoader != null) return
-      CoroutineScope(Dispatchers.IO).launch { getOrCreateImageLoader(context) }
+      CoroutineScope(Dispatchers.IO).launch {
+        // Warm-up only: an uncaught exception here would take the process
+        // down. If creation fails, `sharedImageLoader` stays null and the
+        // next request retries it and surfaces the error itself.
+        runCatching { getOrCreateImageLoader(context) }
+      }
     }
 
     private fun createImageLoader(context: Context): ImageLoader {

@@ -32,8 +32,11 @@ class HybridImage: HybridImageSpec, NativeImage {
     }
 
     deinit {
-        if let memoryWarningObserver {
-            NotificationCenter.default.removeObserver(memoryWarningObserver)
+        pngLock.lock()
+        let observer = memoryWarningObserver
+        pngLock.unlock()
+        if let observer {
+            NotificationCenter.default.removeObserver(observer)
         }
     }
 

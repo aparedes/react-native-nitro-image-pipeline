@@ -29,11 +29,13 @@ enum GaussianBlur {
         // Normalise to premultiplied ARGB8888 — vImageBoxConvolve_ARGB8888
         // needs four 8-bit channels, and premultiplied alpha is what keeps
         // transparent edges from bleeding dark halos into the blur.
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue)
         guard var format = vImage_CGImageFormat(
             bitsPerComponent: 8,
             bitsPerPixel: 32,
-            colorSpace: CGColorSpaceCreateDeviceRGB(),
-            bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue),
+            colorSpace: colorSpace,
+            bitmapInfo: bitmapInfo,
             renderingIntent: .defaultIntent
         ) else { return nil }
 
@@ -78,20 +80,35 @@ enum GaussianBlur {
             swap(&input, &output)
         }
 
-        // kvImageNoAllocate wraps the result buffer in the CGImage instead of
-        // copying it (one full-bitmap memcpy less per blur); the callback
-        // frees the buffer when the image is released. From here on the
-        // buffer belongs to vImage either way: it is not freed on exit above,
-        // and on the (malformed-format-only) failure path leaking it is the
-        // safe choice since whether vImage already ran the callback is not
-        // specified.
+        // Wrap the result buffer in the CGImage instead of copying it (one
+        // full-bitmap memcpy less per blur). Ownership is explicit: once the
+        // data provider exists, it frees the buffer — together with the
+        // image, or right away if creating the image fails and the provider
+        // is released — so `handedOver` keeps the exits above from freeing
+        // it a second time. (vImageCreateCGImageFromBuffer with
+        // kvImageNoAllocate would do the same, but leaves unspecified whether
+        // its free callback runs when the call fails.)
+        guard let provider = CGDataProvider(
+            dataInfo: nil,
+            data: input.data,
+            size: input.rowBytes * Int(input.height),
+            releaseData: { _, data, _ in free(UnsafeMutableRawPointer(mutating: data)) }
+        ) else { return nil }
         handedOver = input.data
-        var error = vImage_Error(kvImageNoError)
-        guard let blurred = vImageCreateCGImageFromBuffer(
-            &input, &format, { _, data in free(data) }, nil, vImage_Flags(kvImageNoAllocate), &error
-        )?.takeRetainedValue(), error == kvImageNoError else { return nil }
 
-        return blurred
+        return CGImage(
+            width: Int(input.width),
+            height: Int(input.height),
+            bitsPerComponent: 8,
+            bitsPerPixel: 32,
+            bytesPerRow: input.rowBytes,
+            space: colorSpace,
+            bitmapInfo: bitmapInfo,
+            provider: provider,
+            decode: nil,
+            shouldInterpolate: true,
+            intent: .defaultIntent
+        )
     }
 
     /// Widths for the three box-blur passes that approximate a Gaussian of
