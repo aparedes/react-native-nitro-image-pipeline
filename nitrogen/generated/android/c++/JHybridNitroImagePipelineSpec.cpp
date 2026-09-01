@@ -9,6 +9,8 @@
 
 // Forward declaration of `HybridImageSpec` to properly resolve imports.
 namespace margelo::nitro::image { class HybridImageSpec; }
+// Forward declaration of `HybridImageLoaderSpec` to properly resolve imports.
+namespace margelo::nitro::image { class HybridImageLoaderSpec; }
 // Forward declaration of `Options` to properly resolve imports.
 namespace margelo::nitro::nitroimagepipeline { struct Options; }
 // Forward declaration of `CacheOption` to properly resolve imports.
@@ -17,12 +19,16 @@ namespace margelo::nitro::nitroimagepipeline { enum class CacheOption; }
 namespace margelo::nitro::nitroimagepipeline { struct CornerRadii; }
 // Forward declaration of `ResizeOptions` to properly resolve imports.
 namespace margelo::nitro::nitroimagepipeline { struct ResizeOptions; }
+// Forward declaration of `ViewOptions` to properly resolve imports.
+namespace margelo::nitro::nitroimagepipeline { struct ViewOptions; }
 
 #include <memory>
 #include <NitroImage/HybridImageSpec.hpp>
 #include <NitroModules/Promise.hpp>
 #include <NitroModules/JPromise.hpp>
 #include <NitroImage/JHybridImageSpec.hpp>
+#include <NitroImage/HybridImageLoaderSpec.hpp>
+#include <NitroImage/JHybridImageLoaderSpec.hpp>
 #include <NitroModules/JUnit.hpp>
 #include <string>
 #include "Options.hpp"
@@ -36,6 +42,8 @@ namespace margelo::nitro::nitroimagepipeline { struct ResizeOptions; }
 #include "JCornerRadii.hpp"
 #include "ResizeOptions.hpp"
 #include "JResizeOptions.hpp"
+#include "ViewOptions.hpp"
+#include "JViewOptions.hpp"
 #include <vector>
 
 namespace margelo::nitro::nitroimagepipeline {
@@ -86,6 +94,11 @@ namespace margelo::nitro::nitroimagepipeline {
       });
       return __promise;
     }();
+  }
+  std::shared_ptr<margelo::nitro::image::HybridImageLoaderSpec> JHybridNitroImagePipelineSpec::createImageLoader(const std::string& url, const std::optional<ViewOptions>& options) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<margelo::nitro::image::JHybridImageLoaderSpec::JavaPart>(jni::alias_ref<jni::JString> /* url */, jni::alias_ref<JViewOptions> /* options */)>("createImageLoader");
+    auto __result = method(_javaPart, jni::make_jstring(url), options.has_value() ? JViewOptions::fromCpp(options.value()) : nullptr);
+    return __result->getJHybridImageLoaderSpec();
   }
   std::shared_ptr<Promise<void>> JHybridNitroImagePipelineSpec::preLoadImage(const std::string& url) {
     static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<jni::JString> /* url */)>("preLoadImage");

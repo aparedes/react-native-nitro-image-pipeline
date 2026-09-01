@@ -17,6 +17,10 @@
 namespace margelo::nitro::image { class HybridImageSpec; }
 // Forward declaration of `Options` to properly resolve imports.
 namespace margelo::nitro::nitroimagepipeline { struct Options; }
+// Forward declaration of `HybridImageLoaderSpec` to properly resolve imports.
+namespace margelo::nitro::image { class HybridImageLoaderSpec; }
+// Forward declaration of `ViewOptions` to properly resolve imports.
+namespace margelo::nitro::nitroimagepipeline { struct ViewOptions; }
 
 #include <memory>
 #include <NitroImage/HybridImageSpec.hpp>
@@ -24,6 +28,8 @@ namespace margelo::nitro::nitroimagepipeline { struct Options; }
 #include <string>
 #include "Options.hpp"
 #include <optional>
+#include <NitroImage/HybridImageLoaderSpec.hpp>
+#include "ViewOptions.hpp"
 #include <vector>
 
 namespace margelo::nitro::nitroimagepipeline {
@@ -58,6 +64,7 @@ namespace margelo::nitro::nitroimagepipeline {
     public:
       // Methods
       virtual std::shared_ptr<Promise<std::shared_ptr<margelo::nitro::image::HybridImageSpec>>> loadImage(const std::string& url, const std::optional<Options>& options) = 0;
+      virtual std::shared_ptr<margelo::nitro::image::HybridImageLoaderSpec> createImageLoader(const std::string& url, const std::optional<ViewOptions>& options) = 0;
       virtual std::shared_ptr<Promise<void>> preLoadImage(const std::string& url) = 0;
       virtual std::shared_ptr<Promise<void>> preLoadImages(const std::vector<std::string>& urls) = 0;
       virtual std::shared_ptr<Promise<std::shared_ptr<margelo::nitro::image::HybridImageSpec>>> gaussianBlur(const std::shared_ptr<margelo::nitro::image::HybridImageSpec>& image, double radius) = 0;

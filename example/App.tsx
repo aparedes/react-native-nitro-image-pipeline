@@ -3,6 +3,7 @@ import { Suspense, use, useState } from 'react';
 import { PixelRatio, StyleSheet, Text, View } from 'react-native';
 import { type Image, NitroImage } from 'react-native-nitro-image';
 import {
+  NativePipelineImage,
   PipelineImage,
   NitroImagePipeline,
   resizeForStyle,
@@ -37,6 +38,13 @@ function App({ img2 }: { img2: Promise<Image> }): React.JSX.Element {
         }}
       />
       {image2 && <NitroImage image={image2} style={styles.image} />}
+      {/* Fully native-driven: the view measures itself and loads natively —
+          no onLayout round trip, no JS work after this render. Rounding
+          comes from the style's borderRadius. */}
+      <NativePipelineImage
+        url="https://picsum.photos/id/1015/4000/3000"
+        style={styles.nativeImage}
+      />
     </View>
   );
 }
@@ -58,6 +66,11 @@ const styles = StyleSheet.create({
   image: {
     width: 300,
     height: 200,
+  },
+  nativeImage: {
+    width: 300,
+    height: 100,
+    borderRadius: 24,
   },
 });
 

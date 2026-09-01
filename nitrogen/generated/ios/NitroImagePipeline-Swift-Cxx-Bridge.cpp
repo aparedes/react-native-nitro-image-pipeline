@@ -41,6 +41,16 @@ namespace margelo::nitro::nitroimagepipeline::bridge::swift {
     };
   }
   
+  // pragma MARK: std::shared_ptr<margelo::nitro::image::HybridImageLoaderSpec>
+  std::shared_ptr<margelo::nitro::image::HybridImageLoaderSpec> create_std__shared_ptr_margelo__nitro__image__HybridImageLoaderSpec_(void* NON_NULL swiftUnsafePointer) noexcept {
+    // Implemented in NitroImage
+    return margelo::nitro::image::bridge::swift::create_std__shared_ptr_HybridImageLoaderSpec_(swiftUnsafePointer);
+  }
+  void* NON_NULL get_std__shared_ptr_margelo__nitro__image__HybridImageLoaderSpec_(std__shared_ptr_margelo__nitro__image__HybridImageLoaderSpec_ cppType) {
+    // Implemented in NitroImage
+    return margelo::nitro::image::bridge::swift::get_std__shared_ptr_HybridImageLoaderSpec_(cppType);
+  }
+  
   // pragma MARK: std::function<void()>
   Func_void create_Func_void(void* NON_NULL swiftClosureWrapper) noexcept {
     auto swiftClosure = NitroImagePipeline::Func_void::fromUnsafe(swiftClosureWrapper);

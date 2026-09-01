@@ -12,6 +12,8 @@
 namespace margelo::nitro::nitroimagepipeline { enum class CacheOption; }
 // Forward declaration of `CornerRadii` to properly resolve imports.
 namespace margelo::nitro::nitroimagepipeline { struct CornerRadii; }
+// Forward declaration of `HybridImageLoaderSpec` to properly resolve imports.
+namespace margelo::nitro::image { class HybridImageLoaderSpec; }
 // Forward declaration of `HybridImageSpec` to properly resolve imports.
 namespace margelo::nitro::image { class HybridImageSpec; }
 // Forward declaration of `HybridNitroImagePipelineSpec` to properly resolve imports.
@@ -20,6 +22,8 @@ namespace margelo::nitro::nitroimagepipeline { class HybridNitroImagePipelineSpe
 namespace margelo::nitro::nitroimagepipeline { struct Options; }
 // Forward declaration of `ResizeOptions` to properly resolve imports.
 namespace margelo::nitro::nitroimagepipeline { struct ResizeOptions; }
+// Forward declaration of `ViewOptions` to properly resolve imports.
+namespace margelo::nitro::nitroimagepipeline { struct ViewOptions; }
 
 // Include C++ defined types
 #include "CacheOption.hpp"
@@ -27,6 +31,8 @@ namespace margelo::nitro::nitroimagepipeline { struct ResizeOptions; }
 #include "HybridNitroImagePipelineSpec.hpp"
 #include "Options.hpp"
 #include "ResizeOptions.hpp"
+#include "ViewOptions.hpp"
+#include <NitroImage/HybridImageLoaderSpec.hpp>
 #include <NitroImage/HybridImageSpec.hpp>
 #include <NitroModules/Promise.hpp>
 #include <NitroModules/Result.hpp>
@@ -47,6 +53,8 @@ namespace margelo::nitro::nitroimagepipeline { struct ResizeOptions; }
 #include <NitroModules/DateToChronoDate.hpp>
 
 // Forward declarations of Swift defined types
+// Forward declaration of `HybridImageLoaderSpec_cxx` to properly resolve imports.
+namespace NitroImage { class HybridImageLoaderSpec_cxx; }
 // Forward declaration of `HybridImageSpec_cxx` to properly resolve imports.
 namespace NitroImage { class HybridImageSpec_cxx; }
 // Forward declaration of `HybridNitroImagePipelineSpec_cxx` to properly resolve imports.

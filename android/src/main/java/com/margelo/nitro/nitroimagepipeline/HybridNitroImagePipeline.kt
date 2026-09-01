@@ -1,6 +1,7 @@
 package com.margelo.nitro.nitroimagepipeline
 
 import android.content.Context
+import android.graphics.Bitmap
 import androidx.core.graphics.drawable.toBitmap
 import coil3.BitmapImage
 import coil3.ColorImage
@@ -45,80 +46,16 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
     get() = getOrCreateImageLoader(context)
 
   override fun loadImage(url: String, options: Options?): Promise<HybridImageSpec> = Promise.async {
-    val blur = options?.blur?.toFloat() ?: 0f
-    val resize =
-        options?.resize?.let { r ->
-          val width = r.width.roundToInt()
-          val height = r.height.roundToInt()
-          if (width > 0 && height > 0) width to height else null
-        }
-    val transformations = buildList {
-      // Resize first: blur sigma and corner radii are in pixels of the bitmap
-      // they run on, so they must see the final size.
-      resize?.let { (width, height) -> add(ResizeTransformation(width, height)) }
-      if (blur > 0f) add(BlurTransformation(context, blur))
-      options
-          ?.cornerRadius
-          ?.match(
-              first = { radius ->
-                if (radius > 0.0) add(RoundedCornersTransformation(radius.toFloat()))
-              },
-              second = { radii ->
-                // RoundedCornersTransformation rejects negative radii; treat them as square.
-                val topLeft = (radii.topLeft?.toFloat() ?: 0f).coerceAtLeast(0f)
-                val topRight = (radii.topRight?.toFloat() ?: 0f).coerceAtLeast(0f)
-                val bottomLeft = (radii.bottomLeft?.toFloat() ?: 0f).coerceAtLeast(0f)
-                val bottomRight = (radii.bottomRight?.toFloat() ?: 0f).coerceAtLeast(0f)
-                if (topLeft > 0f || topRight > 0f || bottomLeft > 0f || bottomRight > 0f) {
-                  add(RoundedCornersTransformation(topLeft, topRight, bottomLeft, bottomRight))
-                }
-              },
-          )
-    }
-    val request =
-        ImageRequest.Builder(context)
-            .data(url)
-            .apply {
-              when (options?.cache) {
-                CacheOption.MEMORY -> {
-                  memoryCachePolicy(CachePolicy.ENABLED)
-                  diskCachePolicy(CachePolicy.DISABLED)
-                }
-                CacheOption.DISK -> {
-                  memoryCachePolicy(CachePolicy.DISABLED)
-                  diskCachePolicy(CachePolicy.ENABLED)
-                }
-                CacheOption.NONE -> {
-                  memoryCachePolicy(CachePolicy.DISABLED)
-                  diskCachePolicy(CachePolicy.DISABLED)
-                }
-                null -> Unit // Coil defaults: both enabled
-              }
-              // Ask the decoder for the target size so a large source is
-              // subsampled near it instead of decoded at full resolution;
-              // ResizeTransformation then makes the size exact.
-              resize?.let { (width, height) ->
-                size(width, height)
-                scale(Scale.FILL)
-              }
-            }
-            .allowHardware(true)
-            .transformations(transformations)
-            .build()
-
-    when (val result = imageLoader.execute(request)) {
+    when (val result = imageLoader.execute(buildRequest(context, url, options))) {
       is ErrorResult -> throw result.throwable
-      is SuccessResult -> {
-        val bitmap =
-            when (val img = result.image) {
-              is BitmapImage -> img.bitmap
-              is DrawableImage -> img.drawable.toBitmap()
-              else -> throw Error("Unsupported image type: ${img.javaClass.simpleName}")
-            }
-        HybridImage(bitmap)
-      }
+      is SuccessResult -> HybridImage(bitmapOf(result))
     }
   }
+
+  override fun createImageLoader(
+      url: String,
+      options: ViewOptions?,
+  ): com.margelo.nitro.image.HybridImageLoaderSpec = PipelineImageLoader(context, url, options)
 
   // Preloading warms the disk cache only: the memory cache is skipped and the
   // decode step is replaced with a no-op (Coil's documented preload pattern),
@@ -182,7 +119,81 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
     // must be shared across all HybridNitroImagePipeline instances.
     @Volatile private var sharedImageLoader: ImageLoader? = null
 
-    private fun getOrCreateImageLoader(context: Context): ImageLoader =
+    /**
+     * The [ImageRequest] for [url] with [options] applied — shared by [loadImage] and
+     * [PipelineImageLoader] so both hit the same caches with identical cache keys.
+     */
+    internal fun buildRequest(context: Context, url: String, options: Options?): ImageRequest {
+      val blur = options?.blur?.toFloat() ?: 0f
+      val resize =
+          options?.resize?.let { r ->
+            val width = r.width.roundToInt()
+            val height = r.height.roundToInt()
+            if (width > 0 && height > 0) width to height else null
+          }
+      val transformations = buildList {
+        // Resize first: blur sigma and corner radii are in pixels of the bitmap
+        // they run on, so they must see the final size.
+        resize?.let { (width, height) -> add(ResizeTransformation(width, height)) }
+        if (blur > 0f) add(BlurTransformation(context, blur))
+        options
+            ?.cornerRadius
+            ?.match(
+                first = { radius ->
+                  if (radius > 0.0) add(RoundedCornersTransformation(radius.toFloat()))
+                },
+                second = { radii ->
+                  // RoundedCornersTransformation rejects negative radii; treat them as square.
+                  val topLeft = (radii.topLeft?.toFloat() ?: 0f).coerceAtLeast(0f)
+                  val topRight = (radii.topRight?.toFloat() ?: 0f).coerceAtLeast(0f)
+                  val bottomLeft = (radii.bottomLeft?.toFloat() ?: 0f).coerceAtLeast(0f)
+                  val bottomRight = (radii.bottomRight?.toFloat() ?: 0f).coerceAtLeast(0f)
+                  if (topLeft > 0f || topRight > 0f || bottomLeft > 0f || bottomRight > 0f) {
+                    add(RoundedCornersTransformation(topLeft, topRight, bottomLeft, bottomRight))
+                  }
+                },
+            )
+      }
+      return ImageRequest.Builder(context)
+          .data(url)
+          .apply {
+            when (options?.cache) {
+              CacheOption.MEMORY -> {
+                memoryCachePolicy(CachePolicy.ENABLED)
+                diskCachePolicy(CachePolicy.DISABLED)
+              }
+              CacheOption.DISK -> {
+                memoryCachePolicy(CachePolicy.DISABLED)
+                diskCachePolicy(CachePolicy.ENABLED)
+              }
+              CacheOption.NONE -> {
+                memoryCachePolicy(CachePolicy.DISABLED)
+                diskCachePolicy(CachePolicy.DISABLED)
+              }
+              null -> Unit // Coil defaults: both enabled
+            }
+            // Ask the decoder for the target size so a large source is
+            // subsampled near it instead of decoded at full resolution;
+            // ResizeTransformation then makes the size exact.
+            resize?.let { (width, height) ->
+              size(width, height)
+              scale(Scale.FILL)
+            }
+          }
+          .allowHardware(true)
+          .transformations(transformations)
+          .build()
+    }
+
+    /** The decoded bitmap of a successful load. */
+    internal fun bitmapOf(result: SuccessResult): Bitmap =
+        when (val img = result.image) {
+          is BitmapImage -> img.bitmap
+          is DrawableImage -> img.drawable.toBitmap()
+          else -> throw Error("Unsupported image type: ${img.javaClass.simpleName}")
+        }
+
+    internal fun getOrCreateImageLoader(context: Context): ImageLoader =
         sharedImageLoader
             ?: synchronized(this) {
               sharedImageLoader ?: createImageLoader(context).also { sharedImageLoader = it }

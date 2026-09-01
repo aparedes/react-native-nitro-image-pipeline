@@ -15,6 +15,7 @@ namespace margelo::nitro::nitroimagepipeline {
     // load custom methods/properties
     registerHybrids(this, [](Prototype& prototype) {
       prototype.registerHybridMethod("loadImage", &HybridNitroImagePipelineSpec::loadImage);
+      prototype.registerHybridMethod("createImageLoader", &HybridNitroImagePipelineSpec::createImageLoader);
       prototype.registerHybridMethod("preLoadImage", &HybridNitroImagePipelineSpec::preLoadImage);
       prototype.registerHybridMethod("preLoadImages", &HybridNitroImagePipelineSpec::preLoadImages);
       prototype.registerHybridMethod("gaussianBlur", &HybridNitroImagePipelineSpec::gaussianBlur);

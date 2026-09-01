@@ -1,4 +1,4 @@
-import type { Image } from 'react-native-nitro-image';
+import type { Image, ImageLoader } from 'react-native-nitro-image';
 import type { HybridObject } from 'react-native-nitro-modules';
 
 export type CacheOption = 'memory' | 'disk' | 'none';
@@ -65,11 +65,55 @@ export type Options = {
   resize?: ResizeOptions;
 };
 
+/**
+ * Options for {@linkcode NitroImagePipeline.createImageLoader}. Unlike
+ * {@linkcode Options} (used by `loadImage`, where values are bitmap pixels),
+ * `blur` and `cornerRadius` here are in **points** (density-independent):
+ * the loader runs inside a view and converts to pixels natively with the
+ * screen scale. The one exception is {@linkcode resize}, which stays an
+ * explicit **pixel** size like everywhere else in the library.
+ */
+export type ViewOptions = {
+  /**
+   * Gaussian blur sigma in **points**. Multiplied by the screen scale
+   * natively, so the same value looks the same on every device.
+   * @default 0 (no blur)
+   */
+  blur?: number;
+  cache?: CacheOption;
+  /**
+   * Corner radius in **points**, uniform or per-corner. Converted to pixels
+   * with the screen scale and baked into the bitmap at the display size.
+   * @default 0 (square corners)
+   */
+  cornerRadius?: number | CornerRadii;
+  /**
+   * Target bitmap size in **pixels**, overriding the size measured from the
+   * view. Rarely needed — without it the loader resizes to the view's
+   * laid-out size × screen scale, which is what you want in a UI.
+   * @default undefined (measure the view)
+   */
+  resize?: ResizeOptions;
+};
+
 export interface NitroImagePipeline extends HybridObject<{
   ios: 'swift';
   android: 'kotlin';
 }> {
   loadImage(url: string, options?: Options): Promise<Image>;
+  /**
+   * Creates an {@linkcode ImageLoader} for `url` that a `<NativeNitroImage>`
+   * view drives entirely natively: the request starts when the view attaches
+   * to the window — at the view's own laid-out size, with no JS round trips —
+   * and is cancelled (and the bitmap released) when it detaches, so
+   * off-screen list cells stop costing memory. Loads go through the same
+   * pipeline and caches as {@linkcode loadImage}/{@linkcode preLoadImage}.
+   *
+   * `options` are in **points** (see {@linkcode ViewOptions}); the loader
+   * applies the screen scale natively. If the view has no size yet when it
+   * attaches, the load waits for its first layout.
+   */
+  createImageLoader(url: string, options?: ViewOptions): ImageLoader;
   preLoadImage(url: string): Promise<void>;
   preLoadImages(urls: string[]): Promise<void>;
   /**

@@ -12,7 +12,7 @@ import Nuke
 
 import UIKit
 
-private class HybridImage: HybridImageSpec, NativeImage {
+class HybridImage: HybridImageSpec, NativeImage {
     let uiImage: UIImage
 
     // PNG encoding is expensive; encode once and reuse for both
@@ -89,7 +89,7 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
     // users in the host app are left untouched, and repeated instantiation
     // (e.g. Metro reloads) never puts two DataCache instances on the same
     // directory.
-    private static let sharedPipeline: ImagePipeline = {
+    static let sharedPipeline: ImagePipeline = {
         var configuration = ImagePipeline.Configuration.withDataCache
         // Store processed (blurred/rounded) variants on disk in addition to
         // the original download, so they survive memory eviction and
@@ -181,34 +181,47 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
         return processors
     }
 
+    /// The `ImageRequest` for `url` with `options` applied — shared by
+    /// `loadImage` and `PipelineImageLoader` so both hit the same caches with
+    /// identical cache keys.
+    static func makeRequest(url: URL, options: Options?) -> ImageRequest {
+        var imgRequest = ImageRequest(
+            url: url,
+            processors: processors(for: options),
+            options: cacheOptions(for: options?.cache)
+        )
+        // With a target size known, decode near it (aspect-fill, so the
+        // decoded image always covers the target) instead of at full
+        // resolution — a 48 MP photo displayed as a 300 pt card would
+        // otherwise decompress to ~190 MB before Resize shrinks it.
+        // Matches Android, where the request's size() drives subsampling;
+        // the exact size and crop still come from the Resize processor.
+        if let size = resizeSize(for: options) {
+            imgRequest.thumbnail = ImageRequest.ThumbnailOptions(
+                size: size,
+                unit: .pixels,
+                contentMode: .aspectFill
+            )
+        }
+        return imgRequest
+    }
+
     func loadImage(url: String, options: Options?) throws -> Promise<any HybridImageSpec> {
         return Promise.async {
             guard let imageUrl = URL(string: url) else {
                 throw RuntimeError.error(withMessage: "Invalid URL: \(url)")
             }
 
-            var imgRequest = ImageRequest(
-                url: imageUrl,
-                processors: Self.processors(for: options),
-                options: Self.cacheOptions(for: options?.cache)
-            )
-            // With a target size known, decode near it (aspect-fill, so the
-            // decoded image always covers the target) instead of at full
-            // resolution — a 48 MP photo displayed as a 300 pt card would
-            // otherwise decompress to ~190 MB before Resize shrinks it.
-            // Matches Android, where the request's size() drives subsampling;
-            // the exact size and crop still come from the Resize processor.
-            if let size = Self.resizeSize(for: options) {
-                imgRequest.thumbnail = ImageRequest.ThumbnailOptions(
-                    size: size,
-                    unit: .pixels,
-                    contentMode: .aspectFill
-                )
-            }
-
+            let imgRequest = Self.makeRequest(url: imageUrl, options: options)
             let image = try await self.pipeline.image(for: imgRequest)
             return HybridImage(uiImage: image)
         }
+    }
+
+    func createImageLoader(url: String, options: ViewOptions?) throws -> any HybridImageLoaderSpec {
+        // An unparseable URL fails at load time, not here — matching Android,
+        // where Coil validates the URL only when the request runs.
+        return PipelineImageLoader(url: url, options: options)
     }
 
     func preLoadImage(url: String) throws -> Promise<Void> {
