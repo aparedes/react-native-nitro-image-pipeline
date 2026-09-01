@@ -15,6 +15,7 @@ public protocol HybridNitroImagePipelineSpec_protocol: HybridObject {
 
   // Methods
   func loadImage(url: String, options: Options?) throws -> Promise<(any HybridImageSpec)>
+  func createImageLoader(url: String, options: ViewOptions?) throws -> (any HybridImageLoaderSpec)
   func preLoadImage(url: String) throws -> Promise<Void>
   func preLoadImages(urls: [String]) throws -> Promise<Void>
   func gaussianBlur(image: (any HybridImageSpec), radius: Double) throws -> Promise<(any HybridImageSpec)>

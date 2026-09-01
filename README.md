@@ -71,6 +71,38 @@ so a style that already rounds the view rounds the bitmap too, with no separate 
 other prop (`resizeMode`, `recyclingKey`, `testID`, …) is passed straight through to
 `NativeNitroImage`.
 
+### `<NativePipelineImage>` component
+
+The fully native-driven variant of `<PipelineImage>`, for when per-image JS work matters (long,
+fast-scrolling lists): after the first render there are **zero JS round trips per image**. The
+native view starts the request the moment it attaches to the window — at its own laid-out size,
+so nothing waits for an `onLayout` event to reach JS — and cancels it (releasing the bitmap) when
+it detaches, which makes off-screen list cells free. Re-attaching hits the shared memory cache,
+so recycled cells re-display instantly.
+
+```tsx
+import { NativePipelineImage } from 'react-native-nitro-image-pipeline';
+
+<NativePipelineImage
+  url="https://example.com/photo.jpg"
+  style={styles.photo} // size measured natively; borderRadius baked into the bitmap
+  blur={2} // points, like PipelineImage
+/>;
+```
+
+`blur`/`cornerRadius` are in points and `style`'s `borderRadius` is picked up automatically,
+exactly like `<PipelineImage>`. The trade-offs of going fully native:
+
+- No `onLoad`/`onError` — the loaded `Image` never crosses into JS. Use `<PipelineImage>` or
+  `useImage` when you need them.
+- The bitmap is loaded once at the size the view first has; if the view resizes later, the bitmap
+  scales with it instead of reloading.
+
+Under the hood this is `NitroImagePipeline.createImageLoader(url, options)` — an
+[`ImageLoader`](https://github.com/mrousavy/react-native-nitro-image) driven by
+`NativeNitroImage` — so you can also use the `usePipelineImageLoader(url, options)` hook directly
+with your own `<NativeNitroImage image={loader} />`.
+
 ### Animating with `react-native-reanimated`
 
 `<PipelineImage>` forwards its `ref` to the underlying `NativeNitroImage` host view, so it can be
@@ -240,6 +272,31 @@ Loads an image from a URL and returns a `Promise<Image>`.
 | `onLayout` | `(event: LayoutChangeEvent) => void` | — | Standard `View` layout callback; also drives the deferred resize for non-numeric sizes |
 | `ref` | `Ref<PipelineImageRef>` | — | Forwarded to the underlying `NativeNitroImage` host view — gives access to native-view methods (`measure`, …) and makes the component work with `Animated.createAnimatedComponent` (see [Animating](#animating-with-react-native-reanimated)) |
 | `…NativeNitroImage props` | — | — | Everything else (`resizeMode`, `recyclingKey`, `testID`, …) is passed through to `NativeNitroImage` |
+
+### `<NativePipelineImage>`
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `url` | `string` | — | Image URL to load |
+| `style` | `StyleProp<ViewStyle>` | — | Layout style. The native side measures the view and loads at that size; `borderRadius`-family properties drive `cornerRadius` when it's omitted |
+| `blur` | `number` | `0` | Gaussian blur strength, in **points** (screen scale applied natively) |
+| `cornerRadius` | `number \| CornerRadii` | derived from `style` | Corner radius, in **points** (screen scale applied natively) |
+| `cache` | `'memory' \| 'disk' \| 'none'` | platform default | Caching strategy |
+| `resize` | `{ width, height }` | measured from the view | Explicit target bitmap size in **pixels**, skipping the native measurement. Rarely needed |
+| `ref` | `Ref<NativePipelineImageRef>` | — | Forwarded to the underlying `NativeNitroImage` host view |
+| `…NativeNitroImage props` | — | — | Everything else (`resizeMode`, `recyclingKey`, `testID`, …) is passed through; `recyclingKey` defaults to `url` |
+
+No `onLoad`/`onError`: loading happens entirely natively and the result never crosses into JS.
+
+### `createImageLoader(url, options?)` / `usePipelineImageLoader(url, options?)`
+
+Creates the [`ImageLoader`](https://github.com/mrousavy/react-native-nitro-image) that powers
+`<NativePipelineImage>`, for use with your own `<NativeNitroImage image={loader} />`. The view
+calls into it natively when it attaches (load at the view's laid-out size) and detaches
+(cancel + release). `options` takes `blur`/`cornerRadius` in **points** and an optional
+pixel-based `resize` override — see the `ViewOptions` type. The hook memoizes by value, so
+inline options literals are fine. `loader.loadImage()` also works imperatively and resolves with
+the processed `Image`.
 
 ### `resizeForStyle(style)` / `resizeForLayout(width, height)`
 

@@ -22,6 +22,10 @@ namespace margelo::nitro::nitroimagepipeline { enum class CacheOption; }
 namespace margelo::nitro::nitroimagepipeline { struct CornerRadii; }
 // Forward declaration of `ResizeOptions` to properly resolve imports.
 namespace margelo::nitro::nitroimagepipeline { struct ResizeOptions; }
+// Forward declaration of `HybridImageLoaderSpec` to properly resolve imports.
+namespace margelo::nitro::image { class HybridImageLoaderSpec; }
+// Forward declaration of `ViewOptions` to properly resolve imports.
+namespace margelo::nitro::nitroimagepipeline { struct ViewOptions; }
 
 #include <memory>
 #include <NitroImage/HybridImageSpec.hpp>
@@ -33,6 +37,8 @@ namespace margelo::nitro::nitroimagepipeline { struct ResizeOptions; }
 #include "CornerRadii.hpp"
 #include <variant>
 #include "ResizeOptions.hpp"
+#include <NitroImage/HybridImageLoaderSpec.hpp>
+#include "ViewOptions.hpp"
 #include <vector>
 
 #include "NitroImagePipeline-Swift-Cxx-Umbrella.hpp"
@@ -87,6 +93,14 @@ namespace margelo::nitro::nitroimagepipeline {
     // Methods
     inline std::shared_ptr<Promise<std::shared_ptr<margelo::nitro::image::HybridImageSpec>>> loadImage(const std::string& url, const std::optional<Options>& options) override {
       auto __result = _swiftPart.loadImage(url, options);
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+      auto __value = std::move(__result.value());
+      return __value;
+    }
+    inline std::shared_ptr<margelo::nitro::image::HybridImageLoaderSpec> createImageLoader(const std::string& url, const std::optional<ViewOptions>& options) override {
+      auto __result = _swiftPart.createImageLoader(url, options);
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }

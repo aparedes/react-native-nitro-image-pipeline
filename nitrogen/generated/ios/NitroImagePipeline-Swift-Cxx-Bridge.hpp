@@ -12,6 +12,8 @@
 namespace margelo::nitro::nitroimagepipeline { enum class CacheOption; }
 // Forward declaration of `CornerRadii` to properly resolve imports.
 namespace margelo::nitro::nitroimagepipeline { struct CornerRadii; }
+// Forward declaration of `HybridImageLoaderSpec` to properly resolve imports.
+namespace margelo::nitro::image { class HybridImageLoaderSpec; }
 // Forward declaration of `HybridImageSpec` to properly resolve imports.
 namespace margelo::nitro::image { class HybridImageSpec; }
 // Forward declaration of `HybridNitroImagePipelineSpec` to properly resolve imports.
@@ -20,8 +22,12 @@ namespace margelo::nitro::nitroimagepipeline { class HybridNitroImagePipelineSpe
 namespace margelo::nitro::nitroimagepipeline { struct Options; }
 // Forward declaration of `ResizeOptions` to properly resolve imports.
 namespace margelo::nitro::nitroimagepipeline { struct ResizeOptions; }
+// Forward declaration of `ViewOptions` to properly resolve imports.
+namespace margelo::nitro::nitroimagepipeline { struct ViewOptions; }
 
 // Forward declarations of Swift defined types
+// Forward declaration of `HybridImageLoaderSpec_cxx` to properly resolve imports.
+namespace NitroImage { class HybridImageLoaderSpec_cxx; }
 // Forward declaration of `HybridImageSpec_cxx` to properly resolve imports.
 namespace NitroImage { class HybridImageSpec_cxx; }
 // Forward declaration of `HybridNitroImagePipelineSpec_cxx` to properly resolve imports.
@@ -33,6 +39,8 @@ namespace NitroImagePipeline { class HybridNitroImagePipelineSpec_cxx; }
 #include "HybridNitroImagePipelineSpec.hpp"
 #include "Options.hpp"
 #include "ResizeOptions.hpp"
+#include "ViewOptions.hpp"
+#include <NitroImage/HybridImageLoaderSpec.hpp>
 #include <NitroImage/HybridImageSpec.hpp>
 #include <NitroModules/Promise.hpp>
 #include <NitroModules/PromiseHolder.hpp>
@@ -223,6 +231,33 @@ namespace margelo::nitro::nitroimagepipeline::bridge::swift {
     return optional.value();
   }
   
+  // pragma MARK: std::shared_ptr<margelo::nitro::image::HybridImageLoaderSpec>
+  /**
+   * Specialized version of `std::shared_ptr<margelo::nitro::image::HybridImageLoaderSpec>`.
+   */
+  using std__shared_ptr_margelo__nitro__image__HybridImageLoaderSpec_ = std::shared_ptr<margelo::nitro::image::HybridImageLoaderSpec>;
+  std::shared_ptr<margelo::nitro::image::HybridImageLoaderSpec> create_std__shared_ptr_margelo__nitro__image__HybridImageLoaderSpec_(void* NON_NULL swiftUnsafePointer) noexcept;
+  void* NON_NULL get_std__shared_ptr_margelo__nitro__image__HybridImageLoaderSpec_(std__shared_ptr_margelo__nitro__image__HybridImageLoaderSpec_ cppType);
+  
+  // pragma MARK: std::weak_ptr<margelo::nitro::image::HybridImageLoaderSpec>
+  using std__weak_ptr_margelo__nitro__image__HybridImageLoaderSpec_ = std::weak_ptr<margelo::nitro::image::HybridImageLoaderSpec>;
+  inline std__weak_ptr_margelo__nitro__image__HybridImageLoaderSpec_ weakify_std__shared_ptr_margelo__nitro__image__HybridImageLoaderSpec_(const std::shared_ptr<margelo::nitro::image::HybridImageLoaderSpec>& strong) noexcept { return strong; }
+  
+  // pragma MARK: std::optional<ViewOptions>
+  /**
+   * Specialized version of `std::optional<ViewOptions>`.
+   */
+  using std__optional_ViewOptions_ = std::optional<ViewOptions>;
+  inline std::optional<ViewOptions> create_std__optional_ViewOptions_(const ViewOptions& value) noexcept {
+    return std::optional<ViewOptions>(value);
+  }
+  inline bool has_value_std__optional_ViewOptions_(const std::optional<ViewOptions>& optional) noexcept {
+    return optional.has_value();
+  }
+  inline ViewOptions get_std__optional_ViewOptions_(const std::optional<ViewOptions>& optional) noexcept {
+    return optional.value();
+  }
+  
   // pragma MARK: std::shared_ptr<Promise<void>>
   /**
    * Specialized version of `std::shared_ptr<Promise<void>>`.
@@ -287,6 +322,15 @@ namespace margelo::nitro::nitroimagepipeline::bridge::swift {
   }
   inline Result_std__shared_ptr_Promise_std__shared_ptr_margelo__nitro__image__HybridImageSpec____ create_Result_std__shared_ptr_Promise_std__shared_ptr_margelo__nitro__image__HybridImageSpec____(const std::exception_ptr& error) noexcept {
     return Result<std::shared_ptr<Promise<std::shared_ptr<margelo::nitro::image::HybridImageSpec>>>>::withError(error);
+  }
+  
+  // pragma MARK: Result<std::shared_ptr<margelo::nitro::image::HybridImageLoaderSpec>>
+  using Result_std__shared_ptr_margelo__nitro__image__HybridImageLoaderSpec__ = Result<std::shared_ptr<margelo::nitro::image::HybridImageLoaderSpec>>;
+  inline Result_std__shared_ptr_margelo__nitro__image__HybridImageLoaderSpec__ create_Result_std__shared_ptr_margelo__nitro__image__HybridImageLoaderSpec__(const std::shared_ptr<margelo::nitro::image::HybridImageLoaderSpec>& value) noexcept {
+    return Result<std::shared_ptr<margelo::nitro::image::HybridImageLoaderSpec>>::withValue(value);
+  }
+  inline Result_std__shared_ptr_margelo__nitro__image__HybridImageLoaderSpec__ create_Result_std__shared_ptr_margelo__nitro__image__HybridImageLoaderSpec__(const std::exception_ptr& error) noexcept {
+    return Result<std::shared_ptr<margelo::nitro::image::HybridImageLoaderSpec>>::withError(error);
   }
   
   // pragma MARK: Result<std::shared_ptr<Promise<void>>>

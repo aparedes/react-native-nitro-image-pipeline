@@ -55,6 +55,7 @@ namespace margelo::nitro::nitroimagepipeline {
   public:
     // Methods
     std::shared_ptr<Promise<std::shared_ptr<margelo::nitro::image::HybridImageSpec>>> loadImage(const std::string& url, const std::optional<Options>& options) override;
+    std::shared_ptr<margelo::nitro::image::HybridImageLoaderSpec> createImageLoader(const std::string& url, const std::optional<ViewOptions>& options) override;
     std::shared_ptr<Promise<void>> preLoadImage(const std::string& url) override;
     std::shared_ptr<Promise<void>> preLoadImages(const std::vector<std::string>& urls) override;
     std::shared_ptr<Promise<std::shared_ptr<margelo::nitro::image::HybridImageSpec>>> gaussianBlur(const std::shared_ptr<margelo::nitro::image::HybridImageSpec>& image, double radius) override;

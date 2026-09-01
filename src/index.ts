@@ -1,3 +1,8 @@
+export {
+  NativePipelineImage,
+  type NativePipelineImageProps,
+  type NativePipelineImageRef,
+} from './NativePipelineImage';
 export { NitroImagePipeline } from './NitroImagePipeline';
 export {
   PipelineImage,
@@ -14,5 +19,7 @@ export type {
   CornerRadii,
   Options,
   ResizeOptions,
+  ViewOptions,
 } from './specs/nitro-image-toolkit.nitro';
 export { useImage } from './useImage';
+export { usePipelineImageLoader } from './usePipelineImageLoader';

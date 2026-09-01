@@ -13,6 +13,7 @@ import com.facebook.proguard.annotations.DoNotStrip
 import dalvik.annotation.optimization.FastNative
 import com.margelo.nitro.image.HybridImageSpec
 import com.margelo.nitro.core.Promise
+import com.margelo.nitro.image.HybridImageLoaderSpec
 import com.margelo.nitro.core.HybridObject
 
 /**
@@ -34,6 +35,10 @@ abstract class HybridNitroImagePipelineSpec: HybridObject() {
   @DoNotStrip
   @Keep
   abstract fun loadImage(url: String, options: Options?): Promise<com.margelo.nitro.image.HybridImageSpec>
+  
+  @DoNotStrip
+  @Keep
+  abstract fun createImageLoader(url: String, options: ViewOptions?): com.margelo.nitro.image.HybridImageLoaderSpec
   
   @DoNotStrip
   @Keep
