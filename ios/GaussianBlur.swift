@@ -37,17 +37,20 @@ enum GaussianBlur {
             renderingIntent: .defaultIntent
         ) else { return nil }
 
+        // Both buffers are freed on exit, except the one handed over to the
+        // result CGImage below (`handedOver`), which is freed with the image.
+        var handedOver: UnsafeMutableRawPointer?
         var source = vImage_Buffer()
         guard vImageBuffer_InitWithCGImage(
             &source, &format, nil, cgImage, vImage_Flags(kvImageNoFlags)
         ) == kvImageNoError else { return nil }
-        defer { free(source.data) }
+        defer { if source.data != handedOver { free(source.data) } }
 
         var scratch = vImage_Buffer()
         guard vImageBuffer_Init(
             &scratch, source.height, source.width, 32, vImage_Flags(kvImageNoFlags)
         ) == kvImageNoError else { return nil }
-        defer { free(scratch.data) }
+        defer { if scratch.data != handedOver { free(scratch.data) } }
 
         // kvImageEdgeExtend clamps at the borders instead of sampling
         // transparent black, so the image keeps its edges instead of fading
@@ -75,9 +78,17 @@ enum GaussianBlur {
             swap(&input, &output)
         }
 
+        // kvImageNoAllocate wraps the result buffer in the CGImage instead of
+        // copying it (one full-bitmap memcpy less per blur); the callback
+        // frees the buffer when the image is released. From here on the
+        // buffer belongs to vImage either way: it is not freed on exit above,
+        // and on the (malformed-format-only) failure path leaking it is the
+        // safe choice since whether vImage already ran the callback is not
+        // specified.
+        handedOver = input.data
         var error = vImage_Error(kvImageNoError)
         guard let blurred = vImageCreateCGImageFromBuffer(
-            &input, &format, nil, nil, vImage_Flags(kvImageNoFlags), &error
+            &input, &format, { _, data in free(data) }, nil, vImage_Flags(kvImageNoAllocate), &error
         )?.takeRetainedValue(), error == kvImageNoError else { return nil }
 
         return blurred

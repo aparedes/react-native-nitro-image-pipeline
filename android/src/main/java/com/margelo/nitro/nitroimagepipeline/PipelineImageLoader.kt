@@ -104,7 +104,9 @@ class PipelineImageLoader(
           val scale = imageView.resources.displayMetrics.density
           val request =
               HybridNitroImagePipeline.buildRequest(context, url, pixelOptions(scale, resize))
-          val loader = HybridNitroImagePipeline.getOrCreateImageLoader(context)
+          // Synchronous once the shared loader exists; otherwise its (slow)
+          // creation runs on a background thread instead of here on main.
+          val loader = HybridNitroImagePipeline.awaitImageLoader(context)
           val result = loader.execute(request)
           // Cancellation normally surfaces as a CancellationException at the
           // suspension point above, but make it explicit: a job that was

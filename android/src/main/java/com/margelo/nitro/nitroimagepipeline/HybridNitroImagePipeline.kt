@@ -29,10 +29,12 @@ import com.margelo.nitro.image.HybridImageSpec
 import com.margelo.nitro.nitroimagepipeline.transform.BlurTransformation
 import com.margelo.nitro.nitroimagepipeline.transform.ResizeTransformation
 import kotlin.math.roundToInt
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okio.Path.Companion.toOkioPath
@@ -44,6 +46,15 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
 
   private val imageLoader: ImageLoader
     get() = getOrCreateImageLoader(context)
+
+  init {
+    // Build the shared loader now, on a background thread, instead of on
+    // whichever thread the first request happens to run on. Creating it
+    // builds a CronetEngine, an OkHttpClient and the disk cache — well over
+    // a frame's worth of work — and the first `PipelineImageLoader` request
+    // would otherwise do that on the main thread.
+    (NitroModules.applicationContext as? Context)?.let { warmUpImageLoader(it) }
+  }
 
   override fun loadImage(url: String, options: Options?): Promise<HybridImageSpec> = Promise.async {
     when (val result = imageLoader.execute(buildRequest(context, url, options))) {
@@ -131,28 +142,39 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
             val height = r.height.roundToInt()
             if (width > 0 && height > 0) width to height else null
           }
+      val roundedCorners: RoundedCornersTransformation? =
+          options
+              ?.cornerRadius
+              ?.match(
+                  first = { radius ->
+                    if (radius > 0.0) RoundedCornersTransformation(radius.toFloat()) else null
+                  },
+                  second = { radii ->
+                    // RoundedCornersTransformation rejects negative radii; treat them as square.
+                    val topLeft = (radii.topLeft?.toFloat() ?: 0f).coerceAtLeast(0f)
+                    val topRight = (radii.topRight?.toFloat() ?: 0f).coerceAtLeast(0f)
+                    val bottomLeft = (radii.bottomLeft?.toFloat() ?: 0f).coerceAtLeast(0f)
+                    val bottomRight = (radii.bottomRight?.toFloat() ?: 0f).coerceAtLeast(0f)
+                    if (topLeft > 0f || topRight > 0f || bottomLeft > 0f || bottomRight > 0f) {
+                      RoundedCornersTransformation(topLeft, topRight, bottomLeft, bottomRight)
+                    } else {
+                      null
+                    }
+                  },
+              )
       val transformations = buildList {
         // Resize first: blur sigma and corner radii are in pixels of the bitmap
-        // they run on, so they must see the final size.
-        resize?.let { (width, height) -> add(ResizeTransformation(width, height)) }
+        // they run on, so they must see the final size. Coil's
+        // RoundedCornersTransformation already scale-fills and center-crops
+        // to the request size (`resize`, when set) as part of its own draw,
+        // so with rounded corners and no blur the explicit resize would only
+        // add an intermediate bitmap — and the radii still apply to the final
+        // size, because that is the size its output has.
+        if (resize != null && (blur > 0f || roundedCorners == null)) {
+          add(ResizeTransformation(resize.first, resize.second))
+        }
         if (blur > 0f) add(BlurTransformation(context, blur))
-        options
-            ?.cornerRadius
-            ?.match(
-                first = { radius ->
-                  if (radius > 0.0) add(RoundedCornersTransformation(radius.toFloat()))
-                },
-                second = { radii ->
-                  // RoundedCornersTransformation rejects negative radii; treat them as square.
-                  val topLeft = (radii.topLeft?.toFloat() ?: 0f).coerceAtLeast(0f)
-                  val topRight = (radii.topRight?.toFloat() ?: 0f).coerceAtLeast(0f)
-                  val bottomLeft = (radii.bottomLeft?.toFloat() ?: 0f).coerceAtLeast(0f)
-                  val bottomRight = (radii.bottomRight?.toFloat() ?: 0f).coerceAtLeast(0f)
-                  if (topLeft > 0f || topRight > 0f || bottomLeft > 0f || bottomRight > 0f) {
-                    add(RoundedCornersTransformation(topLeft, topRight, bottomLeft, bottomRight))
-                  }
-                },
-            )
+        roundedCorners?.let { add(it) }
       }
       return ImageRequest.Builder(context)
           .data(url)
@@ -198,6 +220,20 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
             ?: synchronized(this) {
               sharedImageLoader ?: createImageLoader(context).also { sharedImageLoader = it }
             }
+
+    /**
+     * The shared loader, creating it on [Dispatchers.IO] if it doesn't exist yet. Use this from
+     * main-thread coroutines: once the loader exists this returns synchronously (so memory-cache
+     * hits stay synchronous), and until then the expensive creation runs off the main thread.
+     */
+    internal suspend fun awaitImageLoader(context: Context): ImageLoader =
+        sharedImageLoader ?: withContext(Dispatchers.IO) { getOrCreateImageLoader(context) }
+
+    /** Starts creating the shared loader on a background thread, if it doesn't exist yet. */
+    private fun warmUpImageLoader(context: Context) {
+      if (sharedImageLoader != null) return
+      CoroutineScope(Dispatchers.IO).launch { getOrCreateImageLoader(context) }
+    }
 
     private fun createImageLoader(context: Context): ImageLoader {
       val okHttpClient =

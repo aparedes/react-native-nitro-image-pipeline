@@ -21,21 +21,14 @@ class HybridImage: HybridImageSpec, NativeImage {
     // doesn't pin its encoding forever.
     private let pngLock = NSLock()
     private var cachedPngData: Data?
+    // Registered only once there is encoded data to drop: most images are
+    // only ever displayed, and an observer per image is wasted work in a
+    // list of hundreds. Guarded by `pngLock` like the data it protects.
     private var memoryWarningObserver: (any NSObjectProtocol)?
 
     init(uiImage: UIImage) {
         self.uiImage = uiImage
         super.init()
-        memoryWarningObserver = NotificationCenter.default.addObserver(
-            forName: UIApplication.didReceiveMemoryWarningNotification,
-            object: nil,
-            queue: nil
-        ) { [weak self] _ in
-            guard let self else { return }
-            self.pngLock.lock()
-            self.cachedPngData = nil
-            self.pngLock.unlock()
-        }
     }
 
     deinit {
@@ -52,6 +45,18 @@ class HybridImage: HybridImageSpec, NativeImage {
         }
         let data = uiImage.pngData()
         cachedPngData = data
+        if data != nil, memoryWarningObserver == nil {
+            memoryWarningObserver = NotificationCenter.default.addObserver(
+                forName: UIApplication.didReceiveMemoryWarningNotification,
+                object: nil,
+                queue: nil
+            ) { [weak self] _ in
+                guard let self else { return }
+                self.pngLock.lock()
+                self.cachedPngData = nil
+                self.pngLock.unlock()
+            }
+        }
         return data
     }
 
@@ -104,6 +109,15 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
         // warnings and when the app enters the background.
         configuration.imageCache = ImageCache(
             costLimit: min(ImageCache.defaultCostLimit, 128 * 1024 * 1024)
+        )
+        // Nuke decodes on a serial queue by default, so a screenful of new
+        // list cells is decoded one image at a time however many cores the
+        // device has. Decode in parallel instead — capped so a burst of
+        // full-resolution decodes (no `resize`) can't multiply peak memory
+        // by the core count. Processing stays at Nuke's default of 2: the
+        // blur allocates several full-size buffers per image.
+        configuration.imageDecodingQueue.maxConcurrentOperationCount = min(
+            4, max(1, ProcessInfo.processInfo.activeProcessorCount)
         )
         return ImagePipeline(configuration: configuration)
     }()
