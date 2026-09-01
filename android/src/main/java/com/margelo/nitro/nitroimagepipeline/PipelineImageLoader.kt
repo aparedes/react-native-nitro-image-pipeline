@@ -113,7 +113,9 @@ class PipelineImageLoader(
           if (!isActive) return@launch
           when (result) {
             is SuccessResult -> imageView.setImageBitmap(HybridNitroImagePipeline.bitmapOf(result))
-            is ErrorResult -> Log.w(TAG, "Failed to load $url", result.throwable)
+            // Deliberately no URL in the message — signed URLs and query
+            // tokens must not leak into consuming apps' Logcat.
+            is ErrorResult -> Log.w(TAG, "Failed to load image", result.throwable)
           }
         }
     jobs[forView] = job

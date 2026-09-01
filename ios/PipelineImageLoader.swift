@@ -74,7 +74,7 @@ class PipelineImageLoader: HybridImageLoaderSpec {
             blur: options?.blur.map { $0 * scale },
             cache: options?.cache,
             cornerRadius: cornerRadius,
-            resize: sizePx.map { ResizeOptions(width: $0.width, height: $0.height) }
+            resize: sizePx.map { ResizeOptions(width: Double($0.width), height: Double($0.height)) }
         )
     }
 
