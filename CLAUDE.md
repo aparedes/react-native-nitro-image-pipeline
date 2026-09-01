@@ -76,11 +76,14 @@ lib/   ← compiled JS/TS outputs (commonjs, module, typedefs)
 | `ios/GaussianBlurProcessor.swift` | UIImage + Nuke `ImageProcessing` plumbing around that kernel |
 | `scripts/verify-blur.swift` | Host-side blur checks, run by `bun run verify:blur` and in CI |
 | `android/.../transform/BlurTransformation.kt` | Android blur kernel (RenderScript) as a Coil `Transformation` |
+| `ios/PipelineImageLoader.swift` / `android/.../PipelineImageLoader.kt` | Native `ImageLoader` (react-native-nitro-image) impls behind `createImageLoader` — the view loads at its laid-out size on attach, cancels on detach; `ViewOptions` are points, converted to pixels natively |
 | `src/index.ts` | Library entry point — re-exports only |
 | `src/NitroImagePipeline.ts` | Creates the HybridObject |
 | `src/useImage.ts` | Hook; `enabled` defers loading |
 | `src/resizeForStyle.ts` | Points → bitmap-pixel `resize` helpers |
 | `src/PipelineImage.tsx` | `NativeNitroImage` wrapper that derives `resize` from `style`/`onLayout`; its `blur`/`cornerRadius` are in points |
+| `src/usePipelineImageLoader.ts` | Hook; value-memoized `ImageLoader` for `<NativeNitroImage image={...}>` |
+| `src/NativePipelineImage.tsx` | Fully native-driven image component — no JS work per image after mount; no `onLoad`/`onError` |
 | `nitro.json` | Nitrogen codegen config (namespace, module names, language targets) |
 | `NitroImagePipeline.podspec` | iOS CocoaPods spec — do not manually add source files; nitrogen autolinking handles it |
 | `android/CMakeLists.txt` | C++ build config — includes nitrogen-generated cmake |
