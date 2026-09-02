@@ -28,7 +28,10 @@ class HardwareBitmapTransformation private constructor() : Transformation() {
 
   override suspend fun transform(input: Bitmap, size: Size): Bitmap {
     if (!isSupported || input.config == Bitmap.Config.HARDWARE) return input
-    return input.copy(Bitmap.Config.HARDWARE, false) ?: input
+    // Performance-only: a failed upload (null, or an allocation/driver
+    // exception) must not fail the request, so fall back to the software
+    // bitmap either way.
+    return runCatching { input.copy(Bitmap.Config.HARDWARE, false) }.getOrNull() ?: input
   }
 
   override fun toString() = "HardwareBitmapTransformation"
