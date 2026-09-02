@@ -104,7 +104,15 @@ class PipelineImageLoader(
       // known yet — wait for the first non-empty layout.
       val resize = explicitResize ?: measuredSize(imageView)
       val scale = imageView.resources.displayMetrics.density
-      val request = HybridNitroImagePipeline.buildRequest(context, url, pixelOptions(scale, resize))
+      // The result is only ever drawn here, so a transformed one is cached as
+      // a hardware bitmap: no texture upload per view that shows it.
+      val request =
+          HybridNitroImagePipeline.buildRequest(
+              context,
+              url,
+              pixelOptions(scale, resize),
+              hardwareResult = true,
+          )
       // Synchronous once the shared loader exists; otherwise its (slow)
       // creation runs on a background thread instead of here on main.
       val loader = HybridNitroImagePipeline.awaitImageLoader(context)
