@@ -27,6 +27,7 @@ import com.margelo.nitro.core.Promise
 import com.margelo.nitro.image.HybridImage
 import com.margelo.nitro.image.HybridImageSpec
 import com.margelo.nitro.nitroimagepipeline.transform.BlurTransformation
+import com.margelo.nitro.nitroimagepipeline.transform.HardwareBitmapTransformation
 import com.margelo.nitro.nitroimagepipeline.transform.ResizeTransformation
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
@@ -132,8 +133,17 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
     /**
      * The [ImageRequest] for [url] with [options] applied — shared by [loadImage] and
      * [PipelineImageLoader] so both hit the same caches with identical cache keys.
+     *
+     * With [hardwareResult], a transformed result is converted to a hardware bitmap before it is
+     * cached (see [HardwareBitmapTransformation]). Only for callers that draw the result: its
+     * pixels cannot be read back, and its cache key differs from the software one.
      */
-    internal fun buildRequest(context: Context, url: String, options: Options?): ImageRequest {
+    internal fun buildRequest(
+        context: Context,
+        url: String,
+        options: Options?,
+        hardwareResult: Boolean = false,
+    ): ImageRequest {
       val blur = options?.blur?.toFloat() ?: 0f
       val resize =
           options?.resize?.let { r ->
@@ -174,6 +184,12 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
         }
         if (blur > 0f) add(BlurTransformation(blur))
         roundedCorners?.let { add(it) }
+        // Without transformations Coil decodes straight to a hardware bitmap
+        // already (allowHardware below); only a transformed result needs the
+        // explicit upload.
+        if (hardwareResult && isNotEmpty() && HardwareBitmapTransformation.isSupported) {
+          add(HardwareBitmapTransformation.instance)
+        }
       }
       return ImageRequest.Builder(context)
           .data(url)
