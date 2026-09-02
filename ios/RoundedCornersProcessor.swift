@@ -48,6 +48,11 @@ struct RoundedCornersProcessor: ImageProcessing {
         let format = UIGraphicsImageRendererFormat()
         format.scale = image.scale
         format.opaque = false
+        // `.automatic` picks the extended (16-bit-per-channel) range on
+        // wide-gamut displays, which doubles the bytes of this bitmap — the
+        // one that ends up in the memory cache and on screen — for an 8-bit
+        // sRGB source that gains nothing from it.
+        format.preferredRange = .standard
 
         let rect = CGRect(origin: .zero, size: size)
         return UIGraphicsImageRenderer(size: size, format: format).image { context in

@@ -57,7 +57,7 @@ class PipelineImageLoader: HybridImageLoaderSpec {
     /// The point-based `ViewOptions` as pixel-based `Options`, resolved
     /// against `scale` and the target size in pixels.
     private func pixelOptions(scale: CGFloat, sizePx: CGSize?) -> Options {
-        let cornerRadius: Variant_Double_CornerRadii? = options?.cornerRadius.map { radius -> Variant_Double_CornerRadii in
+        let cornerRadius = options?.cornerRadius.map { radius -> Variant_Double_CornerRadii in
             switch radius {
             case .first(let uniform):
                 return .first(uniform * scale)
@@ -174,6 +174,16 @@ class PipelineImageLoader: HybridImageLoaderSpec {
             options: pixelOptions(scale: scale, sizePx: sizePx)
         )
         let pipeline = self.pipeline
+        // A memory-cache hit is served synchronously. Going through
+        // `pipeline.image(for:)` would resume on Nuke's queue and then hop
+        // back to the main actor, so a recycled cell (whose image `dropImage`
+        // just cleared) would show empty for a frame or two even though the
+        // bitmap is already in memory. The subscript honours the request's
+        // `.disableMemoryCacheReads`, so `cache: 'disk'`/`'none'` still miss.
+        if !request.options.contains(.disableMemoryCacheReads), let cached = pipeline.cache[request] {
+            imageView.image = cached.image
+            return
+        }
         // Cancelling the Task cancels Nuke's request; a finished task stays in
         // the map (cancelling it is a no-op) until `cancel` replaces it.
         tasks[key] = Task { @MainActor [weak imageView] in

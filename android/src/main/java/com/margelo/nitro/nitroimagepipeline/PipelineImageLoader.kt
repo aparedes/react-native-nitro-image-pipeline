@@ -60,18 +60,21 @@ class PipelineImageLoader(
    */
   private fun pixelOptions(scale: Float, resize: ResizeOptions?): Options {
     val cornerRadius =
-        options?.cornerRadius?.match(
-            first = { radius -> Variant_Double_CornerRadii.create(radius * scale) },
-            second = { radii ->
-              Variant_Double_CornerRadii.create(
-                  CornerRadii(
-                      topLeft = radii.topLeft?.times(scale),
-                      topRight = radii.topRight?.times(scale),
-                      bottomLeft = radii.bottomLeft?.times(scale),
-                      bottomRight = radii.bottomRight?.times(scale),
-                  ))
-            },
-        )
+        options
+            ?.cornerRadius
+            ?.match(
+                first = { radius -> Variant_Double_CornerRadii.create(radius * scale) },
+                second = { radii ->
+                  Variant_Double_CornerRadii.create(
+                      CornerRadii(
+                          topLeft = radii.topLeft?.times(scale),
+                          topRight = radii.topRight?.times(scale),
+                          bottomLeft = radii.bottomLeft?.times(scale),
+                          bottomRight = radii.bottomRight?.times(scale),
+                      )
+                  )
+                },
+            )
     return Options(
         blur = options?.blur?.times(scale),
         cache = options?.cache,
@@ -96,28 +99,28 @@ class PipelineImageLoader(
     val view = forView as? HybridImageView ?: return
     val imageView = view.imageView
     jobs[forView]?.cancel()
-    val job =
-        mainScope.launch {
-          // Views attach before they are laid out, so the size may not be
-          // known yet — wait for the first non-empty layout.
-          val resize = explicitResize ?: measuredSize(imageView)
-          val scale = imageView.resources.displayMetrics.density
-          val request =
-              HybridNitroImagePipeline.buildRequest(context, url, pixelOptions(scale, resize))
-          val loader = HybridNitroImagePipeline.getOrCreateImageLoader(context)
-          val result = loader.execute(request)
-          // Cancellation normally surfaces as a CancellationException at the
-          // suspension point above, but make it explicit: a job that was
-          // dropped or replaced while the result was in flight must never
-          // touch the view.
-          if (!isActive) return@launch
-          when (result) {
-            is SuccessResult -> imageView.setImageBitmap(HybridNitroImagePipeline.bitmapOf(result))
-            // Deliberately no URL in the message — signed URLs and query
-            // tokens must not leak into consuming apps' Logcat.
-            is ErrorResult -> Log.w(TAG, "Failed to load image", result.throwable)
-          }
-        }
+    val job = mainScope.launch {
+      // Views attach before they are laid out, so the size may not be
+      // known yet — wait for the first non-empty layout.
+      val resize = explicitResize ?: measuredSize(imageView)
+      val scale = imageView.resources.displayMetrics.density
+      val request = HybridNitroImagePipeline.buildRequest(context, url, pixelOptions(scale, resize))
+      // Synchronous once the shared loader exists; otherwise its (slow)
+      // creation runs on a background thread instead of here on main.
+      val loader = HybridNitroImagePipeline.awaitImageLoader(context)
+      val result = loader.execute(request)
+      // Cancellation normally surfaces as a CancellationException at the
+      // suspension point above, but make it explicit: a job that was
+      // dropped or replaced while the result was in flight must never
+      // touch the view.
+      if (!isActive) return@launch
+      when (result) {
+        is SuccessResult -> imageView.setImageBitmap(HybridNitroImagePipeline.bitmapOf(result))
+        // Deliberately no URL in the message — signed URLs and query
+        // tokens must not leak into consuming apps' Logcat.
+        is ErrorResult -> Log.w(TAG, "Failed to load image", result.throwable)
+      }
+    }
     jobs[forView] = job
     job.invokeOnCompletion { if (jobs[forView] === job) jobs.remove(forView) }
   }
