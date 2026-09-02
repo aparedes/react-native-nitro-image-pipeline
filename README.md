@@ -357,11 +357,12 @@ Two things follow from the unit being *source* pixels:
 Values below ~1 are smaller than the smallest kernel either backend can build and are effectively a
 no-op. There is no upper bound.
 
-Implementation: iOS runs three Accelerate box-convolution passes sized to hit the requested sigma
-(the standard three-box Gaussian approximation, accurate to a few percent); Android uses
-RenderScript's true Gaussian, downscaling first when sigma exceeds the single-pass ceiling of
-~10.6px and compensating the radius so the result is unchanged. Both clamp at the edges, so blurred
-images keep their borders instead of fading out.
+Implementation: both platforms run the same three box-convolution passes sized to hit the requested
+sigma (the standard three-box Gaussian approximation, accurate to a few percent) — iOS through
+Accelerate's `vImageBoxConvolve_ARGB8888`, Android through a C++ port of that kernel working directly
+on the bitmap's pixels. The two are checked against each other on every CI run and produce
+byte-identical output for the same input. Both clamp at the edges, so blurred images keep their
+borders instead of fading out.
 
 ### `setMemoryCacheLimit(bytes)`
 

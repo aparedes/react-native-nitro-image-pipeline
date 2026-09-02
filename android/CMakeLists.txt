@@ -11,6 +11,8 @@ add_compile_options(-DRN_SERIALIZABLE_STATE=1)
 # Define C++ library and add all sources
 add_library(${PACKAGE_NAME} SHARED
         src/main/cpp/cpp-adapter.cpp
+        src/main/cpp/GaussianBlur.cpp
+        src/main/cpp/GaussianBlurJni.cpp
 )
 
 # Add Nitrogen specs :)
@@ -23,12 +25,14 @@ include_directories(
 )
 
 find_library(LOG_LIB log)
+find_library(JNIGRAPHICS_LIB jnigraphics)             # <-- AndroidBitmap_lockPixels for the blur
 find_package(react-native-nitro-image REQUIRED)   # <-- for the HybridImage type
 
 # Link all libraries together
 target_link_libraries(
         ${PACKAGE_NAME}
         ${LOG_LIB}
+        ${JNIGRAPHICS_LIB}
         android                                   # <-- Android core
         react-native-nitro-image::NitroImage      # <-- NitroImage
 )

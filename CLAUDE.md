@@ -23,7 +23,7 @@ bun run build
 # Run codegen (nitrogen → build → post-script)
 bun run codegen
 
-# Verify the blur kernel (macOS + Xcode; runs in the iOS CI job)
+# Verify both blur kernels agree (macOS + Xcode; runs in the iOS CI job)
 bun run verify:blur
 
 # Clean all generated/build artifacts
@@ -75,7 +75,8 @@ lib/   ← compiled JS/TS outputs (commonjs, module, typedefs)
 | `ios/GaussianBlur.swift` | iOS blur kernel (Accelerate) — no UIKit/Nuke, so `scripts/verify-blur.swift` can compile it on the host |
 | `ios/GaussianBlurProcessor.swift` | UIImage + Nuke `ImageProcessing` plumbing around that kernel |
 | `scripts/verify-blur.swift` | Host-side blur checks, run by `bun run verify:blur` and in CI |
-| `android/.../transform/BlurTransformation.kt` | Android blur kernel (RenderScript) as a Coil `Transformation` |
+| `android/src/main/cpp/GaussianBlur.cpp` | Android blur kernel (C++, no JNI/Android headers) — a port of the iOS one, so `scripts/verify-blur.swift` can compile it on the host too |
+| `android/.../transform/BlurTransformation.kt` | Coil `Transformation` around that kernel, via the JNI entry point in `android/src/main/cpp/GaussianBlurJni.cpp` |
 | `ios/PipelineImageLoader.swift` / `android/.../PipelineImageLoader.kt` | Native `ImageLoader` (react-native-nitro-image) impls behind `createImageLoader` — the view loads at its laid-out size on attach, cancels on detach; `ViewOptions` are points, converted to pixels natively |
 | `src/index.ts` | Library entry point — re-exports only |
 | `src/NitroImagePipeline.ts` | Creates the HybridObject |
@@ -101,16 +102,18 @@ the value to its native blur unchanged:
 - iOS (`ios/GaussianBlur.swift`) runs three `vImageBoxConvolve_ARGB8888` passes whose widths are
   solved for the requested sigma. `CIGaussianBlur` is deliberately not used — its `inputRadius`
   measures ≈ `1.18 × sigma` and it fades image borders.
-- Android (`transform/BlurTransformation.kt`) inverts RenderScript's `sigma = 0.4 × radius + 0.6`
-  and, because `radius` caps at 25, blurs a downscaled copy for sigma above ~10.6px — compensating
-  the radius so the result is unchanged.
+- Android (`android/src/main/cpp/GaussianBlur.cpp`) is a port of that kernel: the same
+  `boxSizes(forSigma:)` search and the same three passes, each a separable box that rounds to 8 bits
+  once, run in place on the `ARGB_8888` bitmap through `AndroidBitmap_lockPixels`. There is no
+  RenderScript, no radius cap and no downscaling.
 
-Both clamp at the edges rather than sampling past them: vImage via `kvImageEdgeExtend`, RenderScript
-via `std::max/min` on the sample coordinate (see `OneVU4` in AOSP's blur). That is what keeps blurred
-images from fading out at their borders.
+Both clamp at the edges rather than sampling past them: vImage via `kvImageEdgeExtend`, the C++
+kernel by clamping the sample coordinate. That is what keeps blurred images from fading out at their
+borders.
 
-Changing either kernel means re-checking both against the same sigma — `bun run verify:blur` covers
-the iOS side.
+Changing either kernel means re-checking both against the same sigma — `bun run verify:blur`
+compiles both kernels for the host and asserts they pick the same box widths, measure the same sigma
+and produce byte-identical output on the same image.
 
 ### Nitro Modules Concepts
 

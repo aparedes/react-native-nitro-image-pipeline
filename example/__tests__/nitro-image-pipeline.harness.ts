@@ -108,8 +108,8 @@ describe('NitroImagePipeline', () => {
 
   it('keeps the source dimensions when blurring', async () => {
     const image = await NitroImagePipeline.loadImage(VALID_URL);
-    // A large sigma makes Android blur a downscaled copy internally; the
-    // result still has to come back at the original size.
+    // A sigma this wide used to make Android blur a downscaled copy; the
+    // result has to come back at the original size on both platforms.
     const blurred = await NitroImagePipeline.gaussianBlur(image, 30);
     expect(blurred.width).toBe(image.width);
     expect(blurred.height).toBe(image.height);
