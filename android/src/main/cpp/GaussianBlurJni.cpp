@@ -26,7 +26,10 @@ Java_com_margelo_nitro_nitroimagepipeline_transform_BlurTransformation_nativeBlu
   }
   if (info.format != ANDROID_BITMAP_FORMAT_RGBA_8888) {
     __android_log_print(
-        ANDROID_LOG_ERROR, kTag, "blur: expected an ARGB_8888 bitmap, got format %d", info.format);
+        ANDROID_LOG_ERROR,
+        kTag,
+        "blur: expected an ARGB_8888 bitmap (RGBA_8888 to the NDK), got NDK format %d",
+        info.format);
     return JNI_FALSE;
   }
 

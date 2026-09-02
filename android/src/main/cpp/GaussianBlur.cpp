@@ -116,6 +116,12 @@ extern "C" void nitro_blur_box_sizes(double sigma, uint32_t boxes[NITRO_BLUR_PAS
   // `GaussianBlur.boxSizes(forSigma:)` on iOS, so both platforms pick the
   // same widths.
   const int passes = NITRO_BLUR_PASSES;
+  // A NaN or infinite sigma would make every candidate's error NaN and
+  // leave `boxes` unwritten; treat it, and sigma <= 0, as "no blur".
+  if (!std::isfinite(sigma) || sigma <= 0) {
+    for (int i = 0; i < passes; i++) boxes[i] = 1;
+    return;
+  }
   int64_t lower = static_cast<int64_t>(std::sqrt((12 * sigma * sigma / passes) + 1));
   if (lower % 2 == 0) lower -= 1;
   lower = std::min<int64_t>(std::max<int64_t>(lower, 1), static_cast<int64_t>(UINT32_MAX) - 2);

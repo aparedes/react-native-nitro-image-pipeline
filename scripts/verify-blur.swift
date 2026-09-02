@@ -233,7 +233,8 @@ struct VerifyBlur {
     }
 
     /// The two kernels run on the same photo-like image have to produce the
-    /// same bytes, give or take one level of 8-bit rounding per channel.
+    /// same bytes — exactly: both round once per pass, so nothing is left
+    /// to rounding differences.
     static func checkKernelsAgreePixelwise() {
         let size = 257
         // A gradient with a checkerboard, a hard edge, and a translucent band
@@ -255,27 +256,27 @@ struct VerifyBlur {
             return Pixel(alpha: alpha, red: red, green: green, blue: blue)
         }
         print("\nPixel-wise agreement on a \(size)x\(size) synthetic photo:")
-        print("     sigma     max diff    pixels off by 1")
+        print("     sigma     max diff    pixels differing")
         for sigma in [4.0, 12.0, 30.0] {
             let ios = Kernel.ios.blur(image, sigma: sigma)
             let android = Kernel.android.blur(image, sigma: sigma)
             var maxDiff = 0
-            var offByOne = 0
+            var differing = 0
             for index in 0..<ios.bytes.count {
                 let diff = Int((Int(ios.bytes[index]) - Int(android.bytes[index])).magnitude)
                 if diff > maxDiff { maxDiff = diff }
                 // `BLUR_DEBUG=1 bun run verify:blur` prints where they differ.
-                if diff > 1 && ProcessInfo.processInfo.environment["BLUR_DEBUG"] != nil {
+                if diff > 0 && ProcessInfo.processInfo.environment["BLUR_DEBUG"] != nil {
                     let pixel = index / 4
                     print(
                         "  diff \(diff) at column \(pixel % size) row \(pixel / size)"
                             + " channel \(index % 4): iOS \(ios.bytes[index]) Android \(android.bytes[index])"
                     )
                 }
-                if diff == 1 { offByOne += 1 }
+                if diff != 0 { differing += 1 }
             }
-            print(String(format: "%10.1f %12d %18d", sigma, maxDiff, offByOne))
-            check(maxDiff <= 1, "sigma \(sigma): kernels differ by up to \(maxDiff) levels")
+            print(String(format: "%10.1f %12d %18d", sigma, maxDiff, differing))
+            check(maxDiff == 0, "sigma \(sigma): kernels differ by up to \(maxDiff) levels")
         }
     }
 
