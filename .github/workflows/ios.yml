@@ -172,7 +172,7 @@ jobs:
 
       - name: Run Harness Tests
         if: env.HARNESS_ENABLED == 'true'
-        uses: callstackincubator/react-native-harness@v1.2.0
+        uses: callstackincubator/react-native-harness@v1.4.1
         with:
           runner: iphone-17
           app: ${{ github.workspace }}/example/ios/build/Build/Products/Debug-iphonesimulator/NitroImagePipelineExample.app
