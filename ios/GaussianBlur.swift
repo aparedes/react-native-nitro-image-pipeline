@@ -80,28 +80,39 @@ enum GaussianBlur {
             swap(&input, &output)
         }
 
-        // Wrap the result buffer in the CGImage instead of copying it (one
-        // full-bitmap memcpy less per blur). Ownership is explicit: once the
-        // data provider exists, it frees the buffer — together with the
-        // image, or right away if creating the image fails and the provider
-        // is released — so `handedOver` keeps the exits above from freeing
-        // it a second time. (vImageCreateCGImageFromBuffer with
-        // kvImageNoAllocate would do the same, but leaves unspecified whether
-        // its free callback runs when the call fails.)
+        // Ownership of the result buffer moves to the CGImage (no copy);
+        // `handedOver` keeps the exits above from freeing it a second time.
+        return makeImage(from: input, colorSpace: colorSpace, bitmapInfo: bitmapInfo, handedOver: &handedOver)
+    }
+
+    /// Wraps `buffer` in a CGImage instead of copying it (one full-bitmap
+    /// memcpy less per blur). Ownership is explicit: once the data provider
+    /// exists, it frees the buffer — together with the image, or right away
+    /// if creating the image fails and the provider is released — so
+    /// `handedOver` is set to the buffer's data as soon as that is the case.
+    /// (vImageCreateCGImageFromBuffer with kvImageNoAllocate would do the
+    /// same, but leaves unspecified whether its free callback runs when the
+    /// call fails.)
+    private static func makeImage(
+        from buffer: vImage_Buffer,
+        colorSpace: CGColorSpace,
+        bitmapInfo: CGBitmapInfo,
+        handedOver: inout UnsafeMutableRawPointer?
+    ) -> CGImage? {
         guard let provider = CGDataProvider(
             dataInfo: nil,
-            data: input.data,
-            size: input.rowBytes * Int(input.height),
+            data: buffer.data,
+            size: buffer.rowBytes * Int(buffer.height),
             releaseData: { _, data, _ in free(UnsafeMutableRawPointer(mutating: data)) }
         ) else { return nil }
-        handedOver = input.data
+        handedOver = buffer.data
 
         return CGImage(
-            width: Int(input.width),
-            height: Int(input.height),
+            width: Int(buffer.width),
+            height: Int(buffer.height),
             bitsPerComponent: 8,
             bitsPerPixel: 32,
-            bytesPerRow: input.rowBytes,
+            bytesPerRow: buffer.rowBytes,
             space: colorSpace,
             bitmapInfo: bitmapInfo,
             provider: provider,

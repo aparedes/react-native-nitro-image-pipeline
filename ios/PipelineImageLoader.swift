@@ -57,7 +57,7 @@ class PipelineImageLoader: HybridImageLoaderSpec {
     /// The point-based `ViewOptions` as pixel-based `Options`, resolved
     /// against `scale` and the target size in pixels.
     private func pixelOptions(scale: CGFloat, sizePx: CGSize?) -> Options {
-        let cornerRadius: Variant_Double_CornerRadii? = options?.cornerRadius.map { radius -> Variant_Double_CornerRadii in
+        let cornerRadius = options?.cornerRadius.map { radius -> Variant_Double_CornerRadii in
             switch radius {
             case .first(let uniform):
                 return .first(uniform * scale)
