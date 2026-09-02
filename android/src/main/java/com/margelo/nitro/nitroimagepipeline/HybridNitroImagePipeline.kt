@@ -99,8 +99,7 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
         if (sigma <= 0f) {
           hybridImage
         } else {
-          val blurred =
-              BlurTransformation(context, sigma).transform(hybridImage.bitmap, Size.ORIGINAL)
+          val blurred = BlurTransformation(sigma).transform(hybridImage.bitmap, Size.ORIGINAL)
           HybridImage(blurred)
         }
       }
@@ -173,7 +172,7 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
         if (resize != null && (blur > 0f || roundedCorners == null)) {
           add(ResizeTransformation(resize.first, resize.second))
         }
-        if (blur > 0f) add(BlurTransformation(context, blur))
+        if (blur > 0f) add(BlurTransformation(blur))
         roundedCorners?.let { add(it) }
       }
       return ImageRequest.Builder(context)
