@@ -1,3 +1,15 @@
+## [1.5.0](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v1.4.0...v1.5.0) (2026-09-03)
+
+### ✨ Features
+
+* add fully native-driven image loading (createImageLoader + NativePipelineImage) ([#86](https://github.com/[secure]/react-native-nitro-image-pipeline/issues/86)) ([d0bfc26](https://github.com/[secure]/react-native-nitro-image-pipeline/commit/d0bfc26f978151545c8e07bea845a169678d7e97))
+
+### 💨 Performance Improvements
+
+* **android:** cache transformed view images as hardware bitmaps ([#89](https://github.com/[secure]/react-native-nitro-image-pipeline/issues/89)) ([1e9d374](https://github.com/[secure]/react-native-nitro-image-pipeline/commit/1e9d374d4cd68723aab01de7e162db8211c29710))
+* cut main-thread and per-image overhead in the native loaders ([#87](https://github.com/[secure]/react-native-nitro-image-pipeline/issues/87)) ([e5f6f63](https://github.com/[secure]/react-native-nitro-image-pipeline/commit/e5f6f6383e141dff5b7c9a87d2ffd29cfa9654fb))
+* port the Android blur from RenderScript to a C++ kernel matching iOS ([#88](https://github.com/[secure]/react-native-nitro-image-pipeline/issues/88)) ([80b725f](https://github.com/[secure]/react-native-nitro-image-pipeline/commit/80b725f67e0e9a58d0db10fd366dbe44392303f3))
+
 ## [1.4.0](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v1.3.2...v1.4.0) (2026-08-28)
 
 ### ✨ Features
