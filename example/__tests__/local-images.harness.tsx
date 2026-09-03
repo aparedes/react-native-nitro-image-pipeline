@@ -38,9 +38,36 @@ function UseImageProbe({ url }: { url: string | number }) {
   return <Text testID="loading">loading</Text>;
 }
 
-/** The decoded pixels, so the comparison sees the bitmap and not an encoder. */
-function pixelsOf(image: Image): Uint8Array {
-  return new Uint8Array(image.toRawPixelData().buffer);
+// A mount can take longer than the harness's default 1 s on a cold CI
+// simulator (seen on iOS right after this suite's decode-heavy tests), so give
+// renders headroom. The assertions that matter still run through `waitFor`.
+const RENDER = { timeout: 5000 };
+
+/**
+ * The decoded colour channels as `[R, G, B]` per pixel, whatever the native
+ * byte layout. nitro-image exports a raw memory copy whose `pixelFormat`
+ * differs per image on iOS — an opaque source comes out as `BGRX`, one with an
+ * alpha channel as `BGRA` — so comparing raw buffers would compare layouts,
+ * not pixels.
+ */
+function rgbOf(image: Image): Uint8Array {
+  const { buffer, width, height, pixelFormat } = image.toRawPixelData();
+  const bytes = new Uint8Array(buffer);
+  const bytesPerPixel = bytes.length / (width * height);
+  const offsets = ['R', 'G', 'B'].map((channel) =>
+    pixelFormat.indexOf(channel),
+  );
+  if (offsets.some((offset) => offset < 0 || offset >= bytesPerPixel)) {
+    throw new Error(`Unexpected pixel format ${pixelFormat}`);
+  }
+  const rgb = new Uint8Array(width * height * 3);
+  for (let pixel = 0; pixel < width * height; pixel++) {
+    for (let channel = 0; channel < 3; channel++) {
+      rgb[pixel * 3 + channel] =
+        bytes[pixel * bytesPerPixel + (offsets[channel] ?? 0)] ?? 0;
+    }
+  }
+  return rgb;
 }
 
 describe('local images', () => {
@@ -102,10 +129,11 @@ describe('local images', () => {
   });
 
   it('produces the same bitmap from a local file as from the network', async () => {
+    // No cornerRadius: the transparent corners would bring alpha
+    // premultiplication into a comparison that is about the colour pipeline.
     const options = {
       resize: { width: 90, height: 60 },
       blur: 3,
-      cornerRadius: { topLeft: 10, bottomRight: 30 },
       cache: 'none' as const,
     };
     const fromNetwork = await NitroImagePipeline.loadImage(
@@ -116,17 +144,23 @@ describe('local images', () => {
       `file://${checkerPath}`,
       options,
     );
-    const a = pixelsOf(fromNetwork);
-    const b = pixelsOf(fromFile);
+    expect(fromFile.width).toBe(fromNetwork.width);
+    expect(fromFile.height).toBe(fromNetwork.height);
+    const a = rgbOf(fromNetwork);
+    const b = rgbOf(fromFile);
     expect(b.length).toBe(a.length);
-    let firstDifference = -1;
+    // The re-encoded file carries its own colour profile and the two paths
+    // may decode through differently laid-out bitmaps, so allow for colour
+    // management rounding — anything more would mean a real pipeline
+    // difference.
+    let maxDifference = 0;
     for (let i = 0; i < a.length; i++) {
-      if (a[i] !== b[i]) {
-        firstDifference = i;
-        break;
-      }
+      maxDifference = Math.max(
+        maxDifference,
+        Math.abs((a[i] ?? 0) - (b[i] ?? 0)),
+      );
     }
-    expect(firstDifference).toBe(-1);
+    expect(maxDifference).toBeLessThanOrEqual(2);
   });
 
   it('via createImageLoader().loadImage() from a local file', async () => {
@@ -161,12 +195,12 @@ describe('local images', () => {
   });
 
   it('useImage accepts a require()', async () => {
-    await render(<UseImageProbe url={GRADIENT_ASSET} />);
+    await render(<UseImageProbe url={GRADIENT_ASSET} />, RENDER);
     await waitFor(() => expect(screen.queryByTestId('loaded')).toBeDefined());
   });
 
   it('useImage reports an unregistered asset id as an error', async () => {
-    await render(<UseImageProbe url={987654321} />);
+    await render(<UseImageProbe url={987654321} />, RENDER);
     await waitFor(() => expect(screen.queryByTestId('error')).toBeDefined());
   });
 
@@ -180,6 +214,7 @@ describe('local images', () => {
           loaded = true;
         }}
       />,
+      RENDER,
     );
     await waitFor(() => expect(loaded).toBe(true));
   });
@@ -187,6 +222,7 @@ describe('local images', () => {
   it('<NativePipelineImage> does not throw for an unregistered asset id', async () => {
     const result = await render(
       <NativePipelineImage url={987654321} style={styles.thumb} />,
+      RENDER,
     );
     await new Promise<void>((resolve) => setTimeout(() => resolve(), 500));
     result.unmount();
@@ -206,6 +242,7 @@ describe('local images', () => {
   it('<NativePipelineImage> renders a require() and a file URL', async () => {
     const asset = await render(
       <NativePipelineImage url={GRADIENT_ASSET} style={styles.thumb} />,
+      RENDER,
     );
     const file = await render(
       <NativePipelineImage
@@ -213,6 +250,7 @@ describe('local images', () => {
         style={styles.thumb}
         blur={1}
       />,
+      RENDER,
     );
     await new Promise<void>((resolve) => setTimeout(() => resolve(), 1000));
     asset.unmount();
