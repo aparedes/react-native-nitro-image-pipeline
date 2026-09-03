@@ -82,6 +82,7 @@ lib/   ← compiled JS/TS outputs (commonjs, module, typedefs)
 | `src/NitroImagePipeline.ts` | Creates the HybridObject |
 | `src/useImage.ts` | Hook; `enabled` defers loading |
 | `src/resizeForStyle.ts` | Points → bitmap-pixel `resize` helpers |
+| `src/resolveImageSource.ts` | `ImageSource` (`string \| number`) and `resolveImageUrl` — turns a `require()` into the URL string the native side loads |
 | `src/PipelineImage.tsx` | `NativeNitroImage` wrapper that derives `resize` from `style`/`onLayout`; its `blur`/`cornerRadius` are in points |
 | `src/usePipelineImageLoader.ts` | Hook; value-memoized `ImageLoader` for `<NativeNitroImage image={...}>` |
 | `src/NativePipelineImage.tsx` | Fully native-driven image component — no JS work per image after mount; no `onLoad`/`onError` |

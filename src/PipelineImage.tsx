@@ -17,6 +17,7 @@ import {
   resizeForLayout,
   resizeForStyle,
 } from './resizeForStyle';
+import type { ImageSource } from './resolveImageSource';
 import type {
   CacheOption,
   CornerRadii,
@@ -35,8 +36,12 @@ type NativeImageProps = ReactProps<typeof NativeNitroImage>;
 export type PipelineImageRef = ComponentRef<typeof NativeNitroImage>;
 
 export interface PipelineImageProps extends Omit<NativeImageProps, 'image'> {
-  /** URL of the image to load through the pipeline. */
-  url: string;
+  /**
+   * The image to load through the pipeline: a URL string (`https://`,
+   * `file://`, an absolute path) or a `require()`d asset — see
+   * {@linkcode ImageSource}.
+   */
+  url: ImageSource;
   /**
    * Gaussian blur sigma in **points** (density-independent). Unlike
    * `useImage`/`loadImage`, where it is bitmap pixels, the component

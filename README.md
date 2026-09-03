@@ -8,7 +8,7 @@ A high-performance image loading, caching, and processing library for React Nati
 
 ## Features
 
-- Load remote images with built-in memory and disk caching
+- Load images from the network (with built-in memory and disk caching), the file system, or bundled `require()` assets
 - Prefetch single or multiple images in the background
 - Resize (aspect-fill, center-crop) and apply Gaussian blur and rounded corners (uniform or per-corner) at load time
 - Apply Gaussian blur to already-loaded images
@@ -177,6 +177,41 @@ function BlurFade({ url, blurred }: { url: string; blurred: boolean }) {
 }
 ```
 
+### Local images and `require()`
+
+Every `url` in this library — `<PipelineImage>`, `<NativePipelineImage>`, `useImage`,
+`usePipelineImageLoader` — also takes a `require()`d asset, and any `url` string may point at the
+file system. The image goes through the same pipeline, so a bundled logo or a photo from the camera
+roll gets the same resize-to-layout, blur and rounded corners as a download:
+
+```tsx
+// A bundled asset — streamed from Metro in debug, read from the app bundle /
+// resources in release, at the scale that matches the screen (like <Image>).
+<PipelineImage url={require('./assets/logo.png')} style={styles.logo} blur={2} />
+
+// A file on disk — a `file://` URL or a plain absolute path, e.g. the path
+// react-native-nitro-image's `saveToTemporaryFileAsync` returns.
+<NativePipelineImage url={`file://${photoPath}`} style={styles.thumb} />
+<NativePipelineImage url={photoPath} style={styles.thumb} />
+```
+
+The direct `NitroImagePipeline.loadImage`/`createImageLoader` calls take a string; resolve a
+`require()` first with `resolveImageUrl`:
+
+```ts
+import { NitroImagePipeline, resolveImageUrl } from 'react-native-nitro-image-pipeline';
+
+const logo = await NitroImagePipeline.loadImage(resolveImageUrl(require('./assets/logo.png')), {
+  resize: { width: 200, height: 200 },
+});
+```
+
+Accepted `url` forms: `http(s)://`, `file://`, a plain absolute path, `data:`, and on Android also
+`content://` URIs and bare drawable resource names (what `require()` resolves to in a release build
+there). Local sources are cached **in memory only** — there is nothing to gain from copying a file
+that is already on disk into the disk cache — so `cache: 'disk'` on a local `url` means no caching,
+and `preLoadImage(s)` treats local sources as a no-op.
+
 ### `useImage` hook
 
 The simplest way to load an image in a component:
@@ -249,7 +284,10 @@ await NitroImagePipeline.clearCache();
 
 ### `loadImage(url, options?)`
 
-Loads an image from a URL and returns a `Promise<Image>`.
+Loads an image from a URL and returns a `Promise<Image>`. `url` is a string — `http(s)://`, `file://`,
+a plain absolute path, or the other forms listed under
+[Local images and `require()`](#local-images-and-require); pass a `require()` through
+[`resolveImageUrl`](#resolveimageurlsource) first.
 
 | Option | Type | Default | Description |
 |---|---|---|---|
@@ -262,7 +300,7 @@ Loads an image from a URL and returns a `Promise<Image>`.
 
 | Prop | Type | Default | Description |
 |---|---|---|---|
-| `url` | `string` | — | Image URL to load |
+| `url` | `string \| number` | — | Image to load: a URL string (`https://`, `file://`, an absolute path) or a `require()`d asset |
 | `style` | `StyleProp<ViewStyle>` | — | Layout style; also determines the resize target (see [`resizeForStyle`](#resizeforstyle-style--resizeforlayoutwidth-height)) and, if `cornerRadius` is omitted, the corner radius (see [`cornerRadiusForStyle`](#cornerradiusforstylestyle)) |
 | `blur` | `number` | `0` | Gaussian blur strength, in **points** (converted to bitmap pixels internally) |
 | `cornerRadius` | `number \| CornerRadii` | derived from `style` | Corner radius, in **points** (converted to bitmap pixels internally). When omitted, derived from `style`'s `borderRadius`/`borderTopLeftRadius`/etc.; square if neither is set |
@@ -277,7 +315,7 @@ Loads an image from a URL and returns a `Promise<Image>`.
 
 | Prop | Type | Default | Description |
 |---|---|---|---|
-| `url` | `string` | — | Image URL to load |
+| `url` | `string \| number` | — | Image to load: a URL string (`https://`, `file://`, an absolute path) or a `require()`d asset |
 | `style` | `StyleProp<ViewStyle>` | — | Layout style. The native side measures the view and loads at that size; `borderRadius`-family properties drive `cornerRadius` when it's omitted |
 | `blur` | `number` | `0` | Gaussian blur strength, in **points** (screen scale applied natively) |
 | `cornerRadius` | `number \| CornerRadii` | derived from `style` | Corner radius, in **points** (screen scale applied natively) |
@@ -288,15 +326,23 @@ Loads an image from a URL and returns a `Promise<Image>`.
 
 No `onLoad`/`onError`: loading happens entirely natively and the result never crosses into JS.
 
-### `createImageLoader(url, options?)` / `usePipelineImageLoader(url, options?)`
+### `createImageLoader(url, options?)` / `usePipelineImageLoader(source, options?)`
 
 Creates the [`ImageLoader`](https://github.com/mrousavy/react-native-nitro-image) that powers
 `<NativePipelineImage>`, for use with your own `<NativeNitroImage image={loader} />`. The view
 calls into it natively when it attaches (load at the view's laid-out size) and detaches
 (cancel + release). `options` takes `blur`/`cornerRadius` in **points** and an optional
 pixel-based `resize` override — see the `ViewOptions` type. The hook memoizes by value, so
-inline options literals are fine. `loader.loadImage()` also works imperatively and resolves with
-the processed `Image`.
+inline options literals are fine, and its `source` may be a `require()` as well as a URL string.
+`loader.loadImage()` also works imperatively and resolves with the processed `Image`.
+
+### `resolveImageUrl(source)`
+
+Turns an `ImageSource` (`string | number`) into the URL string the native pipeline loads: strings
+pass through unchanged, a `require()`d asset is resolved with `Image.resolveAssetSource` to the
+scale-matched variant. The components and hooks do this internally; use it when calling
+`loadImage`, `createImageLoader` or `preLoadImage(s)` directly with a `require()`. Throws if the
+number is not a registered asset.
 
 ### `resizeForStyle(style)` / `resizeForLayout(width, height)`
 
@@ -317,6 +363,7 @@ omitted.
 ### `preLoadImage(url)`
 
 Prefetches a single image into the **disk cache**, without decoding it. Returns `Promise<void>`.
+Local sources (`file://`, paths, resources) have no download to cache and are a no-op.
 
 Prefetching only pays the network and disk I/O cost up front — no bitmap is decoded or held in
 memory, so prefetching a long list of URLs doesn't balloon RAM. The image is decoded (at the

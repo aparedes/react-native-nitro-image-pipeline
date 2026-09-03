@@ -138,13 +138,43 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
     private var pipeline: ImagePipeline { Self.sharedPipeline }
     private var prefetcher: ImagePrefetcher { Self.sharedPrefetcher }
 
-    private static func cacheOptions(for cache: CacheOption?) -> ImageRequest.Options {
-        switch cache {
+    /// The `URL` for a `url` string as the JS API accepts it: a URL with a
+    /// scheme (`https://`, `file://`, …), or a plain absolute file-system
+    /// path — the form react-native-nitro-image's `saveToTemporaryFileAsync`
+    /// returns — which becomes a `file://` URL.
+    static func url(from string: String) -> URL? {
+        if string.hasPrefix("/") {
+            return URL(fileURLWithPath: string)
+        }
+        return URL(string: string)
+    }
+
+    /// Whether `url` is fetched over the network, as opposed to read from the
+    /// file system (`file://`, incl. `require()`d assets in release builds)
+    /// or decoded inline (`data:`).
+    static func isNetworkURL(_ url: URL) -> Bool {
+        switch url.scheme?.lowercased() {
+        case "http", "https": true
+        default: false
+        }
+    }
+
+    private static func cacheOptions(for cache: CacheOption?, url: URL) -> ImageRequest.Options {
+        var options: ImageRequest.Options = switch cache {
         case .memory: [.disableDiskCache]
         case .disk:   [.disableMemoryCache]
         case .none?:  [.disableDiskCache, .disableMemoryCache]
         default:      []
         }
+        // A local source has nothing to gain from the disk cache: the
+        // pipeline's `.storeAll` policy would copy the file's bytes into the
+        // data cache next to the original. Keep local images in memory only —
+        // Coil does the same on Android, where only network fetches are
+        // written to disk — so `cache: 'disk'` on a local URL means no cache.
+        if !isNetworkURL(url) {
+            options.insert(.disableDiskCache)
+        }
+        return options
     }
 
     /// The processor that bakes `cornerRadius` into the bitmap, or `nil` when
@@ -205,7 +235,7 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
         var imgRequest = ImageRequest(
             url: url,
             processors: processors(for: options),
-            options: cacheOptions(for: options?.cache)
+            options: cacheOptions(for: options?.cache, url: url)
         )
         // With a target size known, decode near it (aspect-fill, so the
         // decoded image always covers the target) instead of at full
@@ -225,7 +255,7 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
 
     func loadImage(url: String, options: Options?) throws -> Promise<any HybridImageSpec> {
         return Promise.async {
-            guard let imageUrl = URL(string: url) else {
+            guard let imageUrl = Self.url(from: url) else {
                 throw RuntimeError.error(withMessage: "Invalid URL: \(url)")
             }
 
@@ -243,19 +273,27 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
 
     func preLoadImage(url: String) throws -> Promise<Void> {
         return Promise.async {
-            guard let imageUrl = URL(string: url) else {
+            guard let imageUrl = Self.url(from: url) else {
                 throw RuntimeError.error(withMessage: "Invalid URL: \(url)")
             }
-
-            self.prefetcher.startPrefetching(with: [imageUrl])
+            self.prefetch([imageUrl])
         }
     }
 
     func preLoadImages(urls: [String]) throws -> Promise<Void> {
         return Promise.async {
-            let imageUrls = urls.compactMap { URL(string: $0) }
-            self.prefetcher.startPrefetching(with: imageUrls)
+            self.prefetch(urls.compactMap { Self.url(from: $0) })
         }
+    }
+
+    /// Prefetching warms the disk cache with a download; a local source has no
+    /// download to warm it with, so those are a no-op (as on Android, where
+    /// Coil never writes non-network sources to disk) rather than a copy of
+    /// the file into the data cache.
+    private func prefetch(_ urls: [URL]) {
+        let networkUrls = urls.filter(Self.isNetworkURL)
+        guard !networkUrls.isEmpty else { return }
+        prefetcher.startPrefetching(with: networkUrls)
     }
 
     func setMemoryCacheLimit(bytes: Double) throws {
