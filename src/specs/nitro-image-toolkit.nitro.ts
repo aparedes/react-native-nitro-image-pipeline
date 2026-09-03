@@ -100,6 +100,13 @@ export interface NitroImagePipeline extends HybridObject<{
   ios: 'swift';
   android: 'kotlin';
 }> {
+  /**
+   * Loads `url` through the pipeline. Besides `http(s)://`, `url` may be a
+   * `file://` URL or a plain absolute path (read from the file system, cached
+   * in memory only), a `data:` URL, or — on Android — a `content://` URI or
+   * the bare resource name a `require()` resolves to in a release build. Use
+   * `resolveImageUrl(require('./photo.png'))` to pass a bundled asset.
+   */
   loadImage(url: string, options?: Options): Promise<Image>;
   /**
    * Creates an {@linkcode ImageLoader} for `url` that a `<NativeNitroImage>`
@@ -114,6 +121,11 @@ export interface NitroImagePipeline extends HybridObject<{
    * attaches, the load waits for its first layout.
    */
   createImageLoader(url: string, options?: ViewOptions): ImageLoader;
+  /**
+   * Warms the disk cache with the download for `url`, without decoding it.
+   * Local sources (`file://`, paths, resources) have no download to warm it
+   * with and are a no-op.
+   */
   preLoadImage(url: string): Promise<void>;
   preLoadImages(urls: string[]): Promise<void>;
   /**

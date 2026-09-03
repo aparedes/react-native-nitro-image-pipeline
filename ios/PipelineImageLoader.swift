@@ -90,7 +90,7 @@ class PipelineImageLoader: HybridImageLoaderSpec {
 
     func loadImage() throws -> Promise<any HybridImageSpec> {
         return Promise.async {
-            guard let imageUrl = URL(string: self.url) else {
+            guard let imageUrl = HybridNitroImagePipeline.url(from: self.url) else {
                 throw RuntimeError.error(withMessage: "Invalid URL: \(self.url)")
             }
             // No view to measure here: use the explicit resize if given, and
@@ -167,7 +167,7 @@ class PipelineImageLoader: HybridImageLoaderSpec {
     }
 
     private func start(into imageView: UIImageView, key: ObjectIdentifier, sizePx: CGSize) {
-        guard let imageUrl = URL(string: url) else { return }
+        guard let imageUrl = HybridNitroImagePipeline.url(from: url) else { return }
         let scale = Self.displayScale(of: imageView)
         let request = HybridNitroImagePipeline.makeRequest(
             url: imageUrl,

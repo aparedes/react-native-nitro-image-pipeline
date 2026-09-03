@@ -3,6 +3,7 @@ package com.margelo.nitro.nitroimagepipeline
 import android.content.Context
 import android.graphics.Bitmap
 import androidx.core.graphics.drawable.toBitmap
+import androidx.core.net.toUri
 import coil3.BitmapImage
 import coil3.ColorImage
 import coil3.DrawableImage
@@ -76,7 +77,7 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
   // size — only when a loadImage actually displays it.
   private fun preloadRequest(url: String): ImageRequest =
       ImageRequest.Builder(context)
-          .data(url)
+          .data(requestData(context, url))
           .memoryCachePolicy(CachePolicy.DISABLED)
           .decoderFactory { _, _, _ -> Decoder { DecodeResult(ColorImage(), false) } }
           .build()
@@ -192,7 +193,7 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
         }
       }
       return ImageRequest.Builder(context)
-          .data(url)
+          .data(requestData(context, url))
           .apply {
             when (options?.cache) {
               CacheOption.MEMORY -> {
@@ -221,6 +222,30 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
           .transformations(transformations)
           .build()
     }
+
+    /**
+     * What Coil should load for [url]. Coil itself handles `http(s)://`, `file://`, `content://`
+     * and plain absolute paths. The one form it doesn't is a bare resource name — a string with
+     * no scheme, like `src_assets_logo` — which is what React Native's `require()` resolves to
+     * in a release build (assets are packed into `res/drawable-*`). Resolve that to the resource
+     * id here; the density-qualified variant is then picked by the resources system, like
+     * `<Image>` does. An unknown name is passed through so Coil reports the failure as an
+     * [ErrorResult] (the loaders must not throw while building a request).
+     */
+    internal fun requestData(context: Context, url: String): Any {
+      if (url.startsWith("/") || url.toUri().scheme != null) return url
+      // Tolerate `logo.png`: RN's generated names carry no extension, but nitro-image's
+      // `{ resource: 'logo.png' }` convention does.
+      val name = url.substringBefore('.')
+      for (type in RESOURCE_TYPES) {
+        val id = context.resources.getIdentifier(name, type, context.packageName)
+        if (id != 0) return id
+      }
+      return url
+    }
+
+    /** Where React Native puts bundled image assets, then the other image resource types. */
+    private val RESOURCE_TYPES = arrayOf("drawable", "mipmap", "raw")
 
     /** The decoded bitmap of a successful load. */
     internal fun bitmapOf(result: SuccessResult): Bitmap =

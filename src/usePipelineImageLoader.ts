@@ -2,13 +2,18 @@ import { useMemo } from 'react';
 import type { ImageLoader } from 'react-native-nitro-image';
 
 import { NitroImagePipeline } from './NitroImagePipeline';
+import {
+  type ImageSource,
+  resolveImageUrlOrFallback,
+} from './resolveImageSource';
 import type {
   CornerRadii,
   ViewOptions,
 } from './specs/nitro-image-toolkit.nitro';
 
 /**
- * Creates (and memoizes) an {@linkcode ImageLoader} for `url` to pass to
+ * Creates (and memoizes) an {@linkcode ImageLoader} for `source` — a URL
+ * string or a `require()`d asset, see {@linkcode ImageSource} — to pass to
  * `<NativeNitroImage image={...} />`. The view drives it entirely natively:
  * the request starts when the view attaches — at the view's laid-out size,
  * with no JS round trips — and is cancelled when it detaches. See
@@ -19,7 +24,7 @@ import type {
  * literals are fine — options are compared by value, not identity.
  */
 export function usePipelineImageLoader(
-  url: string,
+  source: ImageSource,
   options?: ViewOptions,
 ): ImageLoader {
   // Split the options into primitives (like useImage does) so an inline
@@ -41,6 +46,9 @@ export function usePipelineImageLoader(
   const resizeHeight = options?.resize?.height;
 
   return useMemo(() => {
+    // Runs during render, so an unregistered `require()` id must not throw:
+    // it becomes a URL the native loader fails on at load time instead.
+    const url = resolveImageUrlOrFallback(source);
     const cornerRadiusOption: number | CornerRadii | undefined = isUniformRadius
       ? uniformRadius
       : hasCornerObject
@@ -66,7 +74,7 @@ export function usePipelineImageLoader(
     });
     return loader;
   }, [
-    url,
+    source,
     blur,
     cache,
     isUniformRadius,

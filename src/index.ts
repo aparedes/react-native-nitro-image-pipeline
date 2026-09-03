@@ -10,6 +10,11 @@ export {
   type PipelineImageRef,
 } from './PipelineImage';
 export {
+  type ImageSource,
+  resolveImageUrl,
+  UNREGISTERED_ASSET_URL,
+} from './resolveImageSource';
+export {
   cornerRadiusForStyle,
   resizeForLayout,
   resizeForStyle,

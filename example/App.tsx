@@ -45,6 +45,14 @@ function App({ img2 }: { img2: Promise<Image> }): React.JSX.Element {
         url="https://picsum.photos/id/1015/4000/3000"
         style={styles.nativeImage}
       />
+      {/* A bundled asset goes through the same pipeline: resized to the view,
+          blurred and rounded natively. Streamed from Metro in debug, read from
+          the app bundle / resources in release. */}
+      <NativePipelineImage
+        url={require('./fixtures/gradient-200.png')}
+        blur={2}
+        style={styles.assetImage}
+      />
     </View>
   );
 }
@@ -71,6 +79,11 @@ const styles = StyleSheet.create({
     width: 300,
     height: 100,
     borderRadius: 24,
+  },
+  assetImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
   },
 });
 

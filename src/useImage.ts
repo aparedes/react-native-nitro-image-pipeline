@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Image } from 'react-native-nitro-image';
 
 import { NitroImagePipeline } from './NitroImagePipeline';
+import { type ImageSource, resolveImageUrl } from './resolveImageSource';
 import type {
   CacheOption,
   CornerRadii,
@@ -26,11 +27,12 @@ type Result =
     };
 
 /**
- * A hook to asynchronously load an image from the
- * given {@linkcode AsyncImageSource} into memory.
+ * A hook to asynchronously load an image from `url` through the pipeline
+ * into memory.
  * @example
  * ```ts
- * const { image, error } = useImage({ filePath: '/tmp/image.jpg' })
+ * const { image, error } = useImage({ url: 'https://example.com/photo.jpg' });
+ * const { image: logo } = useImage({ url: require('./logo.png') });
  * ```
  */
 export function useImage({
@@ -41,7 +43,11 @@ export function useImage({
   cache,
   enabled = true,
 }: {
-  url: string;
+  /**
+   * The image to load: a URL string (`https://`, `file://`, an absolute path)
+   * or a `require()`d asset — see {@linkcode ImageSource}.
+   */
+  url: ImageSource;
   /**
    * Gaussian blur strength, as the standard deviation (sigma) of the blur in
    * source-image pixels (of the resized bitmap when `resize` is set). Matches
@@ -103,17 +109,22 @@ export function useImage({
     if (enabled) {
       (async () => {
         try {
-          const result = await NitroImagePipeline.loadImage(url, {
-            blur,
-            cornerRadius: isUniformRadius
-              ? uniformRadius
-              : { topLeft, topRight, bottomLeft, bottomRight },
-            resize:
-              resizeWidth > 0 && resizeHeight > 0
-                ? { width: resizeWidth, height: resizeHeight }
-                : undefined,
-            cache,
-          });
+          // Resolved inside the try so an unregistered `require()` id
+          // surfaces as the error state instead of throwing from the effect.
+          const result = await NitroImagePipeline.loadImage(
+            resolveImageUrl(url),
+            {
+              blur,
+              cornerRadius: isUniformRadius
+                ? uniformRadius
+                : { topLeft, topRight, bottomLeft, bottomRight },
+              resize:
+                resizeWidth > 0 && resizeHeight > 0
+                  ? { width: resizeWidth, height: resizeHeight }
+                  : undefined,
+              cache,
+            },
+          );
 
           if (!cancelled) {
             setImage({ image: result, error: undefined });

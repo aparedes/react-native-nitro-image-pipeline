@@ -3,6 +3,7 @@ import type { HostComponent } from 'react-native';
 import { NativeNitroImage } from 'react-native-nitro-image';
 
 import { cornerRadiusForStyle } from './resizeForStyle';
+import { type ImageSource, recyclingKeyFor } from './resolveImageSource';
 import type {
   CacheOption,
   CornerRadii,
@@ -24,8 +25,12 @@ export interface NativePipelineImageProps extends Omit<
   NativeImageProps,
   'image'
 > {
-  /** URL of the image to load through the pipeline. */
-  url: string;
+  /**
+   * The image to load through the pipeline: a URL string (`https://`,
+   * `file://`, an absolute path) or a `require()`d asset — see
+   * {@linkcode ImageSource}.
+   */
+  url: ImageSource;
   /**
    * Gaussian blur sigma in **points** (density-independent), like
    * `PipelineImage`. Applied natively with the screen scale.
@@ -89,7 +94,7 @@ export const NativePipelineImage = forwardRef<
   return (
     <NativeNitroImage
       // Before the spread so a caller-provided recyclingKey wins.
-      recyclingKey={url}
+      recyclingKey={recyclingKeyFor(url)}
       {...viewProps}
       ref={ref}
       style={style}
