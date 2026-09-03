@@ -14,6 +14,7 @@ import {
   NitroImagePipeline,
   PipelineImage,
   resolveImageUrl,
+  UNREGISTERED_ASSET_URL,
   useImage,
 } from 'react-native-nitro-image-pipeline';
 
@@ -181,6 +182,25 @@ describe('local images', () => {
       />,
     );
     await waitFor(() => expect(loaded).toBe(true));
+  });
+
+  it('<NativePipelineImage> does not throw for an unregistered asset id', async () => {
+    const result = await render(
+      <NativePipelineImage url={987654321} style={styles.thumb} />,
+    );
+    await new Promise<void>((resolve) => setTimeout(() => resolve(), 500));
+    result.unmount();
+  });
+
+  it('createImageLoader with an unregistered asset id fails at load time', async () => {
+    const loader = NitroImagePipeline.createImageLoader(UNREGISTERED_ASSET_URL);
+    let error: unknown;
+    try {
+      await loader.loadImage();
+    } catch (e) {
+      error = e;
+    }
+    expect(error).toBeDefined();
   });
 
   it('<NativePipelineImage> renders a require() and a file URL', async () => {

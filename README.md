@@ -342,7 +342,9 @@ Turns an `ImageSource` (`string | number`) into the URL string the native pipeli
 pass through unchanged, a `require()`d asset is resolved with `Image.resolveAssetSource` to the
 scale-matched variant. The components and hooks do this internally; use it when calling
 `loadImage`, `createImageLoader` or `preLoadImage(s)` directly with a `require()`. Throws if the
-number is not a registered asset.
+number is not a registered asset; the components and hooks never throw for one — `useImage` reports
+it through `error`, and `usePipelineImageLoader`/`<NativePipelineImage>` load a URL no loader can
+resolve, so the request fails at load time like a missing file.
 
 ### `resizeForStyle(style)` / `resizeForLayout(width, height)`
 

@@ -47,6 +47,32 @@ export function resolveImageUrl(source: ImageSource): string {
 }
 
 /**
+ * A URL no loader can resolve, standing in for a `require()` id that is not
+ * a registered asset. Its scheme has no fetcher on either platform, so the
+ * request fails at load time — the same way a missing file does — instead of
+ * throwing from a component's render.
+ */
+export const UNREGISTERED_ASSET_URL = 'unregistered-asset://';
+
+/**
+ * {@linkcode resolveImageUrl} for code that runs during render: an
+ * unregistered `require()` id yields {@linkcode UNREGISTERED_ASSET_URL} (and
+ * a warning in development) rather than throwing.
+ */
+export function resolveImageUrlOrFallback(source: ImageSource): string {
+  try {
+    return resolveImageUrl(source);
+  } catch (error) {
+    if (__DEV__) {
+      console.warn(
+        `[react-native-nitro-image-pipeline] ${(error as Error).message}`,
+      );
+    }
+    return UNREGISTERED_ASSET_URL;
+  }
+}
+
+/**
  * A stable, per-source `recyclingKey` for `<NativeNitroImage>`: the URL
  * itself for strings, and a tag derived from the asset id for a `require()`
  * (resolving it would cost an asset-registry lookup per render for nothing

@@ -2,7 +2,10 @@ import { useMemo } from 'react';
 import type { ImageLoader } from 'react-native-nitro-image';
 
 import { NitroImagePipeline } from './NitroImagePipeline';
-import { type ImageSource, resolveImageUrl } from './resolveImageSource';
+import {
+  type ImageSource,
+  resolveImageUrlOrFallback,
+} from './resolveImageSource';
 import type {
   CornerRadii,
   ViewOptions,
@@ -43,7 +46,9 @@ export function usePipelineImageLoader(
   const resizeHeight = options?.resize?.height;
 
   return useMemo(() => {
-    const url = resolveImageUrl(source);
+    // Runs during render, so an unregistered `require()` id must not throw:
+    // it becomes a URL the native loader fails on at load time instead.
+    const url = resolveImageUrlOrFallback(source);
     const cornerRadiusOption: number | CornerRadii | undefined = isUniformRadius
       ? uniformRadius
       : hasCornerObject
