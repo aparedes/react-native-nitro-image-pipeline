@@ -1,3 +1,9 @@
+## [1.6.0](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v1.5.0...v1.6.0) (2026-09-03)
+
+### ✨ Features
+
+* load local files and require()d assets through the pipeline ([#90](https://github.com/[secure]/react-native-nitro-image-pipeline/issues/90)) ([8a3ee30](https://github.com/[secure]/react-native-nitro-image-pipeline/commit/8a3ee30c1437d7bdf065bb27bf26a560aded817c))
+
 ## [1.5.0](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v1.4.0...v1.5.0) (2026-09-03)
 
 ### ✨ Features
