@@ -26,6 +26,8 @@ import kotlin.math.roundToInt
  * two agree to the pixel.
  */
 internal data class FitGeometry(
+    val sourceWidth: Int,
+    val sourceHeight: Int,
     val scaledWidth: Int,
     val scaledHeight: Int,
     val outputWidth: Int,
@@ -33,10 +35,17 @@ internal data class FitGeometry(
     val originX: Int,
     val originY: Int,
 ) {
-  /** Whether the source is already the output — nothing to draw. */
+  /**
+   * Whether the source is already the output — nothing to draw. Both sizes are compared with the
+   * *source*: `scaled == output` alone also holds for every plain downscale (nothing is cropped),
+   * which is not an identity.
+   */
   val isIdentity: Boolean
     get() =
-        scaledWidth == outputWidth && scaledHeight == outputHeight && originX == 0 && originY == 0
+        scaledWidth == sourceWidth &&
+            scaledHeight == sourceHeight &&
+            outputWidth == sourceWidth &&
+            outputHeight == sourceHeight
 
   companion object {
     fun of(
@@ -80,6 +89,8 @@ internal data class FitGeometry(
       val outputWidth = min(boxWidth, scaledWidth)
       val outputHeight = min(boxHeight, scaledHeight)
       return FitGeometry(
+          sourceWidth = sourceWidth,
+          sourceHeight = sourceHeight,
           scaledWidth = scaledWidth,
           scaledHeight = scaledHeight,
           outputWidth = outputWidth,

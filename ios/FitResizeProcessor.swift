@@ -33,6 +33,7 @@ import UIKit
 /// canvas. Rounding is half-away-from-zero (`.rounded()` here,
 /// `roundToInt()` in Kotlin — identical for the positive values involved).
 struct FitGeometry: Equatable {
+    let source: CGSize
     let scaled: CGSize
     let output: CGSize
     let origin: CGPoint
@@ -66,6 +67,7 @@ struct FitGeometry: Equatable {
         let scaledHeight = max((source.height * scaleY).rounded(), 1)
         let outputWidth = min(boxWidth, scaledWidth)
         let outputHeight = min(boxHeight, scaledHeight)
+        self.source = source
         scaled = CGSize(width: scaledWidth, height: scaledHeight)
         output = CGSize(width: outputWidth, height: outputHeight)
         origin = CGPoint(
@@ -74,8 +76,11 @@ struct FitGeometry: Equatable {
         )
     }
 
-    /// Whether the source is already the output — nothing to draw.
-    var isIdentity: Bool { scaled == output && origin == .zero }
+    /// Whether the source is already the output — nothing to draw. Both
+    /// sizes are compared with the *source*: `scaled == output` alone also
+    /// holds for every plain downscale (nothing is cropped), which is not an
+    /// identity.
+    var isIdentity: Bool { scaled == source && output == source }
 }
 
 /// Nuke processor for the non-default fits. Runs before the blur and corner
