@@ -198,26 +198,46 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
         }
     }
 
-    /// The target size in pixels, or `nil` when no (valid) resize was requested.
-    private static func resizeSize(for options: Options?) -> CGSize? {
+    /// The requested resize, or `nil` when there is no (valid) one.
+    private static func requestedResize(for options: Options?) -> ResizeOptions? {
         guard let resize = options?.resize, resize.width > 0, resize.height > 0 else {
             return nil
         }
-        return CGSize(width: resize.width, height: resize.height)
+        return resize
+    }
+
+    private static func fit(of resize: ResizeOptions) -> ResizeFit { resize.fit ?? .cover }
+
+    private static func allowsUpscale(_ resize: ResizeOptions) -> Bool { resize.allowUpscale ?? true }
+
+    /// The resize as it behaved before `fit` existed — aspect-fill, crop,
+    /// upscale — which keeps Nuke's own processor (and its cache keys).
+    private static func isDefaultFit(_ resize: ResizeOptions) -> Bool {
+        fit(of: resize) == .cover && allowsUpscale(resize)
     }
 
     private static func processors(for options: Options?) -> [any ImageProcessing] {
         var processors: [any ImageProcessing] = []
         // Resize first: blur sigma and corner radii are defined in pixels
         // of the bitmap they run on, so they must see the final size.
-        if let size = resizeSize(for: options) {
-            processors.append(ImageProcessors.Resize(
-                size: size,
-                unit: .pixels,
-                contentMode: .aspectFill,
-                crop: true,
-                upscale: true
-            ))
+        if let resize = requestedResize(for: options) {
+            let size = CGSize(width: resize.width, height: resize.height)
+            if isDefaultFit(resize) {
+                processors.append(ImageProcessors.Resize(
+                    size: size,
+                    unit: .pixels,
+                    contentMode: .aspectFill,
+                    crop: true,
+                    upscale: true
+                ))
+            } else {
+                processors.append(FitResizeProcessor(
+                    width: size.width,
+                    height: size.height,
+                    fit: fit(of: resize),
+                    allowUpscale: allowsUpscale(resize)
+                ))
+            }
         }
         if let blur = options?.blur, blur > 0 {
             processors.append(GaussianBlurProcessor(sigma: blur))
@@ -242,10 +262,15 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
         // resolution — a 48 MP photo displayed as a 300 pt card would
         // otherwise decompress to ~190 MB before Resize shrinks it.
         // Matches Android, where the request's size() drives subsampling;
-        // the exact size and crop still come from the Resize processor.
-        if let size = resizeSize(for: options) {
+        // the exact size and crop still come from the resize processor.
+        // Aspect-fill for every fit, `contain` included: a thumbnail that
+        // covers the box leaves the processor a downscale of a proportional
+        // image, the same input Android's Scale.FILL subsampling produces.
+        // `center` never scales, so it must see the source's own pixels:
+        // a subsampled decode would crop the wrong ones.
+        if let resize = requestedResize(for: options), fit(of: resize) != .center {
             imgRequest.thumbnail = ImageRequest.ThumbnailOptions(
-                size: size,
+                size: CGSize(width: resize.width, height: resize.height),
                 unit: .pixels,
                 contentMode: .aspectFill
             )
