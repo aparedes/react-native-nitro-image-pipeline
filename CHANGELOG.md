@@ -1,3 +1,10 @@
+## [1.7.0](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v1.6.0...v1.7.0) (2026-09-09)
+
+### ✨ Features
+
+* add fit / allowUpscale resize modes ([#92](https://github.com/[secure]/react-native-nitro-image-pipeline/issues/92)) ([e4069dd](https://github.com/[secure]/react-native-nitro-image-pipeline/commit/e4069dd19161ff4f1f47fa08ed4022e1172aa6e1))
+* add onLoad/onError to NativePipelineImage ([#91](https://github.com/[secure]/react-native-nitro-image-pipeline/issues/91)) ([30420d6](https://github.com/[secure]/react-native-nitro-image-pipeline/commit/30420d6d196a7d3cb1269bf98bf43c12dbfa6bf1))
+
 ## [1.6.0](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v1.5.0...v1.6.0) (2026-09-03)
 
 ### ✨ Features
