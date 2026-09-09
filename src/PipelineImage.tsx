@@ -69,6 +69,13 @@ export interface PipelineImageProps extends Omit<NativeImageProps, 'image'> {
    * `resizeMode`, so `resizeMode="contain"` decodes an aspect-fitted bitmap
    * (no crop, no padding) instead of a center-cropped one the view then
    * letterboxes. Set this to decouple the two.
+   *
+   * One iOS caveat, inherited from nitro-image's `Image`: an `Image` handed
+   * to the view is a scale-1 image, which `resizeMode="center"` — the one
+   * mode that draws an image at its own size — shows at 1 pt per pixel,
+   * i.e. `PixelRatio.get()`× larger than Android draws it. The bitmap is
+   * right; the display is not. `NativePipelineImage` draws `center` pixel
+   * for pixel on both platforms; use it when you need that mode.
    * @default undefined (derived from `resizeMode`, or `'cover'` if unset)
    */
   fit?: ResizeFit;

@@ -335,7 +335,11 @@ has no effect on `center`, which never scales. Some examples:
 | 100×50 → 400×400, `allowUpscale: false` | 100×50 | 100×50 | 100×50 | 100×50 |
 
 `blur` and `cornerRadius` apply to the produced bitmap, so under `contain` the corners round the
-image's own edges, not the box's. Both platforms implement the same geometry (down to the
+image's own edges, not the box's. Displaying a `center` bitmap pixel for pixel needs the view's
+`resizeMode="center"`, which `<NativePipelineImage>` (and `createImageLoader`) draw 1:1 on both
+platforms; an `Image` passed to `<NativeNitroImage>` or `<PipelineImage>` is a scale-1 image that
+iOS's `center` mode draws at 1 pt per pixel (nitro-image's `Image` contract — `PixelRatio.get()`×
+too large on a Retina screen). Both platforms implement the same geometry (down to the
 rounding), and the harness suites check every cell of this table on each. Decoding is bounded
 near the produced size for `cover`, `contain` and `stretch`; `center` is the one mode that decodes
 the source at full resolution — it has to see the source's own pixels — so prefer the others for
@@ -350,7 +354,7 @@ very large images.
 | `blur` | `number` | `0` | Gaussian blur strength, in **points** (converted to bitmap pixels internally) |
 | `cornerRadius` | `number \| CornerRadii` | derived from `style` | Corner radius, in **points** (converted to bitmap pixels internally). When omitted, derived from `style`'s `borderRadius`/`borderTopLeftRadius`/etc.; square if neither is set |
 | `cache` | `'memory' \| 'disk' \| 'none'` | platform default | Caching strategy |
-| `fit` | `ResizeFit` | derived from `resizeMode` | How the bitmap is fitted into the display size — see [Resize modes](#resize-modes). When omitted it follows `resizeMode` (`'cover'` if that is unset too); set it to decouple the two |
+| `fit` | `ResizeFit` | derived from `resizeMode` | How the bitmap is fitted into the display size — see [Resize modes](#resize-modes). When omitted it follows `resizeMode` (`'cover'` if that is unset too); set it to decouple the two. On iOS, `resizeMode="center"` draws the (scale-1) `Image` at 1 pt per pixel — a nitro-image `Image` limitation; use `<NativePipelineImage>` for pixel-exact `center` on both platforms |
 | `allowUpscale` | `boolean` | `true` | `false` never enlarges a source smaller than the display size when the *bitmap* is produced (nothing is decoded or blurred larger than the source). The view still scales it per `resizeMode`; use `resizeMode="center"` to show it at its natural size |
 | `onLoad` | `(image: Image) => void` | — | Called when the image finishes loading |
 | `onError` | `(error: Error) => void` | — | Called if loading fails |
