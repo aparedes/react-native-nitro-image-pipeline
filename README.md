@@ -10,7 +10,7 @@ A high-performance image loading, caching, and processing library for React Nati
 
 - Load images from the network (with built-in memory and disk caching), the file system, or bundled `require()` assets
 - Prefetch single or multiple images in the background
-- Resize (aspect-fill, center-crop) and apply Gaussian blur and rounded corners (uniform or per-corner) at load time
+- Resize in every `resizeMode` (`cover`, `contain`, `stretch`, `center`) and apply Gaussian blur and rounded corners (uniform or per-corner) at load time
 - Apply Gaussian blur to already-loaded images
 - Clear the image cache on demand
 - `useImage` hook for declarative image loading in components
@@ -69,7 +69,9 @@ pixels internally, unlike the pixel-based values used everywhere else in this li
 so a style that already rounds the view rounds the bitmap too, with no separate prop. Pass
 `cornerRadius` explicitly to override that. `onLoad`/`onError` callbacks are supported, and every
 other prop (`resizeMode`, `recyclingKey`, `testID`, …) is passed straight through to
-`NativeNitroImage`.
+`NativeNitroImage`. `resizeMode` also decides how the bitmap is produced: `resizeMode="contain"`
+decodes an aspect-fitted bitmap (no crop, no padding) rather than a center-cropped one the view
+then letterboxes — see [Resize modes](#resize-modes). Pass `fit` to decouple the two.
 
 ### `<NativePipelineImage>` component
 
@@ -306,9 +308,37 @@ a plain absolute path, or the other forms listed under
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `blur` | `number` | `0` | Gaussian blur strength applied at load time — see [Blur units](#blur-units) |
-| `resize` | `{ width, height }` | source size | Target bitmap size in pixels. Scales to fill and center-crops (CSS `object-fit: cover`, upscaling if needed) before `blur`/`cornerRadius` run, so their pixel units refer to this final size. Typically your display size in points × `PixelRatio.get()` |
+| `resize` | `{ width, height, fit?, allowUpscale? }` | source size | Target bitmap box in pixels. By default scales to fill and center-crops (CSS `object-fit: cover`, upscaling if needed); `fit` selects the other modes and `allowUpscale: false` never enlarges the source — see [Resize modes](#resize-modes). Runs before `blur`/`cornerRadius`, so their pixel units refer to the produced bitmap. Typically your display size in points × `PixelRatio.get()` |
 | `cornerRadius` | `number \| CornerRadii` | `0` | Corner radius in pixels of the produced bitmap — a single number for all four corners, or `{ topLeft?, topRight?, bottomLeft?, bottomRight? }` for independent per-corner radii (omitted corners stay square). Pair with `resize` for radii that match your layout |
 | `cache` | `'memory' \| 'disk' \| 'none'` | platform default | Caching strategy |
+
+#### Resize modes
+
+`resize.fit` takes the same four values as `NativeNitroImage`'s `resizeMode`, so the bitmap can be
+produced the way the view will display it. With a `w × h` source and a `W × H` box:
+
+| `fit` | Scale | Produced bitmap | Notes |
+|---|---|---|---|
+| `'cover'` (default) | `max(W/w, H/h)` | exactly `W × H` | Center-cropped. Unchanged from earlier versions, byte for byte |
+| `'contain'` | `min(W/w, H/h)` | `round(w·s) × round(h·s)` | Aspect-fit. The bitmap is **not** padded to the box |
+| `'stretch'` | `W/w` and `H/h` independently | exactly `W × H` | Aspect ratio ignored |
+| `'center'` | `1` | `min(w, W) × min(h, H)` | Never resamples; only center-crops what the box could not show |
+
+`allowUpscale: false` clamps the scale to at most 1 for `cover`, `contain` and `stretch`, so a
+source smaller than the box keeps its own size (under `cover` it is only cropped to the box). It
+has no effect on `center`, which never scales. Some examples:
+
+| Source → box | `cover` | `contain` | `stretch` | `center` |
+|---|---|---|---|---|
+| 2000×1000 → 400×400 | 400×400 | 400×200 | 400×400 | 400×400 (cropped) |
+| 100×50 → 400×400 | 400×400 | 400×200 | 400×400 | 100×50 |
+| 100×50 → 400×400, `allowUpscale: false` | 100×50 | 100×50 | 100×50 | 100×50 |
+
+`blur` and `cornerRadius` apply to the produced bitmap, so under `contain` the corners round the
+image's own edges, not the box's. Both platforms implement the same geometry (down to the
+rounding), and the harness suites check every cell of this table on each. `center` is the one mode
+that decodes the source at full resolution — it has to see the source's own pixels — so prefer the
+others for very large images.
 
 ### `<PipelineImage>`
 
@@ -319,6 +349,8 @@ a plain absolute path, or the other forms listed under
 | `blur` | `number` | `0` | Gaussian blur strength, in **points** (converted to bitmap pixels internally) |
 | `cornerRadius` | `number \| CornerRadii` | derived from `style` | Corner radius, in **points** (converted to bitmap pixels internally). When omitted, derived from `style`'s `borderRadius`/`borderTopLeftRadius`/etc.; square if neither is set |
 | `cache` | `'memory' \| 'disk' \| 'none'` | platform default | Caching strategy |
+| `fit` | `ResizeFit` | derived from `resizeMode` | How the bitmap is fitted into the display size — see [Resize modes](#resize-modes). When omitted it follows `resizeMode` (`'cover'` if that is unset too); set it to decouple the two |
+| `allowUpscale` | `boolean` | `true` | `false` never enlarges a source smaller than the display size |
 | `onLoad` | `(image: Image) => void` | — | Called when the image finishes loading |
 | `onError` | `(error: Error) => void` | — | Called if loading fails |
 | `onLayout` | `(event: LayoutChangeEvent) => void` | — | Standard `View` layout callback; also drives the deferred resize for non-numeric sizes |
@@ -334,7 +366,9 @@ a plain absolute path, or the other forms listed under
 | `blur` | `number` | `0` | Gaussian blur strength, in **points** (screen scale applied natively) |
 | `cornerRadius` | `number \| CornerRadii` | derived from `style` | Corner radius, in **points** (screen scale applied natively) |
 | `cache` | `'memory' \| 'disk' \| 'none'` | platform default | Caching strategy |
-| `resize` | `{ width, height }` | measured from the view | Explicit target bitmap size in **pixels**, skipping the native measurement. Rarely needed |
+| `resize` | `{ width, height, fit?, allowUpscale? }` | measured from the view | Explicit target bitmap box in **pixels**, skipping the native measurement. Rarely needed |
+| `fit` | `ResizeFit` | derived from `resizeMode` | How the bitmap is fitted into the measured size — see [Resize modes](#resize-modes). Follows `resizeMode` when omitted; set it to decouple the two |
+| `allowUpscale` | `boolean` | `true` | `false` never enlarges a source smaller than the view |
 | `onLoad` | `(width: number, height: number) => void` | — | Called when the view has displayed the image, with the bitmap's size in **pixels**. Hands you the size rather than the `Image`, which stays native. Not a one-shot event — a recycled cell calls it again on re-attach, and one view may call it more than once for the same image, so make it idempotent |
 | `onError` | `(message: string) => void` | — | Called when loading fails, with the error's message. A load cancelled by the view detaching is not a failure. Without it, failures on this component are silent |
 | `ref` | `Ref<NativePipelineImageRef>` | — | Forwarded to the underlying `NativeNitroImage` host view |
@@ -349,8 +383,11 @@ loading happens entirely natively. The `Image` itself never crosses — use `<Pi
 Creates the [`ImageLoader`](https://github.com/mrousavy/react-native-nitro-image) that powers
 `<NativePipelineImage>`, for use with your own `<NativeNitroImage image={loader} />`. The view
 calls into it natively when it attaches (load at the view's laid-out size) and detaches
-(cancel + release). `options` takes `blur`/`cornerRadius` in **points** and an optional
-pixel-based `resize` override — see the `ViewOptions` type. It also takes the optional
+(cancel + release). `options` takes `blur`/`cornerRadius` in **points**, an optional
+pixel-based `resize` override, and `fit`/`allowUpscale` for the box the view measures (pass the
+view's `resizeMode` as `fit`; a `resize` that carries its own wins) — see the `ViewOptions` type.
+Unlike the callbacks, `fit` is part of what is loaded, so changing it swaps the loader. It also
+takes the optional
 `onLoad(width, height)`/`onError(message)` callbacks a view reports its loads through; without
 them the loader never calls into JS. The hook memoizes by value, so inline options literals are
 fine — the callbacks are read through a ref, so inline arrows don't reload the image either — and
@@ -373,7 +410,9 @@ resolve, so the request fails at load time like a missing file.
 Converts a layout size in points to a bitmap `resize` option in pixels. Returns
 `{ width, height }` in whole pixels via `PixelRatio.getPixelSizeForLayoutSize`, or `undefined` for
 non-numeric sizes (e.g. `'100%'`, `undefined`) — `resizeForStyle` reads `style.width`/`style.height`,
-`resizeForLayout` takes explicit numbers.
+`resizeForLayout` takes explicit numbers. Spread a `fit` into the result for the other
+[resize modes](#resize-modes); under `contain` and `center` the size is then the box the bitmap
+fits in, not necessarily its final size.
 
 ### `cornerRadiusForStyle(style)`
 
@@ -460,7 +499,9 @@ The pipeline is set up so RAM scales with what you display, not with what you do
 - **Pass `resize` (or just use `<PipelineImage>`, which derives it from layout).** With a target
   size known, both platforms decode the source *near that size* instead of at full resolution —
   iOS via a downsampled thumbnail decode, Android via Coil's subsampling. Without `resize`, a
-  48 MP photo decompresses to ~190 MB of bitmap no matter how small you display it.
+  48 MP photo decompresses to ~190 MB of bitmap no matter how small you display it. The one
+  exception is `fit: 'center'`, which by definition needs the source's own pixels and so decodes
+  at full resolution before cropping.
 - **Android draws transformed images from hardware bitmaps** (API 26+). When a view loads its
   image natively (`<NativePipelineImage>`, or `<NativeNitroImage image={createImageLoader(...)}>`),
   a resized, blurred or rounded result is uploaded to a `Bitmap.Config.HARDWARE` bitmap once and

@@ -1,5 +1,14 @@
 # Plan: `fit` / `allowUpscale` for `resize` (every `resizeMode`)
 
+> [!NOTE]
+> Implemented on this branch — kept as the design record. Where the code and this document
+> differ, the code and `README.md` are current. Two things changed in the doing: the iOS thumbnail
+> decode stays aspect-fill for `contain` too (a proportional over-decode the processor then
+> shrinks, the same input Android's `Scale.FILL` produces, rather than a CGImageSource-rounded
+> aspect-fit thumbnail), and Android's `RoundedCornersTransformation` is replaced by the
+> pipeline's own only for the non-default fits, as planned, with the default fit's uniform-radius
+> constructor preserved for its cache key.
+
 Source request: gist `alejandro-paredes-at-work/125f8c1affd33a5848ee0a8d8ebd50e0`
 ("add a `fit` option covering every resize mode"). This document adapts that request to how the
 library is actually built today and lays out the implementation order, the shared geometry both

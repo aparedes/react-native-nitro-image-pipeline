@@ -77,6 +77,9 @@ lib/   ← compiled JS/TS outputs (commonjs, module, typedefs)
 | `scripts/verify-blur.swift` | Host-side blur checks, run by `bun run verify:blur` and in CI |
 | `android/src/main/cpp/GaussianBlur.cpp` | Android blur kernel (C++, no JNI/Android headers) — a port of the iOS one, so `scripts/verify-blur.swift` can compile it on the host too |
 | `android/.../transform/BlurTransformation.kt` | Coil `Transformation` around that kernel, via the JNI entry point in `android/src/main/cpp/GaussianBlurJni.cpp` |
+| `ios/FitResizeProcessor.swift` / `android/.../transform/FitGeometry.kt` + `ResizeTransformation.kt` | The `resize.fit` geometry (see below); the default `cover` stays on Nuke's / the original Coil path so its bytes and cache keys never change |
+| `android/.../transform/PipelineRoundedCornersTransformation.kt` | Rounds at the bitmap's own size (a port of `ios/RoundedCornersProcessor.swift`) for the non-default fits — Coil's own transformation scale-fills to the request size |
+| `ios/RoundedCornersProcessor.swift` | Per-corner radii for Nuke, clipped through a hand-built path |
 | `ios/PipelineImageLoader.swift` / `android/.../PipelineImageLoader.kt` | Native `ImageLoader` (react-native-nitro-image) impls behind `createImageLoader` — the view loads at its laid-out size on attach, cancels on detach; `ViewOptions` are points, converted to pixels natively |
 | `src/index.ts` | Library entry point — re-exports only |
 | `src/NitroImagePipeline.ts` | Creates the HybridObject |
@@ -85,7 +88,7 @@ lib/   ← compiled JS/TS outputs (commonjs, module, typedefs)
 | `src/resolveImageSource.ts` | `ImageSource` (`string \| number`) and `resolveImageUrl` — turns a `require()` into the URL string the native side loads |
 | `src/PipelineImage.tsx` | `NativeNitroImage` wrapper that derives `resize` from `style`/`onLayout`; its `blur`/`cornerRadius` are in points |
 | `src/usePipelineImageLoader.ts` | Hook; value-memoized `ImageLoader` for `<NativeNitroImage image={...}>` |
-| `src/NativePipelineImage.tsx` | Fully native-driven image component — no JS work per image after mount; no `onLoad`/`onError` |
+| `src/NativePipelineImage.tsx` | Fully native-driven image component — no JS work per image after mount unless `onLoad`/`onError` are set |
 | `nitro.json` | Nitrogen codegen config (namespace, module names, language targets) |
 | `NitroImagePipeline.podspec` | iOS CocoaPods spec — do not manually add source files; nitrogen autolinking handles it |
 | `android/CMakeLists.txt` | C++ build config — includes nitrogen-generated cmake |
@@ -93,6 +96,20 @@ lib/   ← compiled JS/TS outputs (commonjs, module, typedefs)
 | `.oxlint/react-native-plugin.mjs` | Vendored React Native lint rules — oxlint has no native `react-native` plugin |
 | `lefthook.yml` | Git hooks — pre-commit formats/lints staged files, pre-push runs the full checks |
 | `.swiftlint.yml` | SwiftLint config (excludes `nitrogen/generated`, Pods, build output) |
+
+### Resize geometry is a cross-platform contract
+
+`resize.fit` (`cover` | `contain` | `stretch` | `center`, mirroring nitro-image's `resizeMode`) and
+`allowUpscale` produce the same bitmap size on both platforms from one formula, written out in
+`ios/FitResizeProcessor.swift`, `android/.../transform/FitGeometry.kt` and — the copy the harness
+checks both against — `example/__tests__/fit-geometry.ts`. Keep the three identical, including the
+rounding and the order of the divisions. The default (`cover` + upscale) deliberately does **not**
+go through that code: it stays on Nuke's `ImageProcessors.Resize` and the original
+`ResizeTransformation` branch so its output and cache keys are unchanged from before `fit` existed.
+`center` skips the thumbnail decode / Coil subsampling (it must see the source's own pixels), and
+the other non-default fits use `Precision.INEXACT` on Android so Coil never upscales the decode.
+On iOS the view loader re-wraps the loaded image with the display scale so `.center` draws one
+bitmap pixel per device pixel, as Android's `ScaleType.CENTER` does.
 
 ### Blur is a cross-platform contract
 
