@@ -13,7 +13,9 @@ import type {
 /**
  * Converts a layout size in points (dp) to the pipeline's `resize` option in
  * whole bitmap pixels using `PixelRatio.getPixelSizeForLayoutSize`. Returns
- * `undefined` unless both values are positive numbers.
+ * `undefined` unless both values are positive numbers. Spread a `fit` into
+ * the result for the other resize modes — under `contain` and `center` the
+ * size is the box the bitmap fits in, not necessarily its final size.
  */
 export function resizeForLayout(
   width: unknown,

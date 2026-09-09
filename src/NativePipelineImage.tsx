@@ -7,6 +7,7 @@ import { type ImageSource, recyclingKeyFor } from './resolveImageSource';
 import type {
   CacheOption,
   CornerRadii,
+  ResizeFit,
   ResizeOptions,
 } from './specs/nitro-image-toolkit.nitro';
 import { usePipelineImageLoader } from './usePipelineImageLoader';
@@ -51,6 +52,19 @@ export interface NativePipelineImageProps extends Omit<
    * @default undefined (measure the view natively)
    */
   resize?: ResizeOptions;
+  /**
+   * How the source is fitted into the measured view size when the bitmap is
+   * produced — see {@linkcode ResizeFit}. When omitted it follows
+   * `resizeMode`, like `PipelineImage`. Set this to decouple the two.
+   * @default undefined (derived from `resizeMode`, or `'cover'` if unset)
+   */
+  fit?: ResizeFit;
+  /**
+   * `false` never enlarges a source smaller than the view — see
+   * {@linkcode ResizeOptions.allowUpscale}.
+   * @default true
+   */
+  allowUpscale?: boolean;
   /**
    * Called when the view has displayed the image, with the size of the bitmap
    * it displays in **pixels**.
@@ -108,9 +122,12 @@ export const NativePipelineImage = forwardRef<
     cornerRadius,
     cache,
     resize,
+    fit,
+    allowUpscale,
     onLoad,
     onError,
     style,
+    resizeMode,
     ...viewProps
   },
   ref,
@@ -124,6 +141,10 @@ export const NativePipelineImage = forwardRef<
     cornerRadius: effectiveCornerRadius,
     cache,
     resize,
+    // Same four values as the view's resizeMode; an explicit `fit` decouples
+    // them.
+    fit: fit ?? resizeMode,
+    allowUpscale,
     onLoad,
     onError,
   });
@@ -135,6 +156,7 @@ export const NativePipelineImage = forwardRef<
       {...viewProps}
       ref={ref}
       style={style}
+      resizeMode={resizeMode}
       image={loader}
     />
   );

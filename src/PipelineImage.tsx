@@ -21,6 +21,7 @@ import type { ImageSource } from './resolveImageSource';
 import type {
   CacheOption,
   CornerRadii,
+  ResizeFit,
   ResizeOptions,
 } from './specs/nitro-image-toolkit.nitro';
 import { useImage } from './useImage';
@@ -62,6 +63,21 @@ export interface PipelineImageProps extends Omit<NativeImageProps, 'image'> {
    */
   cornerRadius?: number | CornerRadii;
   cache?: CacheOption;
+  /**
+   * How the source is fitted into the display size when the bitmap is
+   * produced — see {@linkcode ResizeFit}. When omitted it follows
+   * `resizeMode`, so `resizeMode="contain"` decodes an aspect-fitted bitmap
+   * (no crop, no padding) instead of a center-cropped one the view then
+   * letterboxes. Set this to decouple the two.
+   * @default undefined (derived from `resizeMode`, or `'cover'` if unset)
+   */
+  fit?: ResizeFit;
+  /**
+   * `false` never enlarges a source smaller than the display size — see
+   * {@linkcode ResizeOptions.allowUpscale}.
+   * @default true
+   */
+  allowUpscale?: boolean;
   /** Called with the processed `Image` each time a new variant resolves. */
   onLoad?: (image: Image) => void;
   /** Called when loading fails. */
@@ -119,10 +135,13 @@ export const PipelineImage = forwardRef<PipelineImageRef, PipelineImageProps>(
       blur = 0,
       cornerRadius,
       cache,
+      fit,
+      allowUpscale,
       onLoad,
       onError,
       style,
       onLayout,
+      resizeMode,
       ...viewProps
     },
     ref,
@@ -134,7 +153,13 @@ export const PipelineImage = forwardRef<PipelineImageRef, PipelineImageProps>(
     );
     // A numeric style is what the caller declared, so it wins and starts the
     // request a frame earlier; the measured layout is the fallback.
-    const resize = styleSize ?? layoutSize;
+    const size = styleSize ?? layoutSize;
+    // The view's resizeMode and the bitmap's fit are the same four values;
+    // an explicit `fit` decouples them.
+    const effectiveFit = fit ?? resizeMode;
+    const resize: ResizeOptions | undefined = size
+      ? { ...size, fit: effectiveFit, allowUpscale }
+      : undefined;
     // Same precedence: an explicit prop wins over what style implies.
     const effectiveCornerRadius =
       cornerRadius ?? cornerRadiusForStyle(style) ?? 0;
@@ -176,6 +201,7 @@ export const PipelineImage = forwardRef<PipelineImageRef, PipelineImageProps>(
         {...viewProps}
         ref={ref}
         style={style}
+        resizeMode={resizeMode}
         onLayout={handleLayout}
         image={image}
       />
