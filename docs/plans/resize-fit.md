@@ -2,8 +2,16 @@
 
 Source request: gist `alejandro-paredes-at-work/125f8c1affd33a5848ee0a8d8ebd50e0`
 ("add a `fit` option covering every resize mode"). This document adapts that request to how the
-library is actually built today (v1.6.0) and lays out the implementation order, the shared
-geometry both platforms must agree on, and the tests that pin it.
+library is actually built today and lays out the implementation order, the shared geometry both
+platforms must agree on, and the tests that pin it.
+
+**Base branch: `claude/nativepipelineimage-onload-onerror-vdy7vm`** (unmerged; one commit on top of
+v1.6.0, "feat: add onLoad/onError to NativePipelineImage"). It touches the same files this work
+touches — `ViewOptions` in the spec, `usePipelineImageLoader`, `NativePipelineImage`, both
+`PipelineImageLoader`s, the loader harness and the README — so branch from it, not from `main`.
+If it merges first, rebase onto `main`; either way, never hand-merge `nitrogen/generated/**` — run
+`bun run codegen` after the rebase and commit whatever it produces. Section 12 lists everything
+that branch changes for this plan.
 
 ## 1. Where the gist and the codebase disagree
 
@@ -40,7 +48,7 @@ export interface ResizeOptions {
 }
 
 export type ViewOptions = {
-  // ...existing...
+  // ...existing, incl. the base branch's onLoad(width, height) / onError(message)...
   /** Fit for the box the loader measures from the view. @default 'cover' */
   fit?: ResizeFit;
   /** @default true */
@@ -138,7 +146,10 @@ of the produced bitmap (under `contain` the corners round the image's own edges,
 - `start(...)`: after the load, assign
   `UIImage(cgImage: image.cgImage!, scale: displayScale, orientation: image.imageOrientation)`
   (fallback to `image` if `cgImage` is nil) so `.center` draws 1 bitmap px per device px (see §1 #4).
-  The synchronous memory-cache-hit branch does the same.
+  The synchronous memory-cache-hit branch does the same. The base branch's `notifyLoad` reports
+  `image.size × image.scale`, so pass it the *unwrapped* Nuke image (scale 1) — or the wrapped one,
+  the product is the same pixels either way — and add a harness assertion that `onLoad` still
+  reports bitmap pixels after the rewrap.
 
 ## 5. Android (`android/`)
 
@@ -185,13 +196,15 @@ at density-scaled size, set `bitmap.density = DENSITY_NONE`-equivalent via
   pass them in the rebuilt `resize` object. Update the `resize` JSDoc.
 - `usePipelineImageLoader.ts`: same by-value split for `options.fit`, `options.allowUpscale`,
   `options.resize?.fit`, `options.resize?.allowUpscale`; include them in `stableOptions` (and thus
-  in the `__source` tag the view diffs).
+  in the `__source` tag the view diffs) and in the `useMemo` deps, next to the base branch's
+  `hasOnLoad`/`hasOnError`/`notifyLoad`/`notifyError`. Unlike the callbacks, `fit` *is* part of
+  "what is loaded", so two loaders that differ only in `fit` are different images.
 - `PipelineImage.tsx`: destructure `resizeMode` explicitly (still forwarded to the view), add
   `fit` and `allowUpscale` props; `effectiveFit = fit ?? resizeMode` (undefined ⇒ native default
   `cover`); `resize = size && { ...size, fit: effectiveFit, allowUpscale }`. `sameSize` stays
   width/height-only (fit changes flow through `useImage`'s deps).
 - `NativePipelineImage.tsx`: same two props, `usePipelineImageLoader(url, { ..., fit: fit ??
-  resizeMode, allowUpscale })`.
+  resizeMode, allowUpscale, onLoad, onError })` — the callbacks come from the base branch.
 - `resizeForStyle.ts`: JSDoc only — under `contain`/`center` the returned box is an upper bound.
 - `index.ts`: export `type ResizeFit`.
 
@@ -223,14 +236,16 @@ New `resize-fit.harness.ts` (+ move `rgbOf` from `local-images.harness.tsx` into
    `createImageLoader(url, { resize: { ..., fit } })` (precedence) produce the §3 sizes.
 8. **Components**: `<PipelineImage resizeMode="contain" style={{ width: 300, height: 200 }}
    onLoad>` reports `resizeForLayout(300, 200)` bounded, aspect-fitted sizes; `fit="cover"`
-   overrides `resizeMode="contain"`; `<NativePipelineImage resizeMode="center">` mounts and its
-   loader resolves the `center` size (no `onLoad`, so assert through `usePipelineImageLoader`).
+   overrides `resizeMode="contain"`. `<NativePipelineImage resizeMode="contain">` and
+   `resizeMode="center"` assert the produced size through the base branch's
+   `onLoad(width, height)` (pixels), with an explicit `resize` so the expectation is independent
+   of the device scale — the pattern its `pipeline-image-loader.harness.tsx` already uses.
 9. Extend `resize-for-style.harness.ts` only if `resizeForLayout` gains a `fit` passthrough
    (it does not in this plan).
 
 ## 8. Docs
 
-- README: features bullet (line 13), `loadImage` options table (`resize` row →
+- README: features bullet, `loadImage` options table (`resize` row →
   `{ width, height, fit?, allowUpscale? }`), a new **Resize modes** subsection with the §3 matrix,
   `fit`/`allowUpscale` rows for both components (with the `resizeMode` inference rule),
   `createImageLoader`/`usePipelineImageLoader` paragraph (`fit` in `ViewOptions`),
@@ -253,7 +268,9 @@ New `resize-fit.harness.ts` (+ move `rgbOf` from `local-images.harness.tsx` into
 5. `test: resize fit matrix` — §7.
 6. `docs: resize modes` — §8.
 
-Squash on merge into a single `feat: add fit / allowUpscale resize modes` so the release is a minor.
+Step 0 is `git checkout -b <branch> origin/claude/nativepipelineimage-onload-onerror-vdy7vm`. Open
+the PR against that branch (GitHub retargets it to `main` automatically once the base merges), and
+squash on merge into a single `feat: add fit / allowUpscale resize modes` so the release is a minor.
 
 ## 10. Verification
 
@@ -286,3 +303,27 @@ Squash on merge into a single `feat: add fit / allowUpscale resize modes` so the
 - **`PipelineImage` re-layout under `contain`**: the bitmap is smaller than the box, the view's
   `resizeMode="contain"` letterboxes it — visually the same as today, at half the decoded pixels.
   A later style change re-derives `resize` through the existing `onLayout` path; nothing new.
+
+## 12. What the base branch changes for this plan
+
+`claude/nativepipelineimage-onload-onerror-vdy7vm` adds `onLoad(width, height)` / `onError(message)`
+to `ViewOptions`, `usePipelineImageLoader` and `NativePipelineImage`, and wires them through both
+native view loaders. Consequences:
+
+- **Spec**: `ViewOptions` already gained two function-typed fields; `fit`/`allowUpscale` go next to
+  them. Nitrogen's generated `ViewOptions.*`, `JViewOptions.hpp` and the Swift bridge all change on
+  both branches — regenerate, never merge by hand.
+- **Hook**: `usePipelineImageLoader` now splits options into primitives *and* keeps callbacks in a
+  ref with stable wrappers. `fit`/`allowUpscale` follow the primitives path (they change the loader);
+  do not put them next to the callbacks (which deliberately don't).
+- **iOS loader**: `start(...)` now has a `do/catch` with `notifyLoad(image)` in both the cache-hit
+  and async branches. The `center` display-scale rewrap (§4) lands in the same two places; keep
+  `notifyLoad` reporting pixels (`size × scale`).
+- **Android loader**: `onLoad` reads `bitmap.width/height`, unaffected by fit. If the density
+  check in §5 needs a `BitmapDrawable`, report the bitmap's size, not the drawable's.
+- **Tests**: `pipeline-image-loader.harness.tsx` now imports `useEffect`/`useState` and has an
+  `onLoad` size test to copy for the fit cases (§7 #8). `NativePipelineImage` sizes are
+  observable in JS now, so the fit suite needs no back door through the hook.
+- **README**: the `<NativePipelineImage>` table has `onLoad`/`onError` rows; put `fit` and
+  `allowUpscale` above them, after `resize`, and mention in the `createImageLoader` paragraph
+  that `fit` (unlike the callbacks) is part of the loader's identity.
