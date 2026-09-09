@@ -20,6 +20,8 @@ namespace margelo::nitro::image { class HybridImageSpec; }
 namespace margelo::nitro::nitroimagepipeline { class HybridNitroImagePipelineSpec; }
 // Forward declaration of `Options` to properly resolve imports.
 namespace margelo::nitro::nitroimagepipeline { struct Options; }
+// Forward declaration of `ResizeFit` to properly resolve imports.
+namespace margelo::nitro::nitroimagepipeline { enum class ResizeFit; }
 // Forward declaration of `ResizeOptions` to properly resolve imports.
 namespace margelo::nitro::nitroimagepipeline { struct ResizeOptions; }
 // Forward declaration of `ViewOptions` to properly resolve imports.
@@ -30,6 +32,7 @@ namespace margelo::nitro::nitroimagepipeline { struct ViewOptions; }
 #include "CornerRadii.hpp"
 #include "HybridNitroImagePipelineSpec.hpp"
 #include "Options.hpp"
+#include "ResizeFit.hpp"
 #include "ResizeOptions.hpp"
 #include "ViewOptions.hpp"
 #include <NitroImage/HybridImageLoaderSpec.hpp>

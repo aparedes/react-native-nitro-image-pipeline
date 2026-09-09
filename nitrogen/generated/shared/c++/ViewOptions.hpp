@@ -34,12 +34,15 @@ namespace margelo::nitro::nitroimagepipeline { enum class CacheOption; }
 namespace margelo::nitro::nitroimagepipeline { struct CornerRadii; }
 // Forward declaration of `ResizeOptions` to properly resolve imports.
 namespace margelo::nitro::nitroimagepipeline { struct ResizeOptions; }
+// Forward declaration of `ResizeFit` to properly resolve imports.
+namespace margelo::nitro::nitroimagepipeline { enum class ResizeFit; }
 
 #include <optional>
 #include "CacheOption.hpp"
 #include "CornerRadii.hpp"
 #include <variant>
 #include "ResizeOptions.hpp"
+#include "ResizeFit.hpp"
 #include <functional>
 #include <string>
 
@@ -54,12 +57,14 @@ namespace margelo::nitro::nitroimagepipeline {
     std::optional<CacheOption> cache     SWIFT_PRIVATE;
     std::optional<std::variant<double, CornerRadii>> cornerRadius     SWIFT_PRIVATE;
     std::optional<ResizeOptions> resize     SWIFT_PRIVATE;
+    std::optional<ResizeFit> fit     SWIFT_PRIVATE;
+    std::optional<bool> allowUpscale     SWIFT_PRIVATE;
     std::optional<std::function<void(double /* width */, double /* height */)>> onLoad     SWIFT_PRIVATE;
     std::optional<std::function<void(const std::string& /* message */)>> onError     SWIFT_PRIVATE;
 
   public:
     ViewOptions() = default;
-    explicit ViewOptions(std::optional<double> blur, std::optional<CacheOption> cache, std::optional<std::variant<double, CornerRadii>> cornerRadius, std::optional<ResizeOptions> resize, std::optional<std::function<void(double /* width */, double /* height */)>> onLoad, std::optional<std::function<void(const std::string& /* message */)>> onError): blur(blur), cache(cache), cornerRadius(cornerRadius), resize(resize), onLoad(onLoad), onError(onError) {}
+    explicit ViewOptions(std::optional<double> blur, std::optional<CacheOption> cache, std::optional<std::variant<double, CornerRadii>> cornerRadius, std::optional<ResizeOptions> resize, std::optional<ResizeFit> fit, std::optional<bool> allowUpscale, std::optional<std::function<void(double /* width */, double /* height */)>> onLoad, std::optional<std::function<void(const std::string& /* message */)>> onError): blur(blur), cache(cache), cornerRadius(cornerRadius), resize(resize), fit(fit), allowUpscale(allowUpscale), onLoad(onLoad), onError(onError) {}
 
   public:
     // ViewOptions is not equatable because these properties are not equatable: onLoad, onError
@@ -79,6 +84,8 @@ namespace margelo::nitro {
         JSIConverter<std::optional<margelo::nitro::nitroimagepipeline::CacheOption>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "cache"))),
         JSIConverter<std::optional<std::variant<double, margelo::nitro::nitroimagepipeline::CornerRadii>>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "cornerRadius"))),
         JSIConverter<std::optional<margelo::nitro::nitroimagepipeline::ResizeOptions>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "resize"))),
+        JSIConverter<std::optional<margelo::nitro::nitroimagepipeline::ResizeFit>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "fit"))),
+        JSIConverter<std::optional<bool>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "allowUpscale"))),
         JSIConverter<std::optional<std::function<void(double, double)>>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "onLoad"))),
         JSIConverter<std::optional<std::function<void(const std::string&)>>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "onError")))
       );
@@ -89,6 +96,8 @@ namespace margelo::nitro {
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "cache"), JSIConverter<std::optional<margelo::nitro::nitroimagepipeline::CacheOption>>::toJSI(runtime, arg.cache));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "cornerRadius"), JSIConverter<std::optional<std::variant<double, margelo::nitro::nitroimagepipeline::CornerRadii>>>::toJSI(runtime, arg.cornerRadius));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "resize"), JSIConverter<std::optional<margelo::nitro::nitroimagepipeline::ResizeOptions>>::toJSI(runtime, arg.resize));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "fit"), JSIConverter<std::optional<margelo::nitro::nitroimagepipeline::ResizeFit>>::toJSI(runtime, arg.fit));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "allowUpscale"), JSIConverter<std::optional<bool>>::toJSI(runtime, arg.allowUpscale));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "onLoad"), JSIConverter<std::optional<std::function<void(double, double)>>>::toJSI(runtime, arg.onLoad));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "onError"), JSIConverter<std::optional<std::function<void(const std::string&)>>>::toJSI(runtime, arg.onError));
       return obj;
@@ -105,6 +114,8 @@ namespace margelo::nitro {
       if (!JSIConverter<std::optional<margelo::nitro::nitroimagepipeline::CacheOption>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "cache")))) return false;
       if (!JSIConverter<std::optional<std::variant<double, margelo::nitro::nitroimagepipeline::CornerRadii>>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "cornerRadius")))) return false;
       if (!JSIConverter<std::optional<margelo::nitro::nitroimagepipeline::ResizeOptions>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "resize")))) return false;
+      if (!JSIConverter<std::optional<margelo::nitro::nitroimagepipeline::ResizeFit>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "fit")))) return false;
+      if (!JSIConverter<std::optional<bool>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "allowUpscale")))) return false;
       if (!JSIConverter<std::optional<std::function<void(double, double)>>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "onLoad")))) return false;
       if (!JSIConverter<std::optional<std::function<void(const std::string&)>>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "onError")))) return false;
       return true;

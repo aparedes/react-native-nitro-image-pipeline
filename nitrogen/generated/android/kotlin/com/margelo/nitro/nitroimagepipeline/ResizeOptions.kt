@@ -23,7 +23,13 @@ data class ResizeOptions(
   val width: Double,
   @DoNotStrip
   @Keep
-  val height: Double
+  val height: Double,
+  @DoNotStrip
+  @Keep
+  val fit: ResizeFit?,
+  @DoNotStrip
+  @Keep
+  val allowUpscale: Boolean?
 ) {
   /* primary constructor */
 
@@ -32,12 +38,16 @@ data class ResizeOptions(
     if (other !is ResizeOptions) return false
     return Objects.deepEquals(this.width, other.width)
       && Objects.deepEquals(this.height, other.height)
+      && Objects.deepEquals(this.fit, other.fit)
+      && Objects.deepEquals(this.allowUpscale, other.allowUpscale)
   }
 
   override fun hashCode(): Int {
     return arrayOf<Any?>(
       width,
-      height
+      height,
+      fit,
+      allowUpscale
     ).contentDeepHashCode()
   }
 
@@ -49,8 +59,8 @@ data class ResizeOptions(
     @Keep
     @Suppress("unused")
     @JvmStatic
-    private fun fromCpp(width: Double, height: Double): ResizeOptions {
-      return ResizeOptions(width, height)
+    private fun fromCpp(width: Double, height: Double, fit: ResizeFit?, allowUpscale: Boolean?): ResizeOptions {
+      return ResizeOptions(width, height, fit, allowUpscale)
     }
   }
 }

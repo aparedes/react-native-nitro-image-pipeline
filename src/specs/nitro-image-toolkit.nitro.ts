@@ -15,13 +15,46 @@ export interface CornerRadii {
 }
 
 /**
- * Target bitmap size in pixels. The image is scaled to fill this size and
- * center-cropped (like CSS `object-fit: cover`), upscaling if needed, so the
- * result is exactly `width` × `height` pixels.
+ * How the source is fitted into the {@linkcode ResizeOptions} box. Mirrors
+ * `NativeNitroImage`'s `resizeMode`, so a view's `resizeMode` and the bitmap
+ * it displays can be derived from one value. With a `w` × `h` source and a
+ * `W` × `H` box, the produced bitmap is:
+ *
+ * - `cover`: scale by `max(W/w, H/h)`, center-crop → exactly `W` × `H`
+ *   (CSS `object-fit: cover`).
+ * - `contain`: scale by `min(W/w, H/h)` → `round(w·s)` × `round(h·s)`, the
+ *   largest size with the source's aspect ratio that fits the box. The
+ *   bitmap is *not* padded to the box.
+ * - `stretch`: scale each axis independently → exactly `W` × `H`, aspect
+ *   ratio ignored.
+ * - `center`: no scaling; center-crop to `min(w, W)` × `min(h, H)`. A source
+ *   smaller than the box is left untouched.
+ */
+export type ResizeFit = 'cover' | 'contain' | 'stretch' | 'center';
+
+/**
+ * Target bitmap size in pixels. By default the image is scaled to fill this
+ * size and center-cropped (like CSS `object-fit: cover`), upscaling if
+ * needed, so the result is exactly `width` × `height` pixels; {@linkcode fit}
+ * selects the other resize modes.
  */
 export interface ResizeOptions {
   width: number;
   height: number;
+  /**
+   * How the source is fitted into `width` × `height` — see
+   * {@linkcode ResizeFit} for the size each mode produces.
+   * @default 'cover'
+   */
+  fit?: ResizeFit;
+  /**
+   * `false` never enlarges the source: the scale is clamped to at most 1 for
+   * `cover`, `contain` and `stretch`, so a source smaller than the box keeps
+   * its own size (and, under `cover`, is only cropped to the box). No effect
+   * on `center`, which never scales.
+   * @default true
+   */
+  allowUpscale?: boolean;
 }
 
 export type Options = {
@@ -55,10 +88,11 @@ export type Options = {
    */
   cornerRadius?: number | CornerRadii;
   /**
-   * Resize the image to exactly this size in pixels (aspect-fill,
-   * center-crop) before `blur` and `cornerRadius` are applied. Besides making
-   * `cornerRadius` predictable, this avoids decoding and processing
-   * full-resolution bitmaps you only display small.
+   * Resize the image into this box in pixels — aspect-fill + center-crop by
+   * default, or another {@linkcode ResizeFit} — before `blur` and
+   * `cornerRadius` are applied. Besides making `cornerRadius` predictable,
+   * this avoids decoding and processing full-resolution bitmaps you only
+   * display small.
    *
    * @default undefined (keep the source size)
    */
@@ -90,10 +124,24 @@ export type ViewOptions = {
   /**
    * Target bitmap size in **pixels**, overriding the size measured from the
    * view. Rarely needed — without it the loader resizes to the view's
-   * laid-out size × screen scale, which is what you want in a UI.
+   * laid-out size × screen scale, which is what you want in a UI. Its own
+   * `fit`/`allowUpscale`, when set, win over the top-level ones below.
    * @default undefined (measure the view)
    */
   resize?: ResizeOptions;
+  /**
+   * How the source is fitted into the box the loader resizes to (the view's
+   * size, or {@linkcode resize}) — see {@linkcode ResizeFit}. Pass the view's
+   * `resizeMode` so the bitmap matches how the view displays it.
+   * @default 'cover'
+   */
+  fit?: ResizeFit;
+  /**
+   * `false` never enlarges the source — see
+   * {@linkcode ResizeOptions.allowUpscale}.
+   * @default true
+   */
+  allowUpscale?: boolean;
   /**
    * Called when a view finishes displaying the image, with the size of the
    * bitmap it displays in **pixels**.

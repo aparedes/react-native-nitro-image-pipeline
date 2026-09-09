@@ -20,6 +20,8 @@ namespace margelo::nitro::image { class HybridImageSpec; }
 namespace margelo::nitro::nitroimagepipeline { class HybridNitroImagePipelineSpec; }
 // Forward declaration of `Options` to properly resolve imports.
 namespace margelo::nitro::nitroimagepipeline { struct Options; }
+// Forward declaration of `ResizeFit` to properly resolve imports.
+namespace margelo::nitro::nitroimagepipeline { enum class ResizeFit; }
 // Forward declaration of `ResizeOptions` to properly resolve imports.
 namespace margelo::nitro::nitroimagepipeline { struct ResizeOptions; }
 // Forward declaration of `ViewOptions` to properly resolve imports.
@@ -38,6 +40,7 @@ namespace NitroImagePipeline { class HybridNitroImagePipelineSpec_cxx; }
 #include "CornerRadii.hpp"
 #include "HybridNitroImagePipelineSpec.hpp"
 #include "Options.hpp"
+#include "ResizeFit.hpp"
 #include "ResizeOptions.hpp"
 #include "ViewOptions.hpp"
 #include <NitroImage/HybridImageLoaderSpec.hpp>
@@ -198,6 +201,36 @@ namespace margelo::nitro::nitroimagepipeline::bridge::swift {
     return optional.has_value();
   }
   inline std::variant<double, CornerRadii> get_std__optional_std__variant_double__CornerRadii__(const std::optional<std::variant<double, CornerRadii>>& optional) noexcept {
+    return optional.value();
+  }
+  
+  // pragma MARK: std::optional<ResizeFit>
+  /**
+   * Specialized version of `std::optional<ResizeFit>`.
+   */
+  using std__optional_ResizeFit_ = std::optional<ResizeFit>;
+  inline std::optional<ResizeFit> create_std__optional_ResizeFit_(const ResizeFit& value) noexcept {
+    return std::optional<ResizeFit>(value);
+  }
+  inline bool has_value_std__optional_ResizeFit_(const std::optional<ResizeFit>& optional) noexcept {
+    return optional.has_value();
+  }
+  inline ResizeFit get_std__optional_ResizeFit_(const std::optional<ResizeFit>& optional) noexcept {
+    return optional.value();
+  }
+  
+  // pragma MARK: std::optional<bool>
+  /**
+   * Specialized version of `std::optional<bool>`.
+   */
+  using std__optional_bool_ = std::optional<bool>;
+  inline std::optional<bool> create_std__optional_bool_(const bool& value) noexcept {
+    return std::optional<bool>(value);
+  }
+  inline bool has_value_std__optional_bool_(const std::optional<bool>& optional) noexcept {
+    return optional.has_value();
+  }
+  inline bool get_std__optional_bool_(const std::optional<bool>& optional) noexcept {
     return optional.value();
   }
   

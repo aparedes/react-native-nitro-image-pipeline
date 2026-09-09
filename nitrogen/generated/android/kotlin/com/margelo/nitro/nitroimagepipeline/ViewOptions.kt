@@ -32,6 +32,12 @@ data class ViewOptions(
   val resize: ResizeOptions?,
   @DoNotStrip
   @Keep
+  val fit: ResizeFit?,
+  @DoNotStrip
+  @Keep
+  val allowUpscale: Boolean?,
+  @DoNotStrip
+  @Keep
   val onLoad: Func_void_double_double?,
   @DoNotStrip
   @Keep
@@ -40,8 +46,8 @@ data class ViewOptions(
   /**
    * Create a new instance of ViewOptions from Kotlin
    */
-  constructor(blur: Double?, cache: CacheOption?, cornerRadius: Variant_Double_CornerRadii?, resize: ResizeOptions?, onLoad: ((width: Double, height: Double) -> Unit)?, onError: ((message: String) -> Unit)?):
-         this(blur, cache, cornerRadius, resize, onLoad?.let { Func_void_double_double_java(it) }, onError?.let { Func_void_std__string_java(it) })
+  constructor(blur: Double?, cache: CacheOption?, cornerRadius: Variant_Double_CornerRadii?, resize: ResizeOptions?, fit: ResizeFit?, allowUpscale: Boolean?, onLoad: ((width: Double, height: Double) -> Unit)?, onError: ((message: String) -> Unit)?):
+         this(blur, cache, cornerRadius, resize, fit, allowUpscale, onLoad?.let { Func_void_double_double_java(it) }, onError?.let { Func_void_std__string_java(it) })
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -50,6 +56,8 @@ data class ViewOptions(
       && Objects.deepEquals(this.cache, other.cache)
       && Objects.deepEquals(this.cornerRadius, other.cornerRadius)
       && Objects.deepEquals(this.resize, other.resize)
+      && Objects.deepEquals(this.fit, other.fit)
+      && Objects.deepEquals(this.allowUpscale, other.allowUpscale)
       && Objects.deepEquals(this.onLoad, other.onLoad)
       && Objects.deepEquals(this.onError, other.onError)
   }
@@ -60,6 +68,8 @@ data class ViewOptions(
       cache,
       cornerRadius,
       resize,
+      fit,
+      allowUpscale,
       onLoad,
       onError
     ).contentDeepHashCode()
@@ -73,8 +83,8 @@ data class ViewOptions(
     @Keep
     @Suppress("unused")
     @JvmStatic
-    private fun fromCpp(blur: Double?, cache: CacheOption?, cornerRadius: Variant_Double_CornerRadii?, resize: ResizeOptions?, onLoad: Func_void_double_double?, onError: Func_void_std__string?): ViewOptions {
-      return ViewOptions(blur, cache, cornerRadius, resize, onLoad, onError)
+    private fun fromCpp(blur: Double?, cache: CacheOption?, cornerRadius: Variant_Double_CornerRadii?, resize: ResizeOptions?, fit: ResizeFit?, allowUpscale: Boolean?, onLoad: Func_void_double_double?, onError: Func_void_std__string?): ViewOptions {
+      return ViewOptions(blur, cache, cornerRadius, resize, fit, allowUpscale, onLoad, onError)
     }
   }
 }

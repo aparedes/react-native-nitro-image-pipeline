@@ -10,7 +10,9 @@
 #include <fbjni/fbjni.h>
 #include "ResizeOptions.hpp"
 
-
+#include "JResizeFit.hpp"
+#include "ResizeFit.hpp"
+#include <optional>
 
 namespace margelo::nitro::nitroimagepipeline {
 
@@ -35,9 +37,15 @@ namespace margelo::nitro::nitroimagepipeline {
       double width = this->getFieldValue(fieldWidth);
       static const auto fieldHeight = clazz->getField<double>("height");
       double height = this->getFieldValue(fieldHeight);
+      static const auto fieldFit = clazz->getField<JResizeFit>("fit");
+      jni::local_ref<JResizeFit> fit = this->getFieldValue(fieldFit);
+      static const auto fieldAllowUpscale = clazz->getField<jni::JBoolean>("allowUpscale");
+      jni::local_ref<jni::JBoolean> allowUpscale = this->getFieldValue(fieldAllowUpscale);
       return ResizeOptions(
         width,
-        height
+        height,
+        fit != nullptr ? std::make_optional(fit->toCpp()) : std::nullopt,
+        allowUpscale != nullptr ? std::make_optional(static_cast<bool>(allowUpscale->value())) : std::nullopt
       );
     }
 
@@ -47,13 +55,15 @@ namespace margelo::nitro::nitroimagepipeline {
      */
     [[maybe_unused]]
     static jni::local_ref<JResizeOptions::javaobject> fromCpp(const ResizeOptions& value) {
-      using JSignature = JResizeOptions(double, double);
+      using JSignature = JResizeOptions(double, double, jni::alias_ref<JResizeFit>, jni::alias_ref<jni::JBoolean>);
       static const auto clazz = javaClassStatic();
       static const auto create = clazz->getStaticMethod<JSignature>("fromCpp");
       return create(
         clazz,
         value.width,
-        value.height
+        value.height,
+        value.fit.has_value() ? JResizeFit::fromCpp(value.fit.value()) : nullptr,
+        value.allowUpscale.has_value() ? jni::JBoolean::valueOf(value.allowUpscale.value()) : nullptr
       );
     }
   };

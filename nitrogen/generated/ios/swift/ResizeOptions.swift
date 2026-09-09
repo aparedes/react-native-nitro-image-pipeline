@@ -18,8 +18,20 @@ public extension ResizeOptions {
   /**
    * Create a new instance of `ResizeOptions`.
    */
-  init(width: Double, height: Double) {
-    self.init(width, height)
+  init(width: Double, height: Double, fit: ResizeFit?, allowUpscale: Bool?) {
+    self.init(width, height, { () -> bridge.std__optional_ResizeFit_ in
+      if let __unwrappedValue = fit {
+        return bridge.create_std__optional_ResizeFit_(__unwrappedValue)
+      } else {
+        return .init()
+      }
+    }(), { () -> bridge.std__optional_bool_ in
+      if let __unwrappedValue = allowUpscale {
+        return bridge.create_std__optional_bool_(__unwrappedValue)
+      } else {
+        return .init()
+      }
+    }())
   }
 
   @inline(__always)
@@ -30,5 +42,22 @@ public extension ResizeOptions {
   @inline(__always)
   var height: Double {
     return self.__height
+  }
+  
+  @inline(__always)
+  var fit: ResizeFit? {
+    return self.__fit.value
+  }
+  
+  @inline(__always)
+  var allowUpscale: Bool? {
+    return { () -> Bool? in
+      if bridge.has_value_std__optional_bool_(self.__allowUpscale) {
+        let __unwrapped = bridge.get_std__optional_bool_(self.__allowUpscale)
+        return __unwrapped
+      } else {
+        return nil
+      }
+    }()
   }
 }
