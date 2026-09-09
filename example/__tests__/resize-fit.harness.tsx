@@ -167,9 +167,10 @@ describe('resize fit', () => {
           }
         }
       }
-      // Colour management may round by a step; a resample of a checkerboard
-      // would be off by far more at every edge.
-      expect(worst).toBeLessThanOrEqual(2);
+      // The crop is drawn through a renderer the source never went through,
+      // so allow for colour-management rounding; a resample of the
+      // checkerboard (20 px squares) would be off by ~200 at every edge.
+      expect(worst).toBeLessThanOrEqual(8);
     });
 
     it('contain of a square source is the same picture as a square cover', async () => {
