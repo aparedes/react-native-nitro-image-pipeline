@@ -23,9 +23,9 @@ import UIKit
 /// display scale, so cache keys match an equivalent `loadImage` call.
 ///
 /// The optional `onLoad`/`onError` callbacks report a view's load back to JS.
-/// They are per view, not per loader: several views (and a recycled cell
-/// re-attaching) each call them. `loadImage()` doesn't — it reports through
-/// its promise instead.
+/// They are per request, not per loader: several views (and a recycled cell
+/// re-attaching) each call them, and a view that requests twice reports twice.
+/// `loadImage()` doesn't — it reports through its promise instead.
 class PipelineImageLoader: HybridImageLoaderSpec {
     private let url: String
     private let options: ViewOptions?
@@ -172,7 +172,13 @@ class PipelineImageLoader: HybridImageLoaderSpec {
     }
 
     private func start(into imageView: UIImageView, key: ObjectIdentifier, sizePx: CGSize) {
-        guard let imageUrl = HybridNitroImagePipeline.url(from: url) else { return }
+        guard let imageUrl = HybridNitroImagePipeline.url(from: url) else {
+            // Android's loader hands a malformed URL to Coil, which reports it
+            // as a failed request; report it here too rather than returning
+            // silently and leaving `onError` waiting forever.
+            options?.onError?("Invalid URL: \(url)")
+            return
+        }
         let scale = Self.displayScale(of: imageView)
         let request = HybridNitroImagePipeline.makeRequest(
             url: imageUrl,

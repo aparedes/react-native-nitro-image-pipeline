@@ -56,9 +56,10 @@ export interface NativePipelineImageProps extends Omit<
    * it displays in **pixels**.
    *
    * Unlike `PipelineImage`'s `onLoad` this doesn't hand you the `Image` — the
-   * bitmap stays native, which is the point of this component. It also fires
-   * per *view*, so a recycled cell re-attaching calls it again (memory-cache
-   * hits included, which resolve synchronously).
+   * bitmap stays native, which is the point of this component — and it means
+   * "the view is now showing this image" rather than firing exactly once: a
+   * recycled cell re-attaching calls it again, and a single view may call it
+   * more than once for the same image. Make it idempotent.
    *
    * Setting it means there is per-image JS work again; leave it unset and the
    * component stays free of JS round trips.
@@ -84,7 +85,7 @@ export interface NativePipelineImageProps extends Omit<
  *
  * Compared to `PipelineImage`:
  * - `onLoad` reports the bitmap's pixel size rather than the `Image` itself,
- *   which never crosses into JS, and fires per attaching view. Use
+ *   which never crosses into JS, and can fire more than once for a view. Use
  *   `PipelineImage` (or `useImage`) when you need the `Image`.
  * - The bitmap is loaded once at the size the view first has; if the view is
  *   resized later, the bitmap scales with it instead of reloading.

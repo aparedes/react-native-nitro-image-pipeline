@@ -124,6 +124,35 @@ describe('NativePipelineImage', () => {
     await waitFor(() => expect(message).toBeDefined());
   });
 
+  it('picks up a callback added after the first render', async () => {
+    let message: string | undefined;
+    let enable: (() => void) | undefined;
+    function Probe() {
+      const [enabled, setEnabled] = useState(false);
+      useEffect(() => {
+        enable = () => setEnabled(true);
+      });
+      return (
+        <NativePipelineImage
+          url={INVALID_URL}
+          style={styles.fixed}
+          onError={
+            enabled
+              ? (error) => {
+                  message = error;
+                }
+              : undefined
+          }
+        />
+      );
+    }
+    // Toggling a callback on makes a different loader; the view has to notice
+    // and install it, or the callback would never be called.
+    await render(<Probe />);
+    enable?.();
+    await waitFor(() => expect(message).toBeDefined());
+  });
+
   it('does not reload when only the callbacks change identity', async () => {
     let loads = 0;
     let forceRender: (() => void) | undefined;
@@ -146,12 +175,17 @@ describe('NativePipelineImage', () => {
       );
     }
     await render(<Probe />);
-    await waitFor(() => expect(loads).toBe(1));
+    await waitFor(() => expect(loads).toBeGreaterThanOrEqual(1));
+    // A single mount can report more than once — the view requests the image
+    // both when its `image` prop is set and when it becomes visible — so let
+    // the mount settle and compare against whatever it settled on.
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    const settled = loads;
     forceRender?.();
     forceRender?.();
     // A recreated loader would re-request (and, on a memory-cache hit, report)
     // shortly after; give it time to show up rather than asserting instantly.
     await new Promise((resolve) => setTimeout(resolve, 500));
-    expect(loads).toBe(1);
+    expect(loads).toBe(settled);
   });
 });

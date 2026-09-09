@@ -37,9 +37,10 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  * `loadImage` call. View sizes are already physical pixels on Android, so only blur and corner
  * radii need scaling.
  *
- * The optional `onLoad`/`onError` callbacks report a view's load back to JS. They are per view, not
- * per loader: several views (and a recycled cell re-attaching) each call them. [loadImage] does
- * not — it reports through its promise instead.
+ * The optional `onLoad`/`onError` callbacks report a view's load back to JS. They are per request,
+ * not per loader: several views (and a recycled cell re-attaching) each call them, and a view that
+ * requests twice reports twice — `HybridImageView` requests both when its `image` is set and when
+ * it becomes visible. [loadImage] does not call them — it reports through its promise instead.
  */
 @DoNotStrip
 @Keep

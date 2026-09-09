@@ -94,8 +94,9 @@ import { NativePipelineImage } from 'react-native-nitro-image-pipeline';
 exactly like `<PipelineImage>`. The trade-offs of going fully native:
 
 - `onLoad` reports the bitmap's size in pixels rather than the `Image` itself, which never crosses
-  into JS — use `<PipelineImage>` or `useImage` when you need the `Image`. It also fires per
-  *view*: a recycled cell re-attaching calls it again, memory-cache hits included.
+  into JS — use `<PipelineImage>` or `useImage` when you need the `Image`. It means "this view is
+  now showing this image" rather than firing exactly once: a recycled cell re-attaching calls it
+  again, and a single view may call it more than once for the same image. Make it idempotent.
 - Setting `onLoad`/`onError` means there is per-image JS work again. Leave them unset (the default)
   and nothing crosses into JS at all.
 - The bitmap is loaded once at the size the view first has; if the view resizes later, the bitmap
@@ -334,7 +335,7 @@ a plain absolute path, or the other forms listed under
 | `cornerRadius` | `number \| CornerRadii` | derived from `style` | Corner radius, in **points** (screen scale applied natively) |
 | `cache` | `'memory' \| 'disk' \| 'none'` | platform default | Caching strategy |
 | `resize` | `{ width, height }` | measured from the view | Explicit target bitmap size in **pixels**, skipping the native measurement. Rarely needed |
-| `onLoad` | `(width: number, height: number) => void` | — | Called when the view has displayed the image, with the bitmap's size in **pixels**. Fires per attaching view (recycled cells and memory-cache hits included), and hands you the size rather than the `Image`, which stays native |
+| `onLoad` | `(width: number, height: number) => void` | — | Called when the view has displayed the image, with the bitmap's size in **pixels**. Hands you the size rather than the `Image`, which stays native. Not a one-shot event — a recycled cell calls it again on re-attach, and one view may call it more than once for the same image, so make it idempotent |
 | `onError` | `(message: string) => void` | — | Called when loading fails, with the error's message. A load cancelled by the view detaching is not a failure. Without it, failures on this component are silent |
 | `ref` | `Ref<NativePipelineImageRef>` | — | Forwarded to the underlying `NativeNitroImage` host view |
 | `…NativeNitroImage props` | — | — | Everything else (`resizeMode`, `recyclingKey`, `testID`, …) is passed through; `recyclingKey` defaults to `url` |

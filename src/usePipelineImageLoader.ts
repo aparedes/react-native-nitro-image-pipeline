@@ -97,11 +97,18 @@ export function usePipelineImageLoader(
     });
     // `NativeNitroImage` needs a way to tell two loader instances apart when
     // diffing its `image` prop; tag the loader with what it will load (the
-    // same convention react-native-nitro-image's own loaders use).
+    // same convention react-native-nitro-image's own loaders use). Toggling a
+    // callback on or off makes a different loader, so the tag has to say so —
+    // otherwise the view keeps the old one installed. Their identities stay
+    // out of it: those don't change what is loaded, or which loader this is.
     Object.defineProperty(loader, '__source', {
       enumerable: true,
       configurable: true,
-      value: { url, options: stableOptions },
+      value: {
+        url,
+        options: stableOptions,
+        callbacks: { onLoad: hasOnLoad, onError: hasOnError },
+      },
     });
     return loader;
   }, [

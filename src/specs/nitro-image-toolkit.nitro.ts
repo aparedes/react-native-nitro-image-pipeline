@@ -102,11 +102,13 @@ export type ViewOptions = {
    * would keep it alive there and defeat the point of the native path. Use
    * `useImage`/`loadImage` when you need the `Image` object.
    *
-   * A loader is per URL + options, not per view: this fires once per view that
-   * attaches, including for views that re-attach (list recycling) and for
-   * memory-cache hits, which resolve synchronously. It does not fire for
-   * {@linkcode NitroImagePipeline.loadImage}-style imperative loads through
-   * `ImageLoader.loadImage()` — those resolve through their promise.
+   * This reports "the view is now showing this image", not a one-shot event:
+   * a loader is per URL + options, not per view, so every view using it
+   * reports, a recycled cell reports again when it re-attaches, and a single
+   * view can report more than once (it requests the image both when its
+   * `image` prop is set and when it becomes visible). Memory-cache hits, which
+   * resolve synchronously, report too. It does not fire for imperative loads
+   * through `ImageLoader.loadImage()` — those resolve through their promise.
    *
    * Setting it means there *is* per-image JS work; leave it unset and the
    * native path stays free of JS round trips entirely.
