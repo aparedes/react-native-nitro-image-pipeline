@@ -108,8 +108,10 @@ go through that code: it stays on Nuke's `ImageProcessors.Resize` and the origin
 `ResizeTransformation` branch so its output and cache keys are unchanged from before `fit` existed.
 `center` skips the thumbnail decode / Coil subsampling (it must see the source's own pixels),
 `contain` decodes aspect-fit / `Scale.FIT` so the decode is bounded near the produced size rather
-than the box, and the other non-default fits use `Precision.INEXACT` on Android so Coil never
-upscales the decode.
+than the box; `cover` and `stretch` decode aspect-fill / `Scale.FILL` (bounded by the box's fill
+scale, i.e. up to full size when the aspect ratios differ sharply — `stretch` needs that scale to
+keep its less-shrunk axis from being resampled up, and `cover` has always decoded this way), and
+the non-default fits use `Precision.INEXACT` on Android so Coil never upscales the decode.
 On iOS the view loader re-wraps the loaded image with the display scale so `.center` draws one
 bitmap pixel per device pixel, as Android's `ScaleType.CENTER` does.
 

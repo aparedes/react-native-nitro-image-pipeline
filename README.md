@@ -340,10 +340,15 @@ image's own edges, not the box's. Displaying a `center` bitmap pixel for pixel n
 platforms; an `Image` passed to `<NativeNitroImage>` or `<PipelineImage>` is a scale-1 image that
 iOS's `center` mode draws at 1 pt per pixel (nitro-image's `Image` contract — `PixelRatio.get()`×
 too large on a Retina screen). Both platforms implement the same geometry (down to the
-rounding), and the harness suites check every cell of this table on each. Decoding is bounded
-near the produced size for `cover`, `contain` and `stretch`; `center` is the one mode that decodes
-the source at full resolution — it has to see the source's own pixels — so prefer the others for
-very large images.
+rounding), and the harness suites check every cell of this table on each. How much is decoded before
+the resize depends on the mode. `contain` decodes aspect-fit, so the decode is always near the
+produced size. `cover` and `stretch` decode aspect-*fill* — the source scaled until it covers the
+box — which is near the produced size when the aspect ratios are similar, but a source whose
+aspect ratio differs sharply from the box (a panorama into a square) is decoded larger, up to its
+full size, before the crop or stretch; `cover` has always worked this way, and `stretch` needs the
+fill scale to keep the axis that is shrunk less from being resampled up from a few pixels.
+`center` decodes the source at full resolution — it has to see the source's own pixels. Prefer
+`contain`, or a box with a similar aspect ratio, for very large images.
 
 ### `<PipelineImage>`
 
@@ -504,9 +509,11 @@ The pipeline is set up so RAM scales with what you display, not with what you do
 - **Pass `resize` (or just use `<PipelineImage>`, which derives it from layout).** With a target
   size known, both platforms decode the source *near that size* instead of at full resolution —
   iOS via a downsampled thumbnail decode, Android via Coil's subsampling. Without `resize`, a
-  48 MP photo decompresses to ~190 MB of bitmap no matter how small you display it. The one
-  exception is `fit: 'center'`, which by definition needs the source's own pixels and so decodes
-  at full resolution before cropping.
+  48 MP photo decompresses to ~190 MB of bitmap no matter how small you display it. "Near that
+  size" means the aspect-*fill* decode for `cover` and `stretch` — the source scaled until it
+  covers the box, so a panorama into a square box still decodes near its full width — and the
+  aspect-fit decode for `contain`, which is always near the produced size. `fit: 'center'` by
+  definition needs the source's own pixels and decodes at full resolution before cropping.
 - **Android draws transformed images from hardware bitmaps** (API 26+). When a view loads its
   image natively (`<NativePipelineImage>`, or `<NativeNitroImage image={createImageLoader(...)}>`),
   a resized, blurred or rounded result is uploaded to a `Bitmap.Config.HARDWARE` bitmap once and
