@@ -35,6 +35,14 @@ class PipelineImageLoader: HybridImageLoaderSpec {
     // to the main thread — every access happens inside a main-queue block.
     private var tasks: [ObjectIdentifier: Task<Void, Never>] = [:]
     private var pendingLayouts: [ObjectIdentifier: NSKeyValueObservation] = [:]
+    // Bumped synchronously by every `requestImage`/`dropImage` — the view
+    // calls both on the main thread, from its own lifecycle — so work queued
+    // by an earlier call can tell a later one superseded it before its
+    // main-queue block ran, and neither displays nor reports. `dropImage`
+    // only *queues* its cancellation, so without this a request queued just
+    // before a detach still runs first and, on a memory-cache hit, reports a
+    // load for a view that is about to be cleared.
+    private var generations: [ObjectIdentifier: Int] = [:]
 
     init(url: String, options: ViewOptions?) {
         self.url = url
@@ -113,17 +121,22 @@ class PipelineImageLoader: HybridImageLoaderSpec {
     func requestImage(forView view: any HybridNitroImageViewSpec) throws {
         guard let nativeView = view as? NativeImageView else { return }
         let key = ObjectIdentifier(view)
+        let generation = supersedeWork(for: key)
         // Always hop (asynchronously) to main: `requestImage` fires while the
         // view is being mounted, and only after the current mounting
         // transaction finishes is its final frame guaranteed to be set.
         DispatchQueue.main.async {
-            self.load(into: nativeView.imageView, key: key)
+            guard self.isCurrent(generation, for: key) else { return }
+            self.load(into: nativeView.imageView, key: key, generation: generation)
         }
     }
 
     func dropImage(forView view: any HybridNitroImageViewSpec) throws {
         guard let nativeView = view as? NativeImageView else { return }
         let key = ObjectIdentifier(view)
+        // Takes effect now, unlike the cancellation below: a request queued
+        // before this drop runs first, and must not load or report.
+        _ = supersedeWork(for: key)
         // Same queue as `requestImage`, so rapid attach/detach sequences
         // (list recycling) replay in call order.
         DispatchQueue.main.async {
@@ -134,6 +147,20 @@ class PipelineImageLoader: HybridImageLoaderSpec {
 
     // MARK: - Main-thread loading
 
+    /// Invalidates whatever is queued for `key` and returns the token
+    /// identifying this new piece of work. Main thread, like its callers.
+    private func supersedeWork(for key: ObjectIdentifier) -> Int {
+        // Never reset: a token must not be reused while an older block that
+        // holds it is still queued.
+        let generation = (generations[key] ?? 0) + 1
+        generations[key] = generation
+        return generation
+    }
+
+    private func isCurrent(_ generation: Int, for key: ObjectIdentifier) -> Bool {
+        return generations[key] == generation
+    }
+
     private func cancel(key: ObjectIdentifier) {
         tasks[key]?.cancel()
         tasks[key] = nil
@@ -141,18 +168,18 @@ class PipelineImageLoader: HybridImageLoaderSpec {
         pendingLayouts[key] = nil
     }
 
-    private func load(into imageView: UIImageView, key: ObjectIdentifier) {
+    private func load(into imageView: UIImageView, key: ObjectIdentifier, generation: Int) {
         cancel(key: key)
 
         if let sizePx = explicitResize {
-            start(into: imageView, key: key, sizePx: sizePx)
+            start(into: imageView, key: key, generation: generation, sizePx: sizePx)
             return
         }
 
         let bounds = imageView.bounds.size
         if bounds.width > 0, bounds.height > 0 {
             let scale = Self.displayScale(of: imageView)
-            start(into: imageView, key: key, sizePx: CGSize(
+            start(into: imageView, key: key, generation: generation, sizePx: CGSize(
                 width: bounds.width * scale,
                 height: bounds.height * scale
             ))
@@ -165,13 +192,19 @@ class PipelineImageLoader: HybridImageLoaderSpec {
                 DispatchQueue.main.async {
                     guard let self, let imageView else { return }
                     guard self.pendingLayouts[key] != nil else { return }
-                    self.load(into: imageView, key: key)
+                    guard self.isCurrent(generation, for: key) else { return }
+                    self.load(into: imageView, key: key, generation: generation)
                 }
             }
         }
     }
 
-    private func start(into imageView: UIImageView, key: ObjectIdentifier, sizePx: CGSize) {
+    private func start(
+        into imageView: UIImageView,
+        key: ObjectIdentifier,
+        generation: Int,
+        sizePx: CGSize
+    ) {
         guard let imageUrl = HybridNitroImagePipeline.url(from: url) else {
             // Android's loader hands a malformed URL to Coil, which reports it
             // as a failed request; report it here too rather than returning
@@ -202,11 +235,13 @@ class PipelineImageLoader: HybridImageLoaderSpec {
             do {
                 let image = try await pipeline.image(for: request)
                 guard !Task.isCancelled else { return }
+                guard self?.isCurrent(generation, for: key) == true else { return }
                 imageView?.image = image
                 self?.notifyLoad(image)
             } catch {
                 // A load the view cancelled by detaching is not a failure.
                 guard !Task.isCancelled, !(error is CancellationError) else { return }
+                guard self?.isCurrent(generation, for: key) == true else { return }
                 self?.options?.onError?(error.localizedDescription)
             }
         }

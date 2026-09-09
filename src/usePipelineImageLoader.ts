@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
 import type { ImageLoader } from 'react-native-nitro-image';
 
 import { NitroImagePipeline } from './NitroImagePipeline';
@@ -48,10 +48,10 @@ export function usePipelineImageLoader(
   const resizeHeight = options?.resize?.height;
   const onLoad = options?.onLoad;
   const onError = options?.onError;
-  // Only *whether* a callback is set can change the loader: the native side
-  // gets the stable wrappers below, which read the latest callbacks from a ref
-  // (like PipelineImage does). So an inline arrow — a new identity every
-  // render — doesn't recreate the loader and re-trigger the native load.
+  // Only *whether* a callback is set can change the loader: what the native
+  // side gets is a wrapper that reads the latest callbacks from a ref (like
+  // PipelineImage does). So an inline arrow — a new identity every render —
+  // doesn't recreate the loader and re-trigger the native load.
   const hasOnLoad = onLoad !== undefined;
   const hasOnError = onError !== undefined;
   const callbacks = useRef({ onLoad, onError });
@@ -65,14 +65,14 @@ export function usePipelineImageLoader(
   useLayoutEffect(() => {
     callbacks.current = { onLoad, onError };
   });
-  const notifyLoad = useCallback((width: number, height: number) => {
-    callbacks.current.onLoad?.(width, height);
-  }, []);
-  const notifyError = useCallback((message: string) => {
-    callbacks.current.onError?.(message);
-  }, []);
+  // The loader the view is currently on. Swapping loaders (a changed url or
+  // options) never drops the old one — the view just stops referring to it —
+  // so a load it already had in flight can still report. Without this check
+  // the wrappers, which read the latest callbacks, would hand the previous
+  // image's size to the current `onLoad`.
+  const activeLoader = useRef<ImageLoader | undefined>(undefined);
 
-  return useMemo(() => {
+  const loader = useMemo(() => {
     // Runs during render, so an unregistered `require()` id must not throw:
     // it becomes a URL the native loader fails on at load time instead.
     const url = resolveImageUrlOrFallback(source);
@@ -92,23 +92,36 @@ export function usePipelineImageLoader(
           ? { width: resizeWidth, height: resizeHeight }
           : undefined,
     };
-    // `notifyLoad`/`notifyError` read the ref above, but only when the native
-    // side calls them — the rule can't see that they aren't called here.
+    // Assigned right below, so the wrappers can ask whether the loader they
+    // belong to is still the one in use.
+    let created: ImageLoader | undefined;
+    const isActive = () => activeLoader.current === created;
+    // The wrappers read the refs above, but only when the native side calls
+    // them — the rule can't see that they aren't called here.
     // oxlint-disable-next-line react/refs
-    const loader = NitroImagePipeline.createImageLoader(url, {
+    const newLoader = NitroImagePipeline.createImageLoader(url, {
       ...stableOptions,
       // Passed only when the caller wants them: without a callback nothing
       // ever crosses into JS, which is the point of the native path.
-      onLoad: hasOnLoad ? notifyLoad : undefined,
-      onError: hasOnError ? notifyError : undefined,
+      onLoad: hasOnLoad
+        ? (width, height) => {
+            if (isActive()) callbacks.current.onLoad?.(width, height);
+          }
+        : undefined,
+      onError: hasOnError
+        ? (message) => {
+            if (isActive()) callbacks.current.onError?.(message);
+          }
+        : undefined,
     });
+    created = newLoader;
     // `NativeNitroImage` needs a way to tell two loader instances apart when
     // diffing its `image` prop; tag the loader with what it will load (the
     // same convention react-native-nitro-image's own loaders use). Toggling a
     // callback on or off makes a different loader, so the tag has to say so —
     // otherwise the view keeps the old one installed. Their identities stay
     // out of it: those don't change what is loaded, or which loader this is.
-    Object.defineProperty(loader, '__source', {
+    Object.defineProperty(newLoader, '__source', {
       enumerable: true,
       configurable: true,
       value: {
@@ -117,7 +130,7 @@ export function usePipelineImageLoader(
         callbacks: { onLoad: hasOnLoad, onError: hasOnError },
       },
     });
-    return loader;
+    return newLoader;
   }, [
     source,
     blur,
@@ -133,7 +146,13 @@ export function usePipelineImageLoader(
     resizeHeight,
     hasOnLoad,
     hasOnError,
-    notifyLoad,
-    notifyError,
   ]);
+
+  // Same reasoning as the callbacks ref: a layout effect is current before the
+  // view — which the commit has only just handed this loader — can report.
+  useLayoutEffect(() => {
+    activeLoader.current = loader;
+  }, [loader]);
+
+  return loader;
 }
