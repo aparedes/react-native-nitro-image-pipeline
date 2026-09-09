@@ -29,9 +29,19 @@ data class ViewOptions(
   val cornerRadius: Variant_Double_CornerRadii?,
   @DoNotStrip
   @Keep
-  val resize: ResizeOptions?
+  val resize: ResizeOptions?,
+  @DoNotStrip
+  @Keep
+  val onLoad: Func_void_double_double?,
+  @DoNotStrip
+  @Keep
+  val onError: Func_void_std__string?
 ) {
-  /* primary constructor */
+  /**
+   * Create a new instance of ViewOptions from Kotlin
+   */
+  constructor(blur: Double?, cache: CacheOption?, cornerRadius: Variant_Double_CornerRadii?, resize: ResizeOptions?, onLoad: ((width: Double, height: Double) -> Unit)?, onError: ((message: String) -> Unit)?):
+         this(blur, cache, cornerRadius, resize, onLoad?.let { Func_void_double_double_java(it) }, onError?.let { Func_void_std__string_java(it) })
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -40,6 +50,8 @@ data class ViewOptions(
       && Objects.deepEquals(this.cache, other.cache)
       && Objects.deepEquals(this.cornerRadius, other.cornerRadius)
       && Objects.deepEquals(this.resize, other.resize)
+      && Objects.deepEquals(this.onLoad, other.onLoad)
+      && Objects.deepEquals(this.onError, other.onError)
   }
 
   override fun hashCode(): Int {
@@ -47,7 +59,9 @@ data class ViewOptions(
       blur,
       cache,
       cornerRadius,
-      resize
+      resize,
+      onLoad,
+      onError
     ).contentDeepHashCode()
   }
 
@@ -59,8 +73,8 @@ data class ViewOptions(
     @Keep
     @Suppress("unused")
     @JvmStatic
-    private fun fromCpp(blur: Double?, cache: CacheOption?, cornerRadius: Variant_Double_CornerRadii?, resize: ResizeOptions?): ViewOptions {
-      return ViewOptions(blur, cache, cornerRadius, resize)
+    private fun fromCpp(blur: Double?, cache: CacheOption?, cornerRadius: Variant_Double_CornerRadii?, resize: ResizeOptions?, onLoad: Func_void_double_double?, onError: Func_void_std__string?): ViewOptions {
+      return ViewOptions(blur, cache, cornerRadius, resize, onLoad, onError)
     }
   }
 }

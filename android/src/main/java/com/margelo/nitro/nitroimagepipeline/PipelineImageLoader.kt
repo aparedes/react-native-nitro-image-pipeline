@@ -36,6 +36,10 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  * the shared request builder using the display density, so cache keys match an equivalent
  * `loadImage` call. View sizes are already physical pixels on Android, so only blur and corner
  * radii need scaling.
+ *
+ * The optional `onLoad`/`onError` callbacks report a view's load back to JS. They are per view, not
+ * per loader: several views (and a recycled cell re-attaching) each call them. [loadImage] does
+ * not — it reports through its promise instead.
  */
 @DoNotStrip
 @Keep
@@ -123,10 +127,18 @@ class PipelineImageLoader(
       // touch the view.
       if (!isActive) return@launch
       when (result) {
-        is SuccessResult -> imageView.setImageBitmap(HybridNitroImagePipeline.bitmapOf(result))
-        // Deliberately no URL in the message — signed URLs and query
-        // tokens must not leak into consuming apps' Logcat.
-        is ErrorResult -> Log.w(TAG, "Failed to load image", result.throwable)
+        is SuccessResult -> {
+          val bitmap = HybridNitroImagePipeline.bitmapOf(result)
+          imageView.setImageBitmap(bitmap)
+          options?.onLoad?.invoke(bitmap.width.toDouble(), bitmap.height.toDouble())
+        }
+        is ErrorResult -> {
+          // Deliberately no URL in the message — signed URLs and query
+          // tokens must not leak into consuming apps' Logcat.
+          val throwable = result.throwable
+          Log.w(TAG, "Failed to load image", throwable)
+          options?.onError?.invoke(throwable.message ?: throwable.toString())
+        }
       }
     }
     jobs[forView] = job

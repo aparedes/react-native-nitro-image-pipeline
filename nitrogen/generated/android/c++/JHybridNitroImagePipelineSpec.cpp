@@ -44,6 +44,10 @@ namespace margelo::nitro::nitroimagepipeline { struct ViewOptions; }
 #include "JResizeOptions.hpp"
 #include "ViewOptions.hpp"
 #include "JViewOptions.hpp"
+#include <functional>
+#include "JFunc_void_double_double.hpp"
+#include <NitroModules/JNICallable.hpp>
+#include "JFunc_void_std__string.hpp"
 #include <vector>
 
 namespace margelo::nitro::nitroimagepipeline {

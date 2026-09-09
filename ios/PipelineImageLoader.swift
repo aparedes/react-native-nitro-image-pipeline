@@ -21,6 +21,11 @@ import UIKit
 /// `ViewOptions` values are in points; this class converts them to the
 /// pixel-based `Options` of the shared request builder using the view's
 /// display scale, so cache keys match an equivalent `loadImage` call.
+///
+/// The optional `onLoad`/`onError` callbacks report a view's load back to JS.
+/// They are per view, not per loader: several views (and a recycled cell
+/// re-attaching) each call them. `loadImage()` doesn't — it reports through
+/// its promise instead.
 class PipelineImageLoader: HybridImageLoaderSpec {
     private let url: String
     private let options: ViewOptions?
@@ -182,14 +187,29 @@ class PipelineImageLoader: HybridImageLoaderSpec {
         // `.disableMemoryCacheReads`, so `cache: 'disk'`/`'none'` still miss.
         if !request.options.contains(.disableMemoryCacheReads), let cached = pipeline.cache[request] {
             imageView.image = cached.image
+            notifyLoad(cached.image)
             return
         }
         // Cancelling the Task cancels Nuke's request; a finished task stays in
         // the map (cancelling it is a no-op) until `cancel` replaces it.
-        tasks[key] = Task { @MainActor [weak imageView] in
-            guard let image = try? await pipeline.image(for: request) else { return }
-            guard !Task.isCancelled else { return }
-            imageView?.image = image
+        tasks[key] = Task { @MainActor [weak self, weak imageView] in
+            do {
+                let image = try await pipeline.image(for: request)
+                guard !Task.isCancelled else { return }
+                imageView?.image = image
+                self?.notifyLoad(image)
+            } catch {
+                // A load the view cancelled by detaching is not a failure.
+                guard !Task.isCancelled, !(error is CancellationError) else { return }
+                self?.options?.onError?(error.localizedDescription)
+            }
         }
+    }
+
+    /// Reports the displayed bitmap's size in pixels, when the caller asked
+    /// for it. `UIImage.size` is in points, so it needs the image's own scale.
+    private func notifyLoad(_ image: UIImage) {
+        guard let onLoad = options?.onLoad else { return }
+        onLoad(image.size.width * image.scale, image.size.height * image.scale)
     }
 }

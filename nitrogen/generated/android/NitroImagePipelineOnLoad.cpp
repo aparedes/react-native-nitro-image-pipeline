@@ -16,6 +16,8 @@
 #include <NitroModules/HybridObjectRegistry.hpp>
 
 #include "JHybridNitroImagePipelineSpec.hpp"
+#include "JFunc_void_double_double.hpp"
+#include "JFunc_void_std__string.hpp"
 #include <NitroModules/DefaultConstructableObject.hpp>
 
 namespace margelo::nitro::nitroimagepipeline {
@@ -41,6 +43,8 @@ void registerAllNatives() {
 
   // Register native JNI methods
   margelo::nitro::nitroimagepipeline::JHybridNitroImagePipelineSpec::CxxPart::registerNatives();
+  margelo::nitro::nitroimagepipeline::JFunc_void_double_double_cxx::registerNatives();
+  margelo::nitro::nitroimagepipeline::JFunc_void_std__string_cxx::registerNatives();
 
   // Register Nitro Hybrid Objects
   HybridObjectRegistry::registerHybridObjectConstructor(

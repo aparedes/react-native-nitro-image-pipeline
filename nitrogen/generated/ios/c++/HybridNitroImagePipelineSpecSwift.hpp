@@ -39,6 +39,7 @@ namespace margelo::nitro::nitroimagepipeline { struct ViewOptions; }
 #include "ResizeOptions.hpp"
 #include <NitroImage/HybridImageLoaderSpec.hpp>
 #include "ViewOptions.hpp"
+#include <functional>
 #include <vector>
 
 #include "NitroImagePipeline-Swift-Cxx-Umbrella.hpp"

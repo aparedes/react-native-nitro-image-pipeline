@@ -51,6 +51,22 @@ namespace margelo::nitro::nitroimagepipeline::bridge::swift {
     return margelo::nitro::image::bridge::swift::get_std__shared_ptr_HybridImageLoaderSpec_(cppType);
   }
   
+  // pragma MARK: std::function<void(double /* width */, double /* height */)>
+  Func_void_double_double create_Func_void_double_double(void* NON_NULL swiftClosureWrapper) noexcept {
+    auto swiftClosure = NitroImagePipeline::Func_void_double_double::fromUnsafe(swiftClosureWrapper);
+    return [swiftClosure = std::move(swiftClosure)](double width, double height) mutable -> void {
+      swiftClosure.call(width, height);
+    };
+  }
+  
+  // pragma MARK: std::function<void(const std::string& /* message */)>
+  Func_void_std__string create_Func_void_std__string(void* NON_NULL swiftClosureWrapper) noexcept {
+    auto swiftClosure = NitroImagePipeline::Func_void_std__string::fromUnsafe(swiftClosureWrapper);
+    return [swiftClosure = std::move(swiftClosure)](const std::string& message) mutable -> void {
+      swiftClosure.call(message);
+    };
+  }
+  
   // pragma MARK: std::function<void()>
   Func_void create_Func_void(void* NON_NULL swiftClosureWrapper) noexcept {
     auto swiftClosure = NitroImagePipeline::Func_void::fromUnsafe(swiftClosureWrapper);

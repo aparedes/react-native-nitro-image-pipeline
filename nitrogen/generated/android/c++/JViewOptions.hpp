@@ -14,10 +14,15 @@
 #include "CornerRadii.hpp"
 #include "JCacheOption.hpp"
 #include "JCornerRadii.hpp"
+#include "JFunc_void_double_double.hpp"
+#include "JFunc_void_std__string.hpp"
 #include "JResizeOptions.hpp"
 #include "JVariant_Double_CornerRadii.hpp"
 #include "ResizeOptions.hpp"
+#include <NitroModules/JNICallable.hpp>
+#include <functional>
 #include <optional>
+#include <string>
 #include <variant>
 
 namespace margelo::nitro::nitroimagepipeline {
@@ -47,11 +52,33 @@ namespace margelo::nitro::nitroimagepipeline {
       jni::local_ref<JVariant_Double_CornerRadii> cornerRadius = this->getFieldValue(fieldCornerRadius);
       static const auto fieldResize = clazz->getField<JResizeOptions>("resize");
       jni::local_ref<JResizeOptions> resize = this->getFieldValue(fieldResize);
+      static const auto fieldOnLoad = clazz->getField<JFunc_void_double_double::javaobject>("onLoad");
+      jni::local_ref<JFunc_void_double_double::javaobject> onLoad = this->getFieldValue(fieldOnLoad);
+      static const auto fieldOnError = clazz->getField<JFunc_void_std__string::javaobject>("onError");
+      jni::local_ref<JFunc_void_std__string::javaobject> onError = this->getFieldValue(fieldOnError);
       return ViewOptions(
         blur != nullptr ? std::make_optional(blur->value()) : std::nullopt,
         cache != nullptr ? std::make_optional(cache->toCpp()) : std::nullopt,
         cornerRadius != nullptr ? std::make_optional(cornerRadius->toCpp()) : std::nullopt,
-        resize != nullptr ? std::make_optional(resize->toCpp()) : std::nullopt
+        resize != nullptr ? std::make_optional(resize->toCpp()) : std::nullopt,
+        onLoad != nullptr ? std::make_optional([&]() -> std::function<void(double /* width */, double /* height */)> {
+          if (onLoad->isInstanceOf(JFunc_void_double_double_cxx::javaClassStatic())) [[likely]] {
+            auto downcast = jni::static_ref_cast<JFunc_void_double_double_cxx::javaobject>(onLoad);
+            return downcast->cthis()->getFunction();
+          } else {
+            auto onLoadRef = jni::make_global(onLoad);
+            return JNICallable<JFunc_void_double_double, void(double, double)>(std::move(onLoadRef));
+          }
+        }()) : std::nullopt,
+        onError != nullptr ? std::make_optional([&]() -> std::function<void(const std::string& /* message */)> {
+          if (onError->isInstanceOf(JFunc_void_std__string_cxx::javaClassStatic())) [[likely]] {
+            auto downcast = jni::static_ref_cast<JFunc_void_std__string_cxx::javaobject>(onError);
+            return downcast->cthis()->getFunction();
+          } else {
+            auto onErrorRef = jni::make_global(onError);
+            return JNICallable<JFunc_void_std__string, void(std::string)>(std::move(onErrorRef));
+          }
+        }()) : std::nullopt
       );
     }
 
@@ -61,7 +88,7 @@ namespace margelo::nitro::nitroimagepipeline {
      */
     [[maybe_unused]]
     static jni::local_ref<JViewOptions::javaobject> fromCpp(const ViewOptions& value) {
-      using JSignature = JViewOptions(jni::alias_ref<jni::JDouble>, jni::alias_ref<JCacheOption>, jni::alias_ref<JVariant_Double_CornerRadii>, jni::alias_ref<JResizeOptions>);
+      using JSignature = JViewOptions(jni::alias_ref<jni::JDouble>, jni::alias_ref<JCacheOption>, jni::alias_ref<JVariant_Double_CornerRadii>, jni::alias_ref<JResizeOptions>, jni::alias_ref<JFunc_void_double_double::javaobject>, jni::alias_ref<JFunc_void_std__string::javaobject>);
       static const auto clazz = javaClassStatic();
       static const auto create = clazz->getStaticMethod<JSignature>("fromCpp");
       return create(
@@ -69,7 +96,9 @@ namespace margelo::nitro::nitroimagepipeline {
         value.blur.has_value() ? jni::JDouble::valueOf(value.blur.value()) : nullptr,
         value.cache.has_value() ? JCacheOption::fromCpp(value.cache.value()) : nullptr,
         value.cornerRadius.has_value() ? JVariant_Double_CornerRadii::fromCpp(value.cornerRadius.value()) : nullptr,
-        value.resize.has_value() ? JResizeOptions::fromCpp(value.resize.value()) : nullptr
+        value.resize.has_value() ? JResizeOptions::fromCpp(value.resize.value()) : nullptr,
+        value.onLoad.has_value() ? JFunc_void_double_double_cxx::fromCpp(value.onLoad.value()) : nullptr,
+        value.onError.has_value() ? JFunc_void_std__string_cxx::fromCpp(value.onError.value()) : nullptr
       );
     }
   };
