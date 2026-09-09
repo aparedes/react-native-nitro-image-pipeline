@@ -16,6 +16,11 @@ export default {
   // exceed the 5s default, so give network-bound tests more headroom.
   testTimeout: 30000,
 
+  // Booting the iPhone simulator on a cold GitHub macOS runner has taken
+  // longer than the 5-minute default more than once, failing the job before
+  // a single test ran. Ten minutes covers the slow boots seen so far.
+  platformReadyTimeout: 600000,
+
   runners: [
     androidPlatform({
       name: 'medium_phone_api_36.1',
