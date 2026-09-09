@@ -21,6 +21,7 @@ import type { ImageSource } from './resolveImageSource';
 import type {
   CacheOption,
   CornerRadii,
+  ResizeFit,
   ResizeOptions,
 } from './specs/nitro-image-toolkit.nitro';
 import { useImage } from './useImage';
@@ -62,6 +63,33 @@ export interface PipelineImageProps extends Omit<NativeImageProps, 'image'> {
    */
   cornerRadius?: number | CornerRadii;
   cache?: CacheOption;
+  /**
+   * How the source is fitted into the display size when the bitmap is
+   * produced — see {@linkcode ResizeFit}. When omitted it follows
+   * `resizeMode`, so `resizeMode="contain"` decodes an aspect-fitted bitmap
+   * (no crop, no padding) instead of a center-cropped one the view then
+   * letterboxes. Set this to decouple the two.
+   *
+   * One iOS caveat, inherited from nitro-image's `Image`: an `Image` handed
+   * to the view is a scale-1 image, which `resizeMode="center"` — the one
+   * mode that draws an image at its own size — shows at 1 pt per pixel,
+   * i.e. `PixelRatio.get()`× larger than Android draws it. The bitmap is
+   * right; the display is not. `NativePipelineImage` draws `center` pixel
+   * for pixel on both platforms; use it when you need that mode.
+   * @default undefined (derived from `resizeMode`, or `'cover'` if unset)
+   */
+  fit?: ResizeFit;
+  /**
+   * `false` never enlarges a source smaller than the display size when the
+   * **bitmap** is produced — see {@linkcode ResizeOptions.allowUpscale}: it
+   * stays at its own pixel size, so nothing is decoded or blurred larger
+   * than the source. The **view** still displays that bitmap per
+   * `resizeMode`, so `cover`/`contain`/`stretch` scale it up on screen (and
+   * a baked `blur`/`cornerRadius` with it); `resizeMode="center"` shows it
+   * at its natural size instead.
+   * @default true
+   */
+  allowUpscale?: boolean;
   /** Called with the processed `Image` each time a new variant resolves. */
   onLoad?: (image: Image) => void;
   /** Called when loading fails. */
@@ -119,10 +147,13 @@ export const PipelineImage = forwardRef<PipelineImageRef, PipelineImageProps>(
       blur = 0,
       cornerRadius,
       cache,
+      fit,
+      allowUpscale,
       onLoad,
       onError,
       style,
       onLayout,
+      resizeMode,
       ...viewProps
     },
     ref,
@@ -134,7 +165,13 @@ export const PipelineImage = forwardRef<PipelineImageRef, PipelineImageProps>(
     );
     // A numeric style is what the caller declared, so it wins and starts the
     // request a frame earlier; the measured layout is the fallback.
-    const resize = styleSize ?? layoutSize;
+    const size = styleSize ?? layoutSize;
+    // The view's resizeMode and the bitmap's fit are the same four values;
+    // an explicit `fit` decouples them.
+    const effectiveFit = fit ?? resizeMode;
+    const resize: ResizeOptions | undefined = size
+      ? { ...size, fit: effectiveFit, allowUpscale }
+      : undefined;
     // Same precedence: an explicit prop wins over what style implies.
     const effectiveCornerRadius =
       cornerRadius ?? cornerRadiusForStyle(style) ?? 0;
@@ -176,6 +213,7 @@ export const PipelineImage = forwardRef<PipelineImageRef, PipelineImageProps>(
         {...viewProps}
         ref={ref}
         style={style}
+        resizeMode={resizeMode}
         onLayout={handleLayout}
         image={image}
       />

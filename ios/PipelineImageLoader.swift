@@ -68,7 +68,9 @@ class PipelineImageLoader: HybridImageLoaderSpec {
     }
 
     /// The point-based `ViewOptions` as pixel-based `Options`, resolved
-    /// against `scale` and the target size in pixels.
+    /// against `scale` and the target size in pixels. The fit comes from the
+    /// explicit `resize` when it carries one, else from the top-level
+    /// `fit`/`allowUpscale`, which apply to the measured size.
     private func pixelOptions(scale: CGFloat, sizePx: CGSize?) -> Options {
         let cornerRadius = options?.cornerRadius.map { radius -> Variant_Double_CornerRadii in
             switch radius {
@@ -87,16 +89,43 @@ class PipelineImageLoader: HybridImageLoaderSpec {
             blur: options?.blur.map { $0 * scale },
             cache: options?.cache,
             cornerRadius: cornerRadius,
-            resize: sizePx.map { ResizeOptions(width: Double($0.width), height: Double($0.height)) }
+            resize: sizePx.map {
+                ResizeOptions(
+                    width: Double($0.width),
+                    height: Double($0.height),
+                    fit: explicitResizeOptions?.fit ?? options?.fit,
+                    allowUpscale: explicitResizeOptions?.allowUpscale ?? options?.allowUpscale
+                )
+            }
         )
     }
 
-    /// An explicit `resize` override (pixels), when set and valid.
-    private var explicitResize: CGSize? {
+    /// The loaded image as the view should draw it. The pipeline decodes at
+    /// scale 1 (1 pt = 1 px); `.center` — the one content mode that draws an
+    /// image at its point size — would then show a `fit: 'center'` bitmap at
+    /// `scale`× its size on a Retina screen, while Android's
+    /// `ScaleType.CENTER` draws it pixel for pixel. Re-wrapping with the
+    /// display scale (a wrapper around the same CGImage, not a copy) makes
+    /// iOS draw 1 bitmap pixel per device pixel too; the scaling content
+    /// modes are unaffected by an image's scale.
+    private static func displayImage(_ image: UIImage, scale: CGFloat) -> UIImage {
+        guard image.scale != scale, let cgImage = image.cgImage else { return image }
+        return UIImage(cgImage: cgImage, scale: scale, orientation: image.imageOrientation)
+    }
+
+    /// The explicit `resize` override, when set and valid. An invalid one
+    /// (a non-positive dimension) is ignored as a whole — its `fit` and
+    /// `allowUpscale` included, as on Android — and the view is measured.
+    private var explicitResizeOptions: ResizeOptions? {
         guard let resize = options?.resize, resize.width > 0, resize.height > 0 else {
             return nil
         }
-        return CGSize(width: resize.width, height: resize.height)
+        return resize
+    }
+
+    /// The explicit `resize` override's size (pixels), when set and valid.
+    private var explicitResize: CGSize? {
+        explicitResizeOptions.map { CGSize(width: $0.width, height: $0.height) }
     }
 
     // MARK: - ImageLoader
@@ -225,7 +254,7 @@ class PipelineImageLoader: HybridImageLoaderSpec {
         // bitmap is already in memory. The subscript honours the request's
         // `.disableMemoryCacheReads`, so `cache: 'disk'`/`'none'` still miss.
         if !request.options.contains(.disableMemoryCacheReads), let cached = pipeline.cache[request] {
-            imageView.image = cached.image
+            imageView.image = Self.displayImage(cached.image, scale: scale)
             notifyLoad(cached.image)
             return
         }
@@ -236,7 +265,7 @@ class PipelineImageLoader: HybridImageLoaderSpec {
                 let image = try await pipeline.image(for: request)
                 guard !Task.isCancelled else { return }
                 guard self?.isCurrent(generation, for: key) == true else { return }
-                imageView?.image = image
+                imageView?.image = Self.displayImage(image, scale: scale)
                 self?.notifyLoad(image)
             } catch {
                 // A load the view cancelled by detaching is not a failure.

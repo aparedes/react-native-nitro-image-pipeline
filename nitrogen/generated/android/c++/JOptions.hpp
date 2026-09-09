@@ -14,8 +14,10 @@
 #include "CornerRadii.hpp"
 #include "JCacheOption.hpp"
 #include "JCornerRadii.hpp"
+#include "JResizeFit.hpp"
 #include "JResizeOptions.hpp"
 #include "JVariant_Double_CornerRadii.hpp"
+#include "ResizeFit.hpp"
 #include "ResizeOptions.hpp"
 #include <optional>
 #include <variant>

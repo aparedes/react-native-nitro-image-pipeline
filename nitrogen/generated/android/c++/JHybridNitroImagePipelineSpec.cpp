@@ -19,6 +19,8 @@ namespace margelo::nitro::nitroimagepipeline { enum class CacheOption; }
 namespace margelo::nitro::nitroimagepipeline { struct CornerRadii; }
 // Forward declaration of `ResizeOptions` to properly resolve imports.
 namespace margelo::nitro::nitroimagepipeline { struct ResizeOptions; }
+// Forward declaration of `ResizeFit` to properly resolve imports.
+namespace margelo::nitro::nitroimagepipeline { enum class ResizeFit; }
 // Forward declaration of `ViewOptions` to properly resolve imports.
 namespace margelo::nitro::nitroimagepipeline { struct ViewOptions; }
 
@@ -42,6 +44,8 @@ namespace margelo::nitro::nitroimagepipeline { struct ViewOptions; }
 #include "JCornerRadii.hpp"
 #include "ResizeOptions.hpp"
 #include "JResizeOptions.hpp"
+#include "ResizeFit.hpp"
+#include "JResizeFit.hpp"
 #include "ViewOptions.hpp"
 #include "JViewOptions.hpp"
 #include <functional>

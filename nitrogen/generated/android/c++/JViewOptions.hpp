@@ -16,8 +16,10 @@
 #include "JCornerRadii.hpp"
 #include "JFunc_void_double_double.hpp"
 #include "JFunc_void_std__string.hpp"
+#include "JResizeFit.hpp"
 #include "JResizeOptions.hpp"
 #include "JVariant_Double_CornerRadii.hpp"
+#include "ResizeFit.hpp"
 #include "ResizeOptions.hpp"
 #include <NitroModules/JNICallable.hpp>
 #include <functional>
@@ -52,6 +54,10 @@ namespace margelo::nitro::nitroimagepipeline {
       jni::local_ref<JVariant_Double_CornerRadii> cornerRadius = this->getFieldValue(fieldCornerRadius);
       static const auto fieldResize = clazz->getField<JResizeOptions>("resize");
       jni::local_ref<JResizeOptions> resize = this->getFieldValue(fieldResize);
+      static const auto fieldFit = clazz->getField<JResizeFit>("fit");
+      jni::local_ref<JResizeFit> fit = this->getFieldValue(fieldFit);
+      static const auto fieldAllowUpscale = clazz->getField<jni::JBoolean>("allowUpscale");
+      jni::local_ref<jni::JBoolean> allowUpscale = this->getFieldValue(fieldAllowUpscale);
       static const auto fieldOnLoad = clazz->getField<JFunc_void_double_double::javaobject>("onLoad");
       jni::local_ref<JFunc_void_double_double::javaobject> onLoad = this->getFieldValue(fieldOnLoad);
       static const auto fieldOnError = clazz->getField<JFunc_void_std__string::javaobject>("onError");
@@ -61,6 +67,8 @@ namespace margelo::nitro::nitroimagepipeline {
         cache != nullptr ? std::make_optional(cache->toCpp()) : std::nullopt,
         cornerRadius != nullptr ? std::make_optional(cornerRadius->toCpp()) : std::nullopt,
         resize != nullptr ? std::make_optional(resize->toCpp()) : std::nullopt,
+        fit != nullptr ? std::make_optional(fit->toCpp()) : std::nullopt,
+        allowUpscale != nullptr ? std::make_optional(static_cast<bool>(allowUpscale->value())) : std::nullopt,
         onLoad != nullptr ? std::make_optional([&]() -> std::function<void(double /* width */, double /* height */)> {
           if (onLoad->isInstanceOf(JFunc_void_double_double_cxx::javaClassStatic())) [[likely]] {
             auto downcast = jni::static_ref_cast<JFunc_void_double_double_cxx::javaobject>(onLoad);
@@ -88,7 +96,7 @@ namespace margelo::nitro::nitroimagepipeline {
      */
     [[maybe_unused]]
     static jni::local_ref<JViewOptions::javaobject> fromCpp(const ViewOptions& value) {
-      using JSignature = JViewOptions(jni::alias_ref<jni::JDouble>, jni::alias_ref<JCacheOption>, jni::alias_ref<JVariant_Double_CornerRadii>, jni::alias_ref<JResizeOptions>, jni::alias_ref<JFunc_void_double_double::javaobject>, jni::alias_ref<JFunc_void_std__string::javaobject>);
+      using JSignature = JViewOptions(jni::alias_ref<jni::JDouble>, jni::alias_ref<JCacheOption>, jni::alias_ref<JVariant_Double_CornerRadii>, jni::alias_ref<JResizeOptions>, jni::alias_ref<JResizeFit>, jni::alias_ref<jni::JBoolean>, jni::alias_ref<JFunc_void_double_double::javaobject>, jni::alias_ref<JFunc_void_std__string::javaobject>);
       static const auto clazz = javaClassStatic();
       static const auto create = clazz->getStaticMethod<JSignature>("fromCpp");
       return create(
@@ -97,6 +105,8 @@ namespace margelo::nitro::nitroimagepipeline {
         value.cache.has_value() ? JCacheOption::fromCpp(value.cache.value()) : nullptr,
         value.cornerRadius.has_value() ? JVariant_Double_CornerRadii::fromCpp(value.cornerRadius.value()) : nullptr,
         value.resize.has_value() ? JResizeOptions::fromCpp(value.resize.value()) : nullptr,
+        value.fit.has_value() ? JResizeFit::fromCpp(value.fit.value()) : nullptr,
+        value.allowUpscale.has_value() ? jni::JBoolean::valueOf(value.allowUpscale.value()) : nullptr,
         value.onLoad.has_value() ? JFunc_void_double_double_cxx::fromCpp(value.onLoad.value()) : nullptr,
         value.onError.has_value() ? JFunc_void_std__string_cxx::fromCpp(value.onError.value()) : nullptr
       );

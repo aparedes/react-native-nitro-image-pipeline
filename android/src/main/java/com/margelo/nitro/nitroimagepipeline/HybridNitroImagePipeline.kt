@@ -19,6 +19,7 @@ import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import coil3.request.allowHardware
 import coil3.request.transformations
+import coil3.size.Precision
 import coil3.size.Scale
 import coil3.size.Size
 import coil3.transform.RoundedCornersTransformation
@@ -29,6 +30,7 @@ import com.margelo.nitro.image.HybridImage
 import com.margelo.nitro.image.HybridImageSpec
 import com.margelo.nitro.nitroimagepipeline.transform.BlurTransformation
 import com.margelo.nitro.nitroimagepipeline.transform.HardwareBitmapTransformation
+import com.margelo.nitro.nitroimagepipeline.transform.PipelineRoundedCornersTransformation
 import com.margelo.nitro.nitroimagepipeline.transform.ResizeTransformation
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
@@ -152,21 +154,27 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
             val height = r.height.roundToInt()
             if (width > 0 && height > 0) width to height else null
           }
-      val roundedCorners: RoundedCornersTransformation? =
+      val fit = options?.resize?.fit ?: ResizeFit.COVER
+      val allowUpscale = options?.resize?.allowUpscale ?: true
+      // The resize as it behaved before `fit` existed — aspect-fill, crop,
+      // upscale — which keeps the original transformations and cache keys.
+      val isDefaultFit = fit == ResizeFit.COVER && allowUpscale
+      // Radii in bitmap pixels as (topLeft, topRight, bottomLeft, bottomRight),
+      // or null when no corner is actually rounded. Negative radii are square.
+      val cornerRadii: FloatArray? =
           options
               ?.cornerRadius
               ?.match(
                   first = { radius ->
-                    if (radius > 0.0) RoundedCornersTransformation(radius.toFloat()) else null
+                    if (radius > 0.0) FloatArray(4) { radius.toFloat() } else null
                   },
                   second = { radii ->
-                    // RoundedCornersTransformation rejects negative radii; treat them as square.
                     val topLeft = (radii.topLeft?.toFloat() ?: 0f).coerceAtLeast(0f)
                     val topRight = (radii.topRight?.toFloat() ?: 0f).coerceAtLeast(0f)
                     val bottomLeft = (radii.bottomLeft?.toFloat() ?: 0f).coerceAtLeast(0f)
                     val bottomRight = (radii.bottomRight?.toFloat() ?: 0f).coerceAtLeast(0f)
                     if (topLeft > 0f || topRight > 0f || bottomLeft > 0f || bottomRight > 0f) {
-                      RoundedCornersTransformation(topLeft, topRight, bottomLeft, bottomRight)
+                      floatArrayOf(topLeft, topRight, bottomLeft, bottomRight)
                     } else {
                       null
                     }
@@ -177,14 +185,25 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
         // they run on, so they must see the final size. Coil's
         // RoundedCornersTransformation already scale-fills and center-crops
         // to the request size (`resize`, when set) as part of its own draw,
-        // so with rounded corners and no blur the explicit resize would only
-        // add an intermediate bitmap — and the radii still apply to the final
-        // size, because that is the size its output has.
-        if (resize != null && (blur > 0f || roundedCorners == null)) {
-          add(ResizeTransformation(resize.first, resize.second))
+        // so with the default fit, rounded corners and no blur the explicit
+        // resize would only add an intermediate bitmap — and the radii still
+        // apply to the final size, because that is the size its output has.
+        // Any other fit produces a bitmap that may be smaller than the box,
+        // so it always resizes explicitly and rounds at the produced size.
+        if (resize != null && (blur > 0f || cornerRadii == null || !isDefaultFit)) {
+          add(ResizeTransformation(resize.first, resize.second, fit, allowUpscale))
         }
         if (blur > 0f) add(BlurTransformation(blur))
-        roundedCorners?.let { add(it) }
+        cornerRadii?.let { (topLeft, topRight, bottomLeft, bottomRight) ->
+          if (resize == null || isDefaultFit) {
+            // The uniform constructor keeps the original cache key for a single radius.
+            val uniform = topLeft == topRight && topLeft == bottomLeft && topLeft == bottomRight
+            if (uniform) add(RoundedCornersTransformation(topLeft))
+            else add(RoundedCornersTransformation(topLeft, topRight, bottomLeft, bottomRight))
+          } else {
+            add(PipelineRoundedCornersTransformation(topLeft, topRight, bottomLeft, bottomRight))
+          }
+        }
         // Without transformations Coil decodes straight to a hardware bitmap
         // already (allowHardware below); only a transformed result needs the
         // explicit upload.
@@ -212,10 +231,22 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
             }
             // Ask the decoder for the target size so a large source is
             // subsampled near it instead of decoded at full resolution;
-            // ResizeTransformation then makes the size exact.
-            resize?.let { (width, height) ->
-              size(width, height)
-              scale(Scale.FILL)
+            // ResizeTransformation then makes the size exact. `contain`
+            // decodes to *fit* the box: its output follows the smaller
+            // scale, and a fill decode of a wide panorama into a small box
+            // would be near the source's full width before the
+            // transformation shrinks it (iOS's aspect-fit thumbnail bounds
+            // it the same way). `center` never scales, so it must see the
+            // source's own pixels — the default Size.ORIGINAL — or it would
+            // crop the wrong ones.
+            if (resize != null && fit != ResizeFit.CENTER) {
+              size(resize.first, resize.second)
+              scale(if (fit == ResizeFit.CONTAIN) Scale.FIT else Scale.FILL)
+              // With an explicit size Coil also *upscales* the decode to it,
+              // which the default fit doesn't mind (the transformation ends
+              // at the box anyway) but `allowUpscale: false` and `contain`
+              // must not see. Only subsample; the transformation scales.
+              if (!isDefaultFit) precision(Precision.INEXACT)
             }
           }
           .allowHardware(true)
@@ -225,12 +256,12 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
 
     /**
      * What Coil should load for [url]. Coil itself handles `http(s)://`, `file://`, `content://`
-     * and plain absolute paths. The one form it doesn't is a bare resource name — a string with
-     * no scheme, like `src_assets_logo` — which is what React Native's `require()` resolves to
-     * in a release build (assets are packed into `res/drawable-*`). Resolve that to the resource
-     * id here; the density-qualified variant is then picked by the resources system, like
-     * `<Image>` does. An unknown name is passed through so Coil reports the failure as an
-     * [ErrorResult] (the loaders must not throw while building a request).
+     * and plain absolute paths. The one form it doesn't is a bare resource name — a string with no
+     * scheme, like `src_assets_logo` — which is what React Native's `require()` resolves to in a
+     * release build (assets are packed into `res/drawable-*`). Resolve that to the resource id
+     * here; the density-qualified variant is then picked by the resources system, like `<Image>`
+     * does. An unknown name is passed through so Coil reports the failure as an [ErrorResult] (the
+     * loaders must not throw while building a request).
      */
     internal fun requestData(context: Context, url: String): Any {
       if (url.startsWith("/") || url.toUri().scheme != null) return url

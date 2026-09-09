@@ -62,8 +62,9 @@ export function useImage({
    */
   cornerRadius?: number | CornerRadii;
   /**
-   * Resize the bitmap to exactly this size in pixels (aspect-fill,
-   * center-crop) before blur/rounding. Typically your display size in points
+   * Resize the bitmap into this box in pixels before blur/rounding —
+   * aspect-fill + center-crop by default, or another `fit` (see
+   * {@linkcode ResizeOptions}). Typically your display size in points
    * multiplied by `PixelRatio.get()`. Inline object literals are fine.
    */
   resize?: ResizeOptions;
@@ -95,6 +96,8 @@ export function useImage({
   } = isUniformRadius ? {} : cornerRadius;
   const resizeWidth = resize?.width ?? 0;
   const resizeHeight = resize?.height ?? 0;
+  const resizeFit = resize?.fit;
+  const resizeAllowUpscale = resize?.allowUpscale;
 
   useEffect(() => {
     let cancelled = false;
@@ -120,7 +123,12 @@ export function useImage({
                 : { topLeft, topRight, bottomLeft, bottomRight },
               resize:
                 resizeWidth > 0 && resizeHeight > 0
-                  ? { width: resizeWidth, height: resizeHeight }
+                  ? {
+                      width: resizeWidth,
+                      height: resizeHeight,
+                      fit: resizeFit,
+                      allowUpscale: resizeAllowUpscale,
+                    }
                   : undefined,
               cache,
             },
@@ -152,6 +160,8 @@ export function useImage({
     bottomRight,
     resizeWidth,
     resizeHeight,
+    resizeFit,
+    resizeAllowUpscale,
     cache,
     enabled,
   ]);

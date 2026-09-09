@@ -28,9 +28,11 @@
 #error NitroModules cannot be found! Are you sure you installed NitroModules properly?
 #endif
 
+// Forward declaration of `ResizeFit` to properly resolve imports.
+namespace margelo::nitro::nitroimagepipeline { enum class ResizeFit; }
 
-
-
+#include "ResizeFit.hpp"
+#include <optional>
 
 namespace margelo::nitro::nitroimagepipeline {
 
@@ -41,10 +43,12 @@ namespace margelo::nitro::nitroimagepipeline {
   public:
     double width     SWIFT_PRIVATE;
     double height     SWIFT_PRIVATE;
+    std::optional<ResizeFit> fit     SWIFT_PRIVATE;
+    std::optional<bool> allowUpscale     SWIFT_PRIVATE;
 
   public:
     ResizeOptions() = default;
-    explicit ResizeOptions(double width, double height): width(width), height(height) {}
+    explicit ResizeOptions(double width, double height, std::optional<ResizeFit> fit, std::optional<bool> allowUpscale): width(width), height(height), fit(fit), allowUpscale(allowUpscale) {}
 
   public:
     friend bool operator==(const ResizeOptions& lhs, const ResizeOptions& rhs) = default;
@@ -61,13 +65,17 @@ namespace margelo::nitro {
       jsi::Object obj = arg.asObject(runtime);
       return margelo::nitro::nitroimagepipeline::ResizeOptions(
         JSIConverter<double>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "width"))),
-        JSIConverter<double>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "height")))
+        JSIConverter<double>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "height"))),
+        JSIConverter<std::optional<margelo::nitro::nitroimagepipeline::ResizeFit>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "fit"))),
+        JSIConverter<std::optional<bool>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "allowUpscale")))
       );
     }
     static inline jsi::Value toJSI(jsi::Runtime& runtime, const margelo::nitro::nitroimagepipeline::ResizeOptions& arg) {
       jsi::Object obj(runtime);
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "width"), JSIConverter<double>::toJSI(runtime, arg.width));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "height"), JSIConverter<double>::toJSI(runtime, arg.height));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "fit"), JSIConverter<std::optional<margelo::nitro::nitroimagepipeline::ResizeFit>>::toJSI(runtime, arg.fit));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "allowUpscale"), JSIConverter<std::optional<bool>>::toJSI(runtime, arg.allowUpscale));
       return obj;
     }
     static inline bool canConvert(jsi::Runtime& runtime, const jsi::Value& value) {
@@ -80,6 +88,8 @@ namespace margelo::nitro {
       }
       if (!JSIConverter<double>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "width")))) return false;
       if (!JSIConverter<double>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "height")))) return false;
+      if (!JSIConverter<std::optional<margelo::nitro::nitroimagepipeline::ResizeFit>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "fit")))) return false;
+      if (!JSIConverter<std::optional<bool>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "allowUpscale")))) return false;
       return true;
     }
   };

@@ -78,6 +78,10 @@ export function usePipelineImageLoader(
   } = isUniformRadius || cornerRadius === undefined ? {} : cornerRadius;
   const resizeWidth = options?.resize?.width;
   const resizeHeight = options?.resize?.height;
+  const resizeFit = options?.resize?.fit;
+  const resizeAllowUpscale = options?.resize?.allowUpscale;
+  const fit = options?.fit;
+  const allowUpscale = options?.allowUpscale;
   const onLoad = options?.onLoad;
   const onError = options?.onError;
   // Only *whether* a callback is set can change the loader: what the native
@@ -121,8 +125,15 @@ export function usePipelineImageLoader(
       cornerRadius: cornerRadiusOption,
       resize:
         resizeWidth !== undefined && resizeHeight !== undefined
-          ? { width: resizeWidth, height: resizeHeight }
+          ? {
+              width: resizeWidth,
+              height: resizeHeight,
+              fit: resizeFit,
+              allowUpscale: resizeAllowUpscale,
+            }
           : undefined,
+      fit,
+      allowUpscale,
     };
     const token = nextLoaderToken++;
     // The reporters read the refs, but only when the native side calls them —
@@ -165,6 +176,10 @@ export function usePipelineImageLoader(
     bottomRight,
     resizeWidth,
     resizeHeight,
+    resizeFit,
+    resizeAllowUpscale,
+    fit,
+    allowUpscale,
     hasOnLoad,
     hasOnError,
     // Stable ref objects; listed to satisfy the exhaustive-deps rules.

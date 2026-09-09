@@ -23,6 +23,7 @@ export type {
   CacheOption,
   CornerRadii,
   Options,
+  ResizeFit,
   ResizeOptions,
   ViewOptions,
 } from './specs/nitro-image-toolkit.nitro';

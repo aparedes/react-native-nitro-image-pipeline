@@ -18,7 +18,7 @@ public extension ViewOptions {
   /**
    * Create a new instance of `ViewOptions`.
    */
-  init(blur: Double?, cache: CacheOption?, cornerRadius: Variant_Double_CornerRadii?, resize: ResizeOptions?, onLoad: ((_ width: Double, _ height: Double) -> Void)?, onError: ((_ message: String) -> Void)?) {
+  init(blur: Double?, cache: CacheOption?, cornerRadius: Variant_Double_CornerRadii?, resize: ResizeOptions?, fit: ResizeFit?, allowUpscale: Bool?, onLoad: ((_ width: Double, _ height: Double) -> Void)?, onError: ((_ message: String) -> Void)?) {
     self.init({ () -> bridge.std__optional_double_ in
       if let __unwrappedValue = blur {
         return bridge.create_std__optional_double_(__unwrappedValue)
@@ -47,6 +47,18 @@ public extension ViewOptions {
     }(), { () -> bridge.std__optional_ResizeOptions_ in
       if let __unwrappedValue = resize {
         return bridge.create_std__optional_ResizeOptions_(__unwrappedValue)
+      } else {
+        return .init()
+      }
+    }(), { () -> bridge.std__optional_ResizeFit_ in
+      if let __unwrappedValue = fit {
+        return bridge.create_std__optional_ResizeFit_(__unwrappedValue)
+      } else {
+        return .init()
+      }
+    }(), { () -> bridge.std__optional_bool_ in
+      if let __unwrappedValue = allowUpscale {
+        return bridge.create_std__optional_bool_(__unwrappedValue)
       } else {
         return .init()
       }
@@ -115,6 +127,23 @@ public extension ViewOptions {
   @inline(__always)
   var resize: ResizeOptions? {
     return self.__resize.value
+  }
+  
+  @inline(__always)
+  var fit: ResizeFit? {
+    return self.__fit.value
+  }
+  
+  @inline(__always)
+  var allowUpscale: Bool? {
+    return { () -> Bool? in
+      if bridge.has_value_std__optional_bool_(self.__allowUpscale) {
+        let __unwrapped = bridge.get_std__optional_bool_(self.__allowUpscale)
+        return __unwrapped
+      } else {
+        return nil
+      }
+    }()
   }
   
   @inline(__always)

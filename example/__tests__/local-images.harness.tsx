@@ -8,7 +8,6 @@ import {
   render,
   waitFor,
 } from 'react-native-harness';
-import type { Image } from 'react-native-nitro-image';
 import {
   NativePipelineImage,
   NitroImagePipeline,
@@ -19,6 +18,7 @@ import {
 } from 'react-native-nitro-image-pipeline';
 
 import { CHECKER_URL, GRADIENT_URL } from './fixture-urls';
+import { rgbOf } from './pixels';
 
 // The same 200×200 gradient the fixture server serves, bundled as an asset.
 // In the harness (a debug build) Metro streams it, so this exercises the
@@ -42,33 +42,6 @@ function UseImageProbe({ url }: { url: string | number }) {
 // simulator (seen on iOS right after this suite's decode-heavy tests), so give
 // renders headroom. The assertions that matter still run through `waitFor`.
 const RENDER = { timeout: 5000 };
-
-/**
- * The decoded colour channels as `[R, G, B]` per pixel, whatever the native
- * byte layout. nitro-image exports a raw memory copy whose `pixelFormat`
- * differs per image on iOS — an opaque source comes out as `BGRX`, one with an
- * alpha channel as `BGRA` — so comparing raw buffers would compare layouts,
- * not pixels.
- */
-function rgbOf(image: Image): Uint8Array {
-  const { buffer, width, height, pixelFormat } = image.toRawPixelData();
-  const bytes = new Uint8Array(buffer);
-  const bytesPerPixel = bytes.length / (width * height);
-  const offsets = ['R', 'G', 'B'].map((channel) =>
-    pixelFormat.indexOf(channel),
-  );
-  if (offsets.some((offset) => offset < 0 || offset >= bytesPerPixel)) {
-    throw new Error(`Unexpected pixel format ${pixelFormat}`);
-  }
-  const rgb = new Uint8Array(width * height * 3);
-  for (let pixel = 0; pixel < width * height; pixel++) {
-    for (let channel = 0; channel < 3; channel++) {
-      rgb[pixel * 3 + channel] =
-        bytes[pixel * bytesPerPixel + (offsets[channel] ?? 0)] ?? 0;
-    }
-  }
-  return rgb;
-}
 
 describe('local images', () => {
   // A copy of the checkerboard on the file system, written by nitro-image;
