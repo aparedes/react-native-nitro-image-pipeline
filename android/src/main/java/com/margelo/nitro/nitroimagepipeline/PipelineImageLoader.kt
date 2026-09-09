@@ -62,7 +62,8 @@ class PipelineImageLoader(
 
   /**
    * The point-based [ViewOptions] as pixel-based [Options], resolved against the display [scale]
-   * and the target size in pixels.
+   * and the target size in pixels. The fit comes from the explicit `resize` when it carries one,
+   * else from the top-level `fit`/`allowUpscale`, which apply to the measured size.
    */
   private fun pixelOptions(scale: Float, resize: ResizeOptions?): Options {
     val cornerRadius =
@@ -85,7 +86,15 @@ class PipelineImageLoader(
         blur = options?.blur?.times(scale),
         cache = options?.cache,
         cornerRadius = cornerRadius,
-        resize = resize,
+        resize =
+            resize?.let {
+              ResizeOptions(
+                  width = it.width,
+                  height = it.height,
+                  fit = it.fit ?: options?.fit,
+                  allowUpscale = it.allowUpscale ?: options?.allowUpscale,
+              )
+            },
     )
   }
 
@@ -154,10 +163,10 @@ class PipelineImageLoader(
   }
 
   /**
-   * Reports to JS. Calling a JS callback throws if the callback itself throws, or if the runtime
-   * is already gone — a load can land after it was torn down or reloaded — and an exception
-   * escaping this coroutine would reach the thread's uncaught handler and take the app with it.
-   * A report nobody is left to receive is not worth a crash.
+   * Reports to JS. Calling a JS callback throws if the callback itself throws, or if the runtime is
+   * already gone — a load can land after it was torn down or reloaded — and an exception escaping
+   * this coroutine would reach the thread's uncaught handler and take the app with it. A report
+   * nobody is left to receive is not worth a crash.
    */
   private fun report(block: () -> Unit) {
     try {
@@ -172,7 +181,7 @@ class PipelineImageLoader(
   /** The view's laid-out size in pixels, suspending until it has one. */
   private suspend fun measuredSize(view: ImageView): ResizeOptions {
     if (view.width > 0 && view.height > 0) {
-      return ResizeOptions(view.width.toDouble(), view.height.toDouble())
+      return ResizeOptions(view.width.toDouble(), view.height.toDouble(), null, null)
     }
     return suspendCancellableCoroutine { continuation ->
       val listener =
@@ -192,7 +201,7 @@ class PipelineImageLoader(
               val height = bottom - top
               if (width > 0 && height > 0) {
                 v.removeOnLayoutChangeListener(this)
-                continuation.resume(ResizeOptions(width.toDouble(), height.toDouble()))
+                continuation.resume(ResizeOptions(width.toDouble(), height.toDouble(), null, null))
               }
             }
           }
