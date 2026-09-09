@@ -5,9 +5,9 @@ Source request: gist `alejandro-paredes-at-work/125f8c1affd33a5848ee0a8d8ebd50e0
 library is actually built today and lays out the implementation order, the shared geometry both
 platforms must agree on, and the tests that pin it.
 
-**Base branch: `claude/nativepipelineimage-onload-onerror-vdy7vm`** (unmerged; three commits on top
-of v1.6.0 — "feat: add onLoad/onError to NativePipelineImage" plus two fixes, at `df84a28` when this
-was written). It touches the same files this work
+**Base branch: `claude/nativepipelineimage-onload-onerror-vdy7vm`** (unmerged, PR #91; "feat: add
+onLoad/onError to NativePipelineImage" plus a series of fixes on top of v1.6.0, at `ba2ea67` when
+this was written — it is still moving, so rebase again before starting). It touches the same files this work
 touches — `ViewOptions` in the spec, `usePipelineImageLoader`, `NativePipelineImage`, both
 `PipelineImageLoader`s, the loader harness and the README — so branch from it, not from `main`.
 If it merges first, rebase onto `main`; either way, never hand-merge `nitrogen/generated/**` — run
@@ -317,16 +317,19 @@ native view loaders. Consequences:
   them. Nitrogen's generated `ViewOptions.*`, `JViewOptions.hpp` and the Swift bridge all change on
   both branches — regenerate, never merge by hand.
 - **Hook**: `usePipelineImageLoader` now splits options into primitives *and* keeps callbacks in a
-  ref (updated in a `useLayoutEffect`) with stable wrappers. `fit`/`allowUpscale` follow the
+  ref (updated in a `useLayoutEffect`), handing native a wrapper built by `makeReporters` that is
+  gated on a per-loader token; the `useMemo` returns `{ loader, token }`. `fit`/`allowUpscale` follow the
   primitives path (they change the loader); do not put them next to the callbacks (which
   deliberately don't). The loader's `__source` tag is now `{ url, options, callbacks }` — `fit`
   and `allowUpscale` belong in `options` (via `stableOptions`), which is what makes the view swap
   loaders when the fit changes.
-- **iOS loader**: `start(...)` now has a `do/catch` with `notifyLoad(image)` in both the cache-hit
-  and async branches, and reports an invalid URL through `onError` before anything else. The
-  `center` display-scale rewrap (§4) lands in the two success branches; keep `notifyLoad`
-  reporting pixels (`size × scale`).
-- **Android loader**: `onLoad` reads `bitmap.width/height`, unaffected by fit. If the density
+- **iOS loader**: `start(into:key:generation:sizePx:)` now has a `do/catch` with
+  `notifyLoad(image)` in both the cache-hit and async branches, a per-view `generation` guard so
+  superseded work neither displays nor reports, and reports an invalid URL through `onError`
+  before anything else. The `center` display-scale rewrap (§4) lands in the two success branches,
+  after the generation guard; keep `notifyLoad` reporting pixels (`size × scale`).
+- **Android loader**: `onLoad` reads `bitmap.width/height` inside a `report { }` wrapper that
+  swallows callback exceptions; unaffected by fit. If the density
   check in §5 needs a `BitmapDrawable`, report the bitmap's size, not the drawable's.
 - **Tests**: `pipeline-image-loader.harness.tsx` now imports `useEffect`/`useState` and has an
   `onLoad` size test to copy for the fit cases (§7 #8). `NativePipelineImage` sizes are
