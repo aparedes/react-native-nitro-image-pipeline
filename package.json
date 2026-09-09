@@ -74,7 +74,7 @@
     "oxfmt": "^0.65.0",
     "oxlint": "^1.80.0",
     "react": "19.2.3",
-    "react-native": "0.84.1",
+    "react-native": "0.87.1",
     "react-native-builder-bob": "^0.43.0",
     "react-native-nitro-modules": "0.37.0",
     "semantic-release": "^25.0.9",
