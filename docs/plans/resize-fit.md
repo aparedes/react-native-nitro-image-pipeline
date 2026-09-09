@@ -5,8 +5,9 @@ Source request: gist `alejandro-paredes-at-work/125f8c1affd33a5848ee0a8d8ebd50e0
 library is actually built today and lays out the implementation order, the shared geometry both
 platforms must agree on, and the tests that pin it.
 
-**Base branch: `claude/nativepipelineimage-onload-onerror-vdy7vm`** (unmerged; one commit on top of
-v1.6.0, "feat: add onLoad/onError to NativePipelineImage"). It touches the same files this work
+**Base branch: `claude/nativepipelineimage-onload-onerror-vdy7vm`** (unmerged; three commits on top
+of v1.6.0 — "feat: add onLoad/onError to NativePipelineImage" plus two fixes, at `df84a28` when this
+was written). It touches the same files this work
 touches — `ViewOptions` in the spec, `usePipelineImageLoader`, `NativePipelineImage`, both
 `PipelineImageLoader`s, the loader harness and the README — so branch from it, not from `main`.
 If it merges first, rebase onto `main`; either way, never hand-merge `nitrogen/generated/**` — run
@@ -239,7 +240,9 @@ New `resize-fit.harness.ts` (+ move `rgbOf` from `local-images.harness.tsx` into
    overrides `resizeMode="contain"`. `<NativePipelineImage resizeMode="contain">` and
    `resizeMode="center"` assert the produced size through the base branch's
    `onLoad(width, height)` (pixels), with an explicit `resize` so the expectation is independent
-   of the device scale — the pattern its `pipeline-image-loader.harness.tsx` already uses.
+   of the device scale — the pattern its `pipeline-image-loader.harness.tsx` already uses. Note
+   that `onLoad` is not one-shot there (a view can report twice for the same image), so record
+   the latest size and `waitFor` it rather than counting calls.
 9. Extend `resize-for-style.harness.ts` only if `resizeForLayout` gains a `fit` passthrough
    (it does not in this plan).
 
@@ -314,16 +317,22 @@ native view loaders. Consequences:
   them. Nitrogen's generated `ViewOptions.*`, `JViewOptions.hpp` and the Swift bridge all change on
   both branches — regenerate, never merge by hand.
 - **Hook**: `usePipelineImageLoader` now splits options into primitives *and* keeps callbacks in a
-  ref with stable wrappers. `fit`/`allowUpscale` follow the primitives path (they change the loader);
-  do not put them next to the callbacks (which deliberately don't).
+  ref (updated in a `useLayoutEffect`) with stable wrappers. `fit`/`allowUpscale` follow the
+  primitives path (they change the loader); do not put them next to the callbacks (which
+  deliberately don't). The loader's `__source` tag is now `{ url, options, callbacks }` — `fit`
+  and `allowUpscale` belong in `options` (via `stableOptions`), which is what makes the view swap
+  loaders when the fit changes.
 - **iOS loader**: `start(...)` now has a `do/catch` with `notifyLoad(image)` in both the cache-hit
-  and async branches. The `center` display-scale rewrap (§4) lands in the same two places; keep
-  `notifyLoad` reporting pixels (`size × scale`).
+  and async branches, and reports an invalid URL through `onError` before anything else. The
+  `center` display-scale rewrap (§4) lands in the two success branches; keep `notifyLoad`
+  reporting pixels (`size × scale`).
 - **Android loader**: `onLoad` reads `bitmap.width/height`, unaffected by fit. If the density
   check in §5 needs a `BitmapDrawable`, report the bitmap's size, not the drawable's.
 - **Tests**: `pipeline-image-loader.harness.tsx` now imports `useEffect`/`useState` and has an
   `onLoad` size test to copy for the fit cases (§7 #8). `NativePipelineImage` sizes are
-  observable in JS now, so the fit suite needs no back door through the hook.
+  observable in JS now, so the fit suite needs no back door through the hook. Its own tests
+  already treat `onLoad` as "may fire more than once" (they settle, then compare) — fit tests
+  must do the same.
 - **README**: the `<NativePipelineImage>` table has `onLoad`/`onError` rows; put `fit` and
   `allowUpscale` above them, after `resize`, and mention in the `createImageLoader` paragraph
   that `fit` (unlike the callbacks) is part of the loader's identity.
