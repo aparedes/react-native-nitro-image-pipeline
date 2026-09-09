@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import type { ImageLoader } from 'react-native-nitro-image';
 
 import { NitroImagePipeline } from './NitroImagePipeline';
@@ -55,7 +55,14 @@ export function usePipelineImageLoader(
   const hasOnLoad = onLoad !== undefined;
   const hasOnError = onError !== undefined;
   const callbacks = useRef({ onLoad, onError });
-  useEffect(() => {
+  // A layout effect, not a passive one: passive effects are flushed in a later
+  // task, so a load reported between the commit and that flush would read the
+  // previous render's callbacks — a callback added alongside a new loader
+  // could miss its only event. This runs in the same task as the commit, and
+  // the view can't reach the loader before the commit installs it, so the ref
+  // is always current by the time native calls back. (Assigning it during
+  // render instead would mutate on renders React throws away.)
+  useLayoutEffect(() => {
     callbacks.current = { onLoad, onError };
   });
   const notifyLoad = useCallback((width: number, height: number) => {
