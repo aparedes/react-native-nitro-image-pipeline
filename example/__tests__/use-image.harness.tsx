@@ -35,7 +35,11 @@ describe('useImage hook', () => {
 
   it('transitions to error state for invalid URL', async () => {
     await render(<TestComponent url="https://not-real.invalid/x.jpg" />);
-    await waitFor(() => expect(screen.queryByTestId('error')).toBeDefined());
+    // A failed DNS lookup for a `.invalid` host can take a cold CI simulator
+    // longer than waitFor's 1 s default to report.
+    await waitFor(() => expect(screen.queryByTestId('error')).toBeDefined(), {
+      timeout: 10000,
+    });
   });
 
   it('does not load while enabled is false', async () => {

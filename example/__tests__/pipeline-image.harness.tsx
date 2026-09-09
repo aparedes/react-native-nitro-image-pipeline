@@ -145,6 +145,8 @@ describe('PipelineImage', () => {
         }}
       />,
     );
-    await waitFor(() => expect(err).toBeDefined());
+    // A failed DNS lookup for a `.invalid` host can take a cold CI simulator
+    // longer than waitFor's 1 s default to report.
+    await waitFor(() => expect(err).toBeDefined(), { timeout: 10000 });
   });
 });

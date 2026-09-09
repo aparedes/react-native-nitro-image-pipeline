@@ -121,7 +121,9 @@ describe('NativePipelineImage', () => {
         }}
       />,
     );
-    await waitFor(() => expect(message).toBeDefined());
+    // A failed DNS lookup for a `.invalid` host can take a cold CI simulator
+    // longer than waitFor's 1 s default to report.
+    await waitFor(() => expect(message).toBeDefined(), { timeout: 10000 });
   });
 
   it('picks up a callback added after the first render', async () => {
@@ -150,7 +152,9 @@ describe('NativePipelineImage', () => {
     // and install it, or the callback would never be called.
     await render(<Probe />);
     enable?.();
-    await waitFor(() => expect(message).toBeDefined());
+    // A failed DNS lookup for a `.invalid` host can take a cold CI simulator
+    // longer than waitFor's 1 s default to report.
+    await waitFor(() => expect(message).toBeDefined(), { timeout: 10000 });
   });
 
   it('does not reload when only the callbacks change identity', async () => {
