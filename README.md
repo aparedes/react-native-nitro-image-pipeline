@@ -336,9 +336,10 @@ has no effect on `center`, which never scales. Some examples:
 
 `blur` and `cornerRadius` apply to the produced bitmap, so under `contain` the corners round the
 image's own edges, not the box's. Both platforms implement the same geometry (down to the
-rounding), and the harness suites check every cell of this table on each. `center` is the one mode
-that decodes the source at full resolution — it has to see the source's own pixels — so prefer the
-others for very large images.
+rounding), and the harness suites check every cell of this table on each. Decoding is bounded
+near the produced size for `cover`, `contain` and `stretch`; `center` is the one mode that decodes
+the source at full resolution — it has to see the source's own pixels — so prefer the others for
+very large images.
 
 ### `<PipelineImage>`
 
@@ -350,7 +351,7 @@ others for very large images.
 | `cornerRadius` | `number \| CornerRadii` | derived from `style` | Corner radius, in **points** (converted to bitmap pixels internally). When omitted, derived from `style`'s `borderRadius`/`borderTopLeftRadius`/etc.; square if neither is set |
 | `cache` | `'memory' \| 'disk' \| 'none'` | platform default | Caching strategy |
 | `fit` | `ResizeFit` | derived from `resizeMode` | How the bitmap is fitted into the display size — see [Resize modes](#resize-modes). When omitted it follows `resizeMode` (`'cover'` if that is unset too); set it to decouple the two |
-| `allowUpscale` | `boolean` | `true` | `false` never enlarges a source smaller than the display size |
+| `allowUpscale` | `boolean` | `true` | `false` never enlarges a source smaller than the display size when the *bitmap* is produced (nothing is decoded or blurred larger than the source). The view still scales it per `resizeMode`; use `resizeMode="center"` to show it at its natural size |
 | `onLoad` | `(image: Image) => void` | — | Called when the image finishes loading |
 | `onError` | `(error: Error) => void` | — | Called if loading fails |
 | `onLayout` | `(event: LayoutChangeEvent) => void` | — | Standard `View` layout callback; also drives the deferred resize for non-numeric sizes |
@@ -368,7 +369,7 @@ others for very large images.
 | `cache` | `'memory' \| 'disk' \| 'none'` | platform default | Caching strategy |
 | `resize` | `{ width, height, fit?, allowUpscale? }` | measured from the view | Explicit target bitmap box in **pixels**, skipping the native measurement. Rarely needed |
 | `fit` | `ResizeFit` | derived from `resizeMode` | How the bitmap is fitted into the measured size — see [Resize modes](#resize-modes). Follows `resizeMode` when omitted; set it to decouple the two |
-| `allowUpscale` | `boolean` | `true` | `false` never enlarges a source smaller than the view |
+| `allowUpscale` | `boolean` | `true` | `false` never enlarges a source smaller than the view when the *bitmap* is produced. The view still scales it per `resizeMode`; `resizeMode="center"` shows it pixel for pixel on both platforms |
 | `onLoad` | `(width: number, height: number) => void` | — | Called when the view has displayed the image, with the bitmap's size in **pixels**. Hands you the size rather than the `Image`, which stays native. Not a one-shot event — a recycled cell calls it again on re-attach, and one view may call it more than once for the same image, so make it idempotent |
 | `onError` | `(message: string) => void` | — | Called when loading fails, with the error's message. A load cancelled by the view detaching is not a failure. Without it, failures on this component are silent |
 | `ref` | `Ref<NativePipelineImageRef>` | — | Forwarded to the underlying `NativeNitroImage` host view |

@@ -93,8 +93,8 @@ class PipelineImageLoader: HybridImageLoaderSpec {
                 ResizeOptions(
                     width: Double($0.width),
                     height: Double($0.height),
-                    fit: options?.resize?.fit ?? options?.fit,
-                    allowUpscale: options?.resize?.allowUpscale ?? options?.allowUpscale
+                    fit: explicitResizeOptions?.fit ?? options?.fit,
+                    allowUpscale: explicitResizeOptions?.allowUpscale ?? options?.allowUpscale
                 )
             }
         )
@@ -113,12 +113,19 @@ class PipelineImageLoader: HybridImageLoaderSpec {
         return UIImage(cgImage: cgImage, scale: scale, orientation: image.imageOrientation)
     }
 
-    /// An explicit `resize` override (pixels), when set and valid.
-    private var explicitResize: CGSize? {
+    /// The explicit `resize` override, when set and valid. An invalid one
+    /// (a non-positive dimension) is ignored as a whole — its `fit` and
+    /// `allowUpscale` included, as on Android — and the view is measured.
+    private var explicitResizeOptions: ResizeOptions? {
         guard let resize = options?.resize, resize.width > 0, resize.height > 0 else {
             return nil
         }
-        return CGSize(width: resize.width, height: resize.height)
+        return resize
+    }
+
+    /// The explicit `resize` override's size (pixels), when set and valid.
+    private var explicitResize: CGSize? {
+        explicitResizeOptions.map { CGSize(width: $0.width, height: $0.height) }
     }
 
     // MARK: - ImageLoader

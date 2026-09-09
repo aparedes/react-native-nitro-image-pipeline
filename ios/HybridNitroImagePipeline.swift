@@ -263,16 +263,17 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
         // otherwise decompress to ~190 MB before Resize shrinks it.
         // Matches Android, where the request's size() drives subsampling;
         // the exact size and crop still come from the resize processor.
-        // Aspect-fill for every fit, `contain` included: a thumbnail that
-        // covers the box leaves the processor a downscale of a proportional
-        // image, the same input Android's Scale.FILL subsampling produces.
-        // `center` never scales, so it must see the source's own pixels:
-        // a subsampled decode would crop the wrong ones.
+        // `contain` decodes aspect-fit: its output follows the smaller scale,
+        // and an aspect-fill decode of a wide panorama into a small box would
+        // be near the source's full width before the processor shrinks it.
+        // Android's Scale.FIT subsampling bounds the decode the same way.
+        // `center` never scales, so it must see the source's own pixels: a
+        // subsampled decode would crop the wrong ones.
         if let resize = requestedResize(for: options), fit(of: resize) != .center {
             imgRequest.thumbnail = ImageRequest.ThumbnailOptions(
                 size: CGSize(width: resize.width, height: resize.height),
                 unit: .pixels,
-                contentMode: .aspectFill
+                contentMode: fit(of: resize) == .contain ? .aspectFit : .aspectFill
             )
         }
         return imgRequest

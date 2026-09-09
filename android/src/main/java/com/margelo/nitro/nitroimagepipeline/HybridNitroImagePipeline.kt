@@ -231,15 +231,17 @@ class HybridNitroImagePipeline : HybridNitroImagePipelineSpec() {
             }
             // Ask the decoder for the target size so a large source is
             // subsampled near it instead of decoded at full resolution;
-            // ResizeTransformation then makes the size exact. Scale.FILL for
-            // every fit, `contain` included: a decode that covers the box
-            // leaves the transformation a downscale of a proportional image,
-            // the same input iOS's aspect-fill thumbnail produces. `center`
-            // never scales, so it must see the source's own pixels — the
-            // default Size.ORIGINAL — or it would crop the wrong ones.
+            // ResizeTransformation then makes the size exact. `contain`
+            // decodes to *fit* the box: its output follows the smaller
+            // scale, and a fill decode of a wide panorama into a small box
+            // would be near the source's full width before the
+            // transformation shrinks it (iOS's aspect-fit thumbnail bounds
+            // it the same way). `center` never scales, so it must see the
+            // source's own pixels — the default Size.ORIGINAL — or it would
+            // crop the wrong ones.
             if (resize != null && fit != ResizeFit.CENTER) {
               size(resize.first, resize.second)
-              scale(Scale.FILL)
+              scale(if (fit == ResizeFit.CONTAIN) Scale.FIT else Scale.FILL)
               // With an explicit size Coil also *upscales* the decode to it,
               // which the default fit doesn't mind (the transformation ends
               // at the box anyway) but `allowUpscale: false` and `contain`

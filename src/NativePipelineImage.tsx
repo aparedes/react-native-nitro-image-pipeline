@@ -60,8 +60,13 @@ export interface NativePipelineImageProps extends Omit<
    */
   fit?: ResizeFit;
   /**
-   * `false` never enlarges a source smaller than the view — see
-   * {@linkcode ResizeOptions.allowUpscale}.
+   * `false` never enlarges a source smaller than the view when the
+   * **bitmap** is produced — see {@linkcode ResizeOptions.allowUpscale}: it
+   * stays at its own pixel size, so nothing is decoded or blurred larger
+   * than the source. The **view** still displays that bitmap per
+   * `resizeMode`, so `cover`/`contain`/`stretch` scale it up on screen (and
+   * a baked `blur`/`cornerRadius` with it); `resizeMode="center"` shows it
+   * pixel for pixel instead, on both platforms.
    * @default true
    */
   allowUpscale?: boolean;
