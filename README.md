@@ -93,10 +93,24 @@ import { NativePipelineImage } from 'react-native-nitro-image-pipeline';
 `blur`/`cornerRadius` are in points and `style`'s `borderRadius` is picked up automatically,
 exactly like `<PipelineImage>`. The trade-offs of going fully native:
 
-- No `onLoad`/`onError` — the loaded `Image` never crosses into JS. Use `<PipelineImage>` or
-  `useImage` when you need them.
+- `onLoad` reports the bitmap's size in pixels rather than the `Image` itself, which never crosses
+  into JS — use `<PipelineImage>` or `useImage` when you need the `Image`. It means "this view is
+  now showing this image" rather than firing exactly once: a recycled cell re-attaching calls it
+  again, and a single view may call it more than once for the same image. Make it idempotent.
+- Setting `onLoad`/`onError` means there is per-image JS work again. Leave them unset (the default)
+  and nothing crosses into JS at all.
 - The bitmap is loaded once at the size the view first has; if the view resizes later, the bitmap
   scales with it instead of reloading.
+
+```tsx
+<NativePipelineImage
+  url={url}
+  style={styles.photo}
+  // Bitmap pixels, not points. Inline arrows are fine — they don't reload it.
+  onLoad={(width, height) => console.log(`loaded ${width}×${height}`)}
+  onError={(message) => setFailed(message)}
+/>;
+```
 
 Under the hood this is `NitroImagePipeline.createImageLoader(url, options)` — an
 [`ImageLoader`](https://github.com/mrousavy/react-native-nitro-image) driven by
@@ -321,10 +335,14 @@ a plain absolute path, or the other forms listed under
 | `cornerRadius` | `number \| CornerRadii` | derived from `style` | Corner radius, in **points** (screen scale applied natively) |
 | `cache` | `'memory' \| 'disk' \| 'none'` | platform default | Caching strategy |
 | `resize` | `{ width, height }` | measured from the view | Explicit target bitmap size in **pixels**, skipping the native measurement. Rarely needed |
+| `onLoad` | `(width: number, height: number) => void` | — | Called when the view has displayed the image, with the bitmap's size in **pixels**. Hands you the size rather than the `Image`, which stays native. Not a one-shot event — a recycled cell calls it again on re-attach, and one view may call it more than once for the same image, so make it idempotent |
+| `onError` | `(message: string) => void` | — | Called when loading fails, with the error's message. A load cancelled by the view detaching is not a failure. Without it, failures on this component are silent |
 | `ref` | `Ref<NativePipelineImageRef>` | — | Forwarded to the underlying `NativeNitroImage` host view |
 | `…NativeNitroImage props` | — | — | Everything else (`resizeMode`, `recyclingKey`, `testID`, …) is passed through; `recyclingKey` defaults to `url` |
 
-No `onLoad`/`onError`: loading happens entirely natively and the result never crosses into JS.
+`onLoad`/`onError` are the only things that cross into JS here, and only when you pass them: unset,
+loading happens entirely natively. The `Image` itself never crosses — use `<PipelineImage>` or
+`useImage` for that.
 
 ### `createImageLoader(url, options?)` / `usePipelineImageLoader(source, options?)`
 
@@ -332,9 +350,13 @@ Creates the [`ImageLoader`](https://github.com/mrousavy/react-native-nitro-image
 `<NativePipelineImage>`, for use with your own `<NativeNitroImage image={loader} />`. The view
 calls into it natively when it attaches (load at the view's laid-out size) and detaches
 (cancel + release). `options` takes `blur`/`cornerRadius` in **points** and an optional
-pixel-based `resize` override — see the `ViewOptions` type. The hook memoizes by value, so
-inline options literals are fine, and its `source` may be a `require()` as well as a URL string.
-`loader.loadImage()` also works imperatively and resolves with the processed `Image`.
+pixel-based `resize` override — see the `ViewOptions` type. It also takes the optional
+`onLoad(width, height)`/`onError(message)` callbacks a view reports its loads through; without
+them the loader never calls into JS. The hook memoizes by value, so inline options literals are
+fine — the callbacks are read through a ref, so inline arrows don't reload the image either — and
+its `source` may be a `require()` as well as a URL string. `loader.loadImage()` also works
+imperatively and resolves with the processed `Image`; it reports through its promise, not through
+`onLoad`/`onError`.
 
 ### `resolveImageUrl(source)`
 

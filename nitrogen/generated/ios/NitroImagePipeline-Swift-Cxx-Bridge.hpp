@@ -243,6 +243,80 @@ namespace margelo::nitro::nitroimagepipeline::bridge::swift {
   using std__weak_ptr_margelo__nitro__image__HybridImageLoaderSpec_ = std::weak_ptr<margelo::nitro::image::HybridImageLoaderSpec>;
   inline std__weak_ptr_margelo__nitro__image__HybridImageLoaderSpec_ weakify_std__shared_ptr_margelo__nitro__image__HybridImageLoaderSpec_(const std::shared_ptr<margelo::nitro::image::HybridImageLoaderSpec>& strong) noexcept { return strong; }
   
+  // pragma MARK: std::function<void(double /* width */, double /* height */)>
+  /**
+   * Specialized version of `std::function<void(double, double)>`.
+   */
+  using Func_void_double_double = std::function<void(double /* width */, double /* height */)>;
+  /**
+   * Wrapper class for a `std::function<void(double / * width * /, double / * height * /)>`, this can be used from Swift.
+   */
+  class Func_void_double_double_Wrapper final {
+  public:
+    explicit Func_void_double_double_Wrapper(std::function<void(double /* width */, double /* height */)>&& func): _function(std::make_unique<std::function<void(double /* width */, double /* height */)>>(std::move(func))) {}
+    inline void call(double width, double height) const noexcept {
+      _function->operator()(width, height);
+    }
+  private:
+    std::unique_ptr<std::function<void(double /* width */, double /* height */)>> _function;
+  } SWIFT_NONCOPYABLE;
+  Func_void_double_double create_Func_void_double_double(void* NON_NULL swiftClosureWrapper) noexcept;
+  inline Func_void_double_double_Wrapper wrap_Func_void_double_double(Func_void_double_double value) noexcept {
+    return Func_void_double_double_Wrapper(std::move(value));
+  }
+  
+  // pragma MARK: std::optional<std::function<void(double /* width */, double /* height */)>>
+  /**
+   * Specialized version of `std::optional<std::function<void(double / * width * /, double / * height * /)>>`.
+   */
+  using std__optional_std__function_void_double____width_____double____height______ = std::optional<std::function<void(double /* width */, double /* height */)>>;
+  inline std::optional<std::function<void(double /* width */, double /* height */)>> create_std__optional_std__function_void_double____width_____double____height______(const std::function<void(double /* width */, double /* height */)>& value) noexcept {
+    return std::optional<std::function<void(double /* width */, double /* height */)>>(value);
+  }
+  inline bool has_value_std__optional_std__function_void_double____width_____double____height______(const std::optional<std::function<void(double /* width */, double /* height */)>>& optional) noexcept {
+    return optional.has_value();
+  }
+  inline std::function<void(double /* width */, double /* height */)> get_std__optional_std__function_void_double____width_____double____height______(const std::optional<std::function<void(double /* width */, double /* height */)>>& optional) noexcept {
+    return optional.value();
+  }
+  
+  // pragma MARK: std::function<void(const std::string& /* message */)>
+  /**
+   * Specialized version of `std::function<void(const std::string&)>`.
+   */
+  using Func_void_std__string = std::function<void(const std::string& /* message */)>;
+  /**
+   * Wrapper class for a `std::function<void(const std::string& / * message * /)>`, this can be used from Swift.
+   */
+  class Func_void_std__string_Wrapper final {
+  public:
+    explicit Func_void_std__string_Wrapper(std::function<void(const std::string& /* message */)>&& func): _function(std::make_unique<std::function<void(const std::string& /* message */)>>(std::move(func))) {}
+    inline void call(std::string message) const noexcept {
+      _function->operator()(message);
+    }
+  private:
+    std::unique_ptr<std::function<void(const std::string& /* message */)>> _function;
+  } SWIFT_NONCOPYABLE;
+  Func_void_std__string create_Func_void_std__string(void* NON_NULL swiftClosureWrapper) noexcept;
+  inline Func_void_std__string_Wrapper wrap_Func_void_std__string(Func_void_std__string value) noexcept {
+    return Func_void_std__string_Wrapper(std::move(value));
+  }
+  
+  // pragma MARK: std::optional<std::function<void(const std::string& /* message */)>>
+  /**
+   * Specialized version of `std::optional<std::function<void(const std::string& / * message * /)>>`.
+   */
+  using std__optional_std__function_void_const_std__string_____message______ = std::optional<std::function<void(const std::string& /* message */)>>;
+  inline std::optional<std::function<void(const std::string& /* message */)>> create_std__optional_std__function_void_const_std__string_____message______(const std::function<void(const std::string& /* message */)>& value) noexcept {
+    return std::optional<std::function<void(const std::string& /* message */)>>(value);
+  }
+  inline bool has_value_std__optional_std__function_void_const_std__string_____message______(const std::optional<std::function<void(const std::string& /* message */)>>& optional) noexcept {
+    return optional.has_value();
+  }
+  inline std::function<void(const std::string& /* message */)> get_std__optional_std__function_void_const_std__string_____message______(const std::optional<std::function<void(const std::string& /* message */)>>& optional) noexcept {
+    return optional.value();
+  }
+  
   // pragma MARK: std::optional<ViewOptions>
   /**
    * Specialized version of `std::optional<ViewOptions>`.

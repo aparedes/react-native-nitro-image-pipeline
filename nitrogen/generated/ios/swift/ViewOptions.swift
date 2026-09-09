@@ -18,7 +18,7 @@ public extension ViewOptions {
   /**
    * Create a new instance of `ViewOptions`.
    */
-  init(blur: Double?, cache: CacheOption?, cornerRadius: Variant_Double_CornerRadii?, resize: ResizeOptions?) {
+  init(blur: Double?, cache: CacheOption?, cornerRadius: Variant_Double_CornerRadii?, resize: ResizeOptions?, onLoad: ((_ width: Double, _ height: Double) -> Void)?, onError: ((_ message: String) -> Void)?) {
     self.init({ () -> bridge.std__optional_double_ in
       if let __unwrappedValue = blur {
         return bridge.create_std__optional_double_(__unwrappedValue)
@@ -47,6 +47,24 @@ public extension ViewOptions {
     }(), { () -> bridge.std__optional_ResizeOptions_ in
       if let __unwrappedValue = resize {
         return bridge.create_std__optional_ResizeOptions_(__unwrappedValue)
+      } else {
+        return .init()
+      }
+    }(), { () -> bridge.std__optional_std__function_void_double____width_____double____height______ in
+      if let __unwrappedValue = onLoad {
+        return bridge.create_std__optional_std__function_void_double____width_____double____height______({ () -> bridge.Func_void_double_double in
+          let __closureWrapper = Func_void_double_double(__unwrappedValue)
+          return bridge.create_Func_void_double_double(__closureWrapper.toUnsafe())
+        }())
+      } else {
+        return .init()
+      }
+    }(), { () -> bridge.std__optional_std__function_void_const_std__string_____message______ in
+      if let __unwrappedValue = onError {
+        return bridge.create_std__optional_std__function_void_const_std__string_____message______({ () -> bridge.Func_void_std__string in
+          let __closureWrapper = Func_void_std__string(__unwrappedValue)
+          return bridge.create_Func_void_std__string(__closureWrapper.toUnsafe())
+        }())
       } else {
         return .init()
       }
@@ -97,5 +115,39 @@ public extension ViewOptions {
   @inline(__always)
   var resize: ResizeOptions? {
     return self.__resize.value
+  }
+  
+  @inline(__always)
+  var onLoad: ((_ width: Double, _ height: Double) -> Void)? {
+    return { () -> ((_ width: Double, _ height: Double) -> Void)? in
+      if bridge.has_value_std__optional_std__function_void_double____width_____double____height______(self.__onLoad) {
+        let __unwrapped = bridge.get_std__optional_std__function_void_double____width_____double____height______(self.__onLoad)
+        return { () -> (Double, Double) -> Void in
+          let __wrappedFunction = bridge.wrap_Func_void_double_double(__unwrapped)
+          return { (__width: Double, __height: Double) -> Void in
+            __wrappedFunction.call(__width, __height)
+          }
+        }()
+      } else {
+        return nil
+      }
+    }()
+  }
+  
+  @inline(__always)
+  var onError: ((_ message: String) -> Void)? {
+    return { () -> ((_ message: String) -> Void)? in
+      if bridge.has_value_std__optional_std__function_void_const_std__string_____message______(self.__onError) {
+        let __unwrapped = bridge.get_std__optional_std__function_void_const_std__string_____message______(self.__onError)
+        return { () -> (String) -> Void in
+          let __wrappedFunction = bridge.wrap_Func_void_std__string(__unwrapped)
+          return { (__message: String) -> Void in
+            __wrappedFunction.call(std.string(__message))
+          }
+        }()
+      } else {
+        return nil
+      }
+    }()
   }
 }

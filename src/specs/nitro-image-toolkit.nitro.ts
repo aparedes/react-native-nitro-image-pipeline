@@ -94,6 +94,34 @@ export type ViewOptions = {
    * @default undefined (measure the view)
    */
   resize?: ResizeOptions;
+  /**
+   * Called when a view finishes displaying the image, with the size of the
+   * bitmap it displays in **pixels**.
+   *
+   * The bitmap itself deliberately stays native — passing the `Image` into JS
+   * would keep it alive there and defeat the point of the native path. Use
+   * `useImage`/`loadImage` when you need the `Image` object.
+   *
+   * This reports "the view is now showing this image", not a one-shot event:
+   * a loader is per URL + options, not per view, so every view using it
+   * reports, a recycled cell reports again when it re-attaches, and a single
+   * view can report more than once (it requests the image both when its
+   * `image` prop is set and when it becomes visible). Memory-cache hits, which
+   * resolve synchronously, report too. It does not fire for imperative loads
+   * through `ImageLoader.loadImage()` — those resolve through their promise.
+   *
+   * Setting it means there *is* per-image JS work; leave it unset and the
+   * native path stays free of JS round trips entirely.
+   * @default undefined (nothing crosses into JS)
+   */
+  onLoad?: (width: number, height: number) => void;
+  /**
+   * Called when a view fails to load the image, with the underlying error's
+   * message. Cancelling a load (the view detaching before it finishes) is not
+   * a failure and does not call this.
+   * @default undefined (failures are silent)
+   */
+  onError?: (message: string) => void;
 };
 
 export interface NitroImagePipeline extends HybridObject<{

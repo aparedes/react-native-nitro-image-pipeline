@@ -15,6 +15,7 @@ import com.margelo.nitro.image.HybridImageSpec
 import com.margelo.nitro.image.HybridImageView
 import com.margelo.nitro.image.HybridNitroImageViewSpec
 import kotlin.coroutines.resume
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -36,6 +37,11 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  * the shared request builder using the display density, so cache keys match an equivalent
  * `loadImage` call. View sizes are already physical pixels on Android, so only blur and corner
  * radii need scaling.
+ *
+ * The optional `onLoad`/`onError` callbacks report a view's load back to JS. They are per request,
+ * not per loader: several views (and a recycled cell re-attaching) each call them, and a view that
+ * requests twice reports twice — `HybridImageView` requests both when its `image` is set and when
+ * it becomes visible. [loadImage] does not call them — it reports through its promise instead.
  */
 @DoNotStrip
 @Keep
@@ -123,10 +129,18 @@ class PipelineImageLoader(
       // touch the view.
       if (!isActive) return@launch
       when (result) {
-        is SuccessResult -> imageView.setImageBitmap(HybridNitroImagePipeline.bitmapOf(result))
-        // Deliberately no URL in the message — signed URLs and query
-        // tokens must not leak into consuming apps' Logcat.
-        is ErrorResult -> Log.w(TAG, "Failed to load image", result.throwable)
+        is SuccessResult -> {
+          val bitmap = HybridNitroImagePipeline.bitmapOf(result)
+          imageView.setImageBitmap(bitmap)
+          report { options?.onLoad?.invoke(bitmap.width.toDouble(), bitmap.height.toDouble()) }
+        }
+        is ErrorResult -> {
+          // Deliberately no URL in the message — signed URLs and query
+          // tokens must not leak into consuming apps' Logcat.
+          val throwable = result.throwable
+          Log.w(TAG, "Failed to load image", throwable)
+          report { options?.onError?.invoke(throwable.message ?: throwable.toString()) }
+        }
       }
     }
     jobs[forView] = job
@@ -137,6 +151,22 @@ class PipelineImageLoader(
     val view = forView as? HybridImageView ?: return
     jobs.remove(forView)?.cancel()
     view.imageView.setImageDrawable(null)
+  }
+
+  /**
+   * Reports to JS. Calling a JS callback throws if the callback itself throws, or if the runtime
+   * is already gone — a load can land after it was torn down or reloaded — and an exception
+   * escaping this coroutine would reach the thread's uncaught handler and take the app with it.
+   * A report nobody is left to receive is not worth a crash.
+   */
+  private fun report(block: () -> Unit) {
+    try {
+      block()
+    } catch (cancellation: CancellationException) {
+      throw cancellation
+    } catch (throwable: Throwable) {
+      Log.w(TAG, "Image callback failed", throwable)
+    }
   }
 
   /** The view's laid-out size in pixels, suspending until it has one. */

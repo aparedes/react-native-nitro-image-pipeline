@@ -51,6 +51,28 @@ export interface NativePipelineImageProps extends Omit<
    * @default undefined (measure the view natively)
    */
   resize?: ResizeOptions;
+  /**
+   * Called when the view has displayed the image, with the size of the bitmap
+   * it displays in **pixels**.
+   *
+   * Unlike `PipelineImage`'s `onLoad` this doesn't hand you the `Image` — the
+   * bitmap stays native, which is the point of this component — and it means
+   * "the view is now showing this image" rather than firing exactly once: a
+   * recycled cell re-attaching calls it again, and a single view may call it
+   * more than once for the same image. Make it idempotent.
+   *
+   * Setting it means there is per-image JS work again; leave it unset and the
+   * component stays free of JS round trips.
+   */
+  onLoad?: (width: number, height: number) => void;
+  /**
+   * Called when loading fails, with the underlying error's message. A load
+   * cancelled by the view detaching is not a failure and doesn't call this.
+   *
+   * Without it, failures on this component are silent — there is no `Image`
+   * and no promise to surface them.
+   */
+  onError?: (message: string) => void;
 }
 
 /**
@@ -62,8 +84,9 @@ export interface NativePipelineImageProps extends Omit<
  * the same pipeline and caches as `useImage`/`preLoadImage`.
  *
  * Compared to `PipelineImage`:
- * - No `onLoad`/`onError` callbacks — the loaded `Image` never crosses into
- *   JS. Use `PipelineImage` (or `useImage`) when you need them.
+ * - `onLoad` reports the bitmap's pixel size rather than the `Image` itself,
+ *   which never crosses into JS, and can fire more than once for a view. Use
+ *   `PipelineImage` (or `useImage`) when you need the `Image`.
  * - The bitmap is loaded once at the size the view first has; if the view is
  *   resized later, the bitmap scales with it instead of reloading.
  * @example
@@ -79,16 +102,30 @@ export const NativePipelineImage = forwardRef<
   NativePipelineImageRef,
   NativePipelineImageProps
 >(function NativePipelineImage(
-  { url, blur, cornerRadius, cache, resize, style, ...viewProps },
+  {
+    url,
+    blur,
+    cornerRadius,
+    cache,
+    resize,
+    onLoad,
+    onError,
+    style,
+    ...viewProps
+  },
   ref,
 ) {
   // Same precedence as PipelineImage: an explicit prop wins over style.
   const effectiveCornerRadius = cornerRadius ?? cornerRadiusForStyle(style);
+  // Inline arrows are fine here — the hook keeps the callbacks in a ref, so a
+  // new identity doesn't recreate the loader (which would reload the image).
   const loader = usePipelineImageLoader(url, {
     blur,
     cornerRadius: effectiveCornerRadius,
     cache,
     resize,
+    onLoad,
+    onError,
   });
 
   return (
