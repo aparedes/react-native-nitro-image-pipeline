@@ -33,6 +33,18 @@ const sizeOf = (image: Image): Size => ({
   height: image.height,
 });
 
+// `onLoad` is not one-shot (a view can report the same image twice), so
+// each test records the latest size and waits for it.
+function probe() {
+  let size: Size | undefined;
+  return {
+    onLoad: (width: number, height: number) => {
+      size = { width, height };
+    },
+    size: () => size,
+  };
+}
+
 describe('resize fit', () => {
   // A 200×100 source, made by the pipeline from the 200×200 checkerboard and
   // written to a file — the fixtures are square, and every fit but `stretch`
@@ -366,18 +378,6 @@ describe('resize fit', () => {
   });
 
   describe('NativePipelineImage', () => {
-    // `onLoad` is not one-shot (a view can report the same image twice), so
-    // each test records the latest size and waits for it.
-    function probe() {
-      let size: Size | undefined;
-      return {
-        onLoad: (width: number, height: number) => {
-          size = { width, height };
-        },
-        size: () => size,
-      };
-    }
-
     it('derives fit from resizeMode', async () => {
       const reported = probe();
       await render(
