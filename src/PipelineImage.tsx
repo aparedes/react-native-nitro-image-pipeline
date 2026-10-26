@@ -1,15 +1,14 @@
 import {
+  type ComponentPropsWithoutRef,
   type ComponentRef,
   forwardRef,
+  type ForwardRefExoticComponent,
+  type RefAttributes,
   useEffect,
   useRef,
   useState,
 } from 'react';
-import {
-  type HostComponent,
-  type LayoutChangeEvent,
-  PixelRatio,
-} from 'react-native';
+import { type LayoutChangeEvent, PixelRatio } from 'react-native';
 import { type Image, NativeNitroImage } from 'react-native-nitro-image';
 
 import {
@@ -26,8 +25,7 @@ import type {
 } from './specs/nitro-image-toolkit.nitro';
 import { useImage } from './useImage';
 
-type ReactProps<T> = T extends HostComponent<infer P> ? P : never;
-type NativeImageProps = ReactProps<typeof NativeNitroImage>;
+type NativeImageProps = ComponentPropsWithoutRef<typeof NativeNitroImage>;
 
 /**
  * The instance `<PipelineImage>` exposes through its `ref` — the underlying
@@ -140,86 +138,86 @@ function scaleRadius(
  * />
  * ```
  */
-export const PipelineImage = forwardRef<PipelineImageRef, PipelineImageProps>(
-  function PipelineImage(
-    {
-      url,
-      blur = 0,
-      cornerRadius,
-      cache,
-      fit,
-      allowUpscale,
-      onLoad,
-      onError,
-      style,
-      onLayout,
-      resizeMode,
-      ...viewProps
-    },
-    ref,
-  ) {
-    const scale = PixelRatio.get();
-    const styleSize = resizeForStyle(style);
-    const [layoutSize, setLayoutSize] = useState<ResizeOptions | undefined>(
-      undefined,
-    );
-    // A numeric style is what the caller declared, so it wins and starts the
-    // request a frame earlier; the measured layout is the fallback.
-    const size = styleSize ?? layoutSize;
-    // The view's resizeMode and the bitmap's fit are the same four values;
-    // an explicit `fit` decouples them.
-    const effectiveFit = fit ?? resizeMode;
-    const resize: ResizeOptions | undefined = size
-      ? { ...size, fit: effectiveFit, allowUpscale }
-      : undefined;
-    // Same precedence: an explicit prop wins over what style implies.
-    const effectiveCornerRadius =
-      cornerRadius ?? cornerRadiusForStyle(style) ?? 0;
-
-    const { image, error } = useImage({
-      url,
-      blur: blur * scale,
-      cornerRadius: scaleRadius(effectiveCornerRadius, scale),
-      cache,
-      resize,
-      enabled: resize !== undefined,
-    });
-
-    // Latest callbacks in refs so inline arrow props don't re-fire the effects.
-    const onLoadRef = useRef(onLoad);
-    const onErrorRef = useRef(onError);
-    useEffect(() => {
-      onLoadRef.current = onLoad;
-      onErrorRef.current = onError;
-    });
-    useEffect(() => {
-      if (image) onLoadRef.current?.(image);
-    }, [image]);
-    useEffect(() => {
-      if (error) onErrorRef.current?.(error);
-    }, [error]);
-
-    const handleLayout = (event: LayoutChangeEvent) => {
-      onLayout?.(event);
-      const { width, height } = event.nativeEvent.layout;
-      const next = resizeForLayout(width, height);
-      // Always record it (even when a numeric style is in charge) so a later
-      // switch to a non-numeric style has a size to fall back on.
-      setLayoutSize((prev) => (sameSize(prev, next) ? prev : next));
-    };
-
-    return (
-      <NativeNitroImage
-        {...viewProps}
-        ref={ref}
-        style={style}
-        resizeMode={resizeMode}
-        onLayout={handleLayout}
-        image={image}
-      />
-    );
+export const PipelineImage: ForwardRefExoticComponent<
+  PipelineImageProps & RefAttributes<PipelineImageRef>
+> = forwardRef<PipelineImageRef, PipelineImageProps>(function PipelineImage(
+  {
+    url,
+    blur = 0,
+    cornerRadius,
+    cache,
+    fit,
+    allowUpscale,
+    onLoad,
+    onError,
+    style,
+    onLayout,
+    resizeMode,
+    ...viewProps
   },
-);
+  ref,
+) {
+  const scale = PixelRatio.get();
+  const styleSize = resizeForStyle(style);
+  const [layoutSize, setLayoutSize] = useState<ResizeOptions | undefined>(
+    undefined,
+  );
+  // A numeric style is what the caller declared, so it wins and starts the
+  // request a frame earlier; the measured layout is the fallback.
+  const size = styleSize ?? layoutSize;
+  // The view's resizeMode and the bitmap's fit are the same four values;
+  // an explicit `fit` decouples them.
+  const effectiveFit = fit ?? resizeMode;
+  const resize: ResizeOptions | undefined = size
+    ? { ...size, fit: effectiveFit, allowUpscale }
+    : undefined;
+  // Same precedence: an explicit prop wins over what style implies.
+  const effectiveCornerRadius =
+    cornerRadius ?? cornerRadiusForStyle(style) ?? 0;
+
+  const { image, error } = useImage({
+    url,
+    blur: blur * scale,
+    cornerRadius: scaleRadius(effectiveCornerRadius, scale),
+    cache,
+    resize,
+    enabled: resize !== undefined,
+  });
+
+  // Latest callbacks in refs so inline arrow props don't re-fire the effects.
+  const onLoadRef = useRef(onLoad);
+  const onErrorRef = useRef(onError);
+  useEffect(() => {
+    onLoadRef.current = onLoad;
+    onErrorRef.current = onError;
+  });
+  useEffect(() => {
+    if (image) onLoadRef.current?.(image);
+  }, [image]);
+  useEffect(() => {
+    if (error) onErrorRef.current?.(error);
+  }, [error]);
+
+  const handleLayout = (event: LayoutChangeEvent) => {
+    onLayout?.(event);
+    const { width, height } = event.nativeEvent.layout;
+    const next = resizeForLayout(width, height);
+    // Always record it (even when a numeric style is in charge) so a later
+    // switch to a non-numeric style has a size to fall back on.
+    setLayoutSize((prev) => (sameSize(prev, next) ? prev : next));
+  };
+
+  return (
+    <NativeNitroImage
+      {...viewProps}
+      ref={ref}
+      style={style}
+      resizeMode={resizeMode}
+      onLayout={handleLayout}
+      image={image}
+    />
+  );
+});
 
 // Reanimated and DevTools read the display name; the forwardRef wrapper
 // would otherwise report as anonymous.
