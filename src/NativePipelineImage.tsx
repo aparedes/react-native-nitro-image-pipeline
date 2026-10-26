@@ -1,5 +1,10 @@
-import { type ComponentRef, forwardRef } from 'react';
-import type { HostComponent } from 'react-native';
+import {
+  type ComponentPropsWithoutRef,
+  type ComponentRef,
+  forwardRef,
+  type ForwardRefExoticComponent,
+  type RefAttributes,
+} from 'react';
 import { NativeNitroImage } from 'react-native-nitro-image';
 
 import { cornerRadiusForStyle } from './resizeForStyle';
@@ -12,8 +17,7 @@ import type {
 } from './specs/nitro-image-toolkit.nitro';
 import { usePipelineImageLoader } from './usePipelineImageLoader';
 
-type ReactProps<T> = T extends HostComponent<infer P> ? P : never;
-type NativeImageProps = ReactProps<typeof NativeNitroImage>;
+type NativeImageProps = ComponentPropsWithoutRef<typeof NativeNitroImage>;
 
 /**
  * The instance `<NativePipelineImage>` exposes through its `ref` — the
@@ -117,55 +121,56 @@ export interface NativePipelineImageProps extends Omit<
  * />
  * ```
  */
-export const NativePipelineImage = forwardRef<
-  NativePipelineImageRef,
-  NativePipelineImageProps
->(function NativePipelineImage(
-  {
-    url,
-    blur,
-    cornerRadius,
-    cache,
-    resize,
-    fit,
-    allowUpscale,
-    onLoad,
-    onError,
-    style,
-    resizeMode,
-    ...viewProps
-  },
-  ref,
-) {
-  // Same precedence as PipelineImage: an explicit prop wins over style.
-  const effectiveCornerRadius = cornerRadius ?? cornerRadiusForStyle(style);
-  // Inline arrows are fine here — the hook keeps the callbacks in a ref, so a
-  // new identity doesn't recreate the loader (which would reload the image).
-  const loader = usePipelineImageLoader(url, {
-    blur,
-    cornerRadius: effectiveCornerRadius,
-    cache,
-    resize,
-    // Same four values as the view's resizeMode; an explicit `fit` decouples
-    // them.
-    fit: fit ?? resizeMode,
-    allowUpscale,
-    onLoad,
-    onError,
-  });
+export const NativePipelineImage: ForwardRefExoticComponent<
+  NativePipelineImageProps & RefAttributes<NativePipelineImageRef>
+> = forwardRef<NativePipelineImageRef, NativePipelineImageProps>(
+  function NativePipelineImage(
+    {
+      url,
+      blur,
+      cornerRadius,
+      cache,
+      resize,
+      fit,
+      allowUpscale,
+      onLoad,
+      onError,
+      style,
+      resizeMode,
+      ...viewProps
+    },
+    ref,
+  ) {
+    // Same precedence as PipelineImage: an explicit prop wins over style.
+    const effectiveCornerRadius = cornerRadius ?? cornerRadiusForStyle(style);
+    // Inline arrows are fine here — the hook keeps the callbacks in a ref, so a
+    // new identity doesn't recreate the loader (which would reload the image).
+    const loader = usePipelineImageLoader(url, {
+      blur,
+      cornerRadius: effectiveCornerRadius,
+      cache,
+      resize,
+      // Same four values as the view's resizeMode; an explicit `fit` decouples
+      // them.
+      fit: fit ?? resizeMode,
+      allowUpscale,
+      onLoad,
+      onError,
+    });
 
-  return (
-    <NativeNitroImage
-      // Before the spread so a caller-provided recyclingKey wins.
-      recyclingKey={recyclingKeyFor(url)}
-      {...viewProps}
-      ref={ref}
-      style={style}
-      resizeMode={resizeMode}
-      image={loader}
-    />
-  );
-});
+    return (
+      <NativeNitroImage
+        // Before the spread so a caller-provided recyclingKey wins.
+        recyclingKey={recyclingKeyFor(url)}
+        {...viewProps}
+        ref={ref}
+        style={style}
+        resizeMode={resizeMode}
+        image={loader}
+      />
+    );
+  },
+);
 
 // Reanimated and DevTools read the display name; the forwardRef wrapper
 // would otherwise report as anonymous.

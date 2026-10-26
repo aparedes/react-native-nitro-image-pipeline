@@ -78,7 +78,7 @@ class PipelineImageLoader(
                           topRight = radii.topRight?.times(scale),
                           bottomLeft = radii.bottomLeft?.times(scale),
                           bottomRight = radii.bottomRight?.times(scale),
-                      )
+                      ),
                   )
                 },
             )
