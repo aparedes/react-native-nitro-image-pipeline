@@ -1,14 +1,18 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { describe, expect, it, render, waitFor } from 'react-native-harness';
-import type { ImageLoader } from 'react-native-nitro-image';
+import { type ImageLoader, NativeNitroImage } from 'react-native-nitro-image';
 import {
   NativePipelineImage,
   NitroImagePipeline,
   usePipelineImageLoader,
 } from 'react-native-nitro-image-pipeline';
 
-import { GRADIENT_URL as VALID_URL, INVALID_URL } from './fixture-urls';
+import {
+  GRADIENT_URL as VALID_URL,
+  INVALID_URL,
+  slowCheckerUrl,
+} from './fixture-urls';
 
 const styles = StyleSheet.create({
   fixed: { width: 100, height: 50 },
@@ -191,5 +195,40 @@ describe('NativePipelineImage', () => {
     // shortly after; give it time to show up rather than asserting instantly.
     await new Promise((resolve) => setTimeout(resolve, 500));
     expect(loads).toBe(settled);
+  });
+});
+
+describe('replacing a view’s loader', () => {
+  it('never displays the image of a loader the view no longer has', async () => {
+    // Plain NativeNitroImage with raw loaders on purpose: usePipelineImageLoader
+    // drops reports from a loader that is no longer current, which would hide
+    // exactly the late load this test is after. Here a loader reports right
+    // after it puts its bitmap on the view, so a report is a display.
+    const reports: string[] = [];
+    const slow = NitroImagePipeline.createImageLoader(slowCheckerUrl(2000), {
+      // Never from a cache, so it really is still in flight when replaced.
+      cache: 'none',
+      onLoad: () => reports.push('slow'),
+    });
+    const fast = NitroImagePipeline.createImageLoader(VALID_URL, {
+      onLoad: () => reports.push('fast'),
+    });
+    let replace: (() => void) | undefined;
+    function Probe() {
+      const [loader, setLoader] = useState<ImageLoader>(slow);
+      useEffect(() => {
+        replace = () => setLoader(fast);
+      });
+      return <NativeNitroImage image={loader} style={styles.fixed} />;
+    }
+    await render(<Probe />);
+    // Let the view attach and start the slow request before replacing it.
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    replace?.();
+    await waitFor(() => expect(reports).toContain('fast'), { timeout: 5000 });
+    // Outlast the slow response. If the replaced loader's request were still
+    // running it would land now, after the fast one, and take over the view.
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    expect(reports).not.toContain('slow');
   });
 });

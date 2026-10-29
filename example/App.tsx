@@ -1,6 +1,6 @@
 import type React from 'react';
-import { Suspense, use, useState } from 'react';
-import { PixelRatio, StyleSheet, Text, View } from 'react-native';
+import { Suspense, use, useEffect, useState } from 'react';
+import { Linking, PixelRatio, StyleSheet, Text, View } from 'react-native';
 import { type Image, NitroImage } from 'react-native-nitro-image';
 import {
   NativePipelineImage,
@@ -8,6 +8,12 @@ import {
   NitroImagePipeline,
   resizeForStyle,
 } from 'react-native-nitro-image-pipeline';
+
+import {
+  parseStressUrl,
+  type StressConfig,
+  StressScreen,
+} from './StressScreen';
 
 // The direct pixel-based `loadImage` call below still needs the screen scale
 // to convert its resize/cornerRadius options (in bitmap pixels) from the
@@ -59,6 +65,7 @@ function App({ img2 }: { img2: Promise<Image> }): React.JSX.Element {
 
 const colors = {
   text: 'green',
+  link: 'blue',
 };
 
 const styles = StyleSheet.create({
@@ -85,9 +92,15 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
   },
+  stressLink: {
+    paddingTop: 48,
+    textAlign: 'center',
+    fontSize: 16,
+    color: colors.link,
+  },
 });
 
-export default () => {
+function Demo(): React.JSX.Element {
   const img2 = NitroImagePipeline.loadImage(
     'https://picsum.photos/id/100/5000/3333',
     {
@@ -107,5 +120,36 @@ export default () => {
     <Suspense fallback={<Text>Loading...</Text>}>
       <App img2={img2}></App>
     </Suspense>
+  );
+}
+
+export default () => {
+  // `undefined` until the initial URL is known, so a deep-linked stress run
+  // never starts the demo's loads first.
+  const [stress, setStress] = useState<StressConfig | null | undefined>();
+  useEffect(() => {
+    Linking.getInitialURL()
+      .then((url) => setStress(parseStressUrl(url) ?? null))
+      .catch(() => setStress(null));
+  }, []);
+
+  if (stress === undefined) return <View />;
+  if (stress) return <StressScreen initial={stress} />;
+  return (
+    <>
+      <Text
+        style={styles.stressLink}
+        onPress={() =>
+          setStress({
+            component: 'native',
+            list: 'flatlist',
+            autoScroll: false,
+          })
+        }
+      >
+        {'Stress test →'}
+      </Text>
+      <Demo />
+    </>
   );
 };

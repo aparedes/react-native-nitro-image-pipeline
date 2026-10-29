@@ -81,6 +81,8 @@ lib/   ← compiled JS/TS outputs (commonjs, module, typedefs)
 | `android/.../transform/PipelineRoundedCornersTransformation.kt` | Rounds at the bitmap's own size (a port of `ios/RoundedCornersProcessor.swift`) for the non-default fits — Coil's own transformation scale-fills to the request size |
 | `ios/RoundedCornersProcessor.swift` | Per-corner radii for Nuke, clipped through a hand-built path |
 | `ios/PipelineImageLoader.swift` / `android/.../PipelineImageLoader.kt` | Native `ImageLoader` (react-native-nitro-image) impls behind `createImageLoader` — the view loads at its laid-out size on attach, cancels on detach; `ViewOptions` are points, converted to pixels natively |
+| `android/.../ViewportTracker.kt` | Android only: one scroll/layout listener per window that tells the loader when an attached view goes far off-screen (release) or comes near (reload) |
+| `example/StressScreen.tsx` | 150-image memory stress grid, opened by deep link `nitroimagepipeline://stress?component=native\|pipeline&list=flatlist\|scrollview&autoscroll=1` |
 | `src/index.ts` | Library entry point — re-exports only |
 | `src/NitroImagePipeline.ts` | Creates the HybridObject |
 | `src/useImage.ts` | Hook; `enabled` defers loading |

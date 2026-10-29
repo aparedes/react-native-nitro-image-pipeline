@@ -44,6 +44,17 @@ class PipelineImageLoader: HybridImageLoaderSpec {
     // load for a view that is about to be cleared.
     private var generations: [ObjectIdentifier: Int] = [:]
 
+    /// The loader each view currently shows, keyed like the maps above. A
+    /// view whose `image` changes only calls `requestImage` on the new loader
+    /// — nitro-image never tells the old one — so the old one's request would
+    /// otherwise still land and replace the new image. Main thread only, like
+    /// the callers.
+    private static var owners: [ObjectIdentifier: WeakOwner] = [:]
+
+    private struct WeakOwner {
+        weak var loader: PipelineImageLoader?
+    }
+
     init(url: String, options: ViewOptions?) {
         self.url = url
         self.options = options
@@ -151,6 +162,10 @@ class PipelineImageLoader: HybridImageLoaderSpec {
         guard let nativeView = view as? NativeImageView else { return }
         let key = ObjectIdentifier(view)
         let generation = supersedeWork(for: key)
+        if let previous = Self.owners[key]?.loader, previous !== self {
+            previous.yieldView(key: key)
+        }
+        Self.owners[key] = WeakOwner(loader: self)
         // Always hop (asynchronously) to main: `requestImage` fires while the
         // view is being mounted, and only after the current mounting
         // transaction finishes is its final frame guaranteed to be set.
@@ -166,6 +181,9 @@ class PipelineImageLoader: HybridImageLoaderSpec {
         // Takes effect now, unlike the cancellation below: a request queued
         // before this drop runs first, and must not load or report.
         _ = supersedeWork(for: key)
+        if Self.owners[key]?.loader === self {
+            Self.owners[key] = nil
+        }
         // Same queue as `requestImage`, so rapid attach/detach sequences
         // (list recycling) replay in call order.
         DispatchQueue.main.async {
@@ -184,6 +202,16 @@ class PipelineImageLoader: HybridImageLoaderSpec {
         let generation = (generations[key] ?? 0) + 1
         generations[key] = generation
         return generation
+    }
+
+    /// Another loader took the view: nothing this one has queued or in flight
+    /// for it may display or report. The view's image stays — the new owner
+    /// replaces it.
+    private func yieldView(key: ObjectIdentifier) {
+        _ = supersedeWork(for: key)
+        DispatchQueue.main.async {
+            self.cancel(key: key)
+        }
     }
 
     private func isCurrent(_ generation: Int, for key: ObjectIdentifier) -> Bool {
