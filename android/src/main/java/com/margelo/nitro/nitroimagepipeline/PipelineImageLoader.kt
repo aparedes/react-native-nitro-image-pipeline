@@ -31,7 +31,9 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  * when it attaches to the window and [dropImage] when it detaches. The load runs at the view's
  * laid-out size with no JS round trips, and detaching cancels the request and releases the bitmap —
  * the decoded image stays in the shared memory/disk caches, so re-attaching (list recycling) is
- * instant.
+ * instant. An attached view does the same once it is far off-screen, and loads again as it scrolls
+ * back near the window (see [ViewportTracker]), so a `ScrollView` grid holds bitmaps only around
+ * what is visible.
  *
  * [ViewOptions] values are in points (dp); this class converts them to the pixel-based [Options] of
  * the shared request builder using the display density, so cache keys match an equivalent
@@ -54,6 +56,10 @@ class PipelineImageLoader(
   // between several views cancels only the right request. Confined to the
   // main thread — the view calls requestImage/dropImage there.
   private val jobs = HashMap<HybridNitroImageViewSpec, Job>()
+  // Each view's viewport registration (see [ViewportTracker]): a view far
+  // off-screen releases its bitmap even while it stays attached, and loads
+  // again as it nears the window. Main thread only, like [jobs].
+  private val tracked = HashMap<HybridNitroImageViewSpec, ViewportTracker.Entry>()
   private val mainScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
   /** An explicit `resize` override (pixels), when set and valid. */
@@ -113,6 +119,38 @@ class PipelineImageLoader(
   override fun requestImage(forView: HybridNitroImageViewSpec) {
     val view = forView as? HybridImageView ?: return
     val imageView = view.imageView
+    // Not in a window yet (the `image` prop was set first): attaching calls
+    // requestImage again, and only then is there a viewport to load against.
+    if (!imageView.isAttachedToWindow) return
+    lateinit var entry: ViewportTracker.Entry
+    entry =
+        ViewportTracker.Entry(
+            onNear = { load(forView, imageView) },
+            onFar = { release(forView, imageView) },
+            // A newer registration took the view: this one's load must not
+            // land. Its bitmap stays — the new owner replaces it.
+            onReplaced = {
+              if (tracked[forView] === entry) tracked.remove(forView)
+              jobs.remove(forView)?.cancel()
+            },
+        )
+    tracked[forView] = entry
+    ViewportTracker.track(imageView, entry)
+  }
+
+  override fun dropImage(forView: HybridNitroImageViewSpec) {
+    val view = forView as? HybridImageView ?: return
+    tracked.remove(forView)?.let { ViewportTracker.untrack(view.imageView, it) }
+    release(forView, view.imageView)
+  }
+
+  /** Cancels [forView]'s load and clears its bitmap; it stays in the shared caches. */
+  private fun release(forView: HybridNitroImageViewSpec, imageView: ImageView) {
+    jobs.remove(forView)?.cancel()
+    imageView.setImageDrawable(null)
+  }
+
+  private fun load(forView: HybridNitroImageViewSpec, imageView: ImageView) {
     jobs[forView]?.cancel()
     val job = mainScope.launch {
       // Views attach before they are laid out, so the size may not be
@@ -154,12 +192,6 @@ class PipelineImageLoader(
     }
     jobs[forView] = job
     job.invokeOnCompletion { if (jobs[forView] === job) jobs.remove(forView) }
-  }
-
-  override fun dropImage(forView: HybridNitroImageViewSpec) {
-    val view = forView as? HybridImageView ?: return
-    jobs.remove(forView)?.cancel()
-    view.imageView.setImageDrawable(null)
   }
 
   /**

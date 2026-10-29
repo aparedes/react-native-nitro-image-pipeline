@@ -80,7 +80,11 @@ fast-scrolling lists): after the first render there are **zero JS round trips pe
 native view starts the request the moment it attaches to the window — at its own laid-out size,
 so nothing waits for an `onLayout` event to reach JS — and cancels it (releasing the bitmap) when
 it detaches, which makes off-screen list cells free. Re-attaching hits the shared memory cache,
-so recycled cells re-display instantly.
+so recycled cells re-display instantly. On Android, a view that stays attached also releases its
+bitmap once it is more than about one and a half screens off-screen, and loads it again as it
+comes within a screen of the visible area — so a `ScrollView` grid or a `FlatList` with
+`removeClippedSubviews={false}` holds bitmaps only around what is on screen, not one per mounted
+cell.
 
 ```tsx
 import { NativePipelineImage } from 'react-native-nitro-image-pipeline';
