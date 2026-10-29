@@ -19,6 +19,14 @@ export const GRADIENT_URL = `${HOST}/gradient-200.png`;
 export const CHECKER_URL = `${HOST}/checker-200.png`;
 
 /**
+ * The checkerboard, held back by the server for `ms` milliseconds — for a
+ * load that must finish after another one. Each delay is its own URL, so
+ * its own cache entry.
+ */
+export const slowCheckerUrl = (ms: number): string =>
+  `${CHECKER_URL}?delay=${ms}`;
+
+/**
  * `.invalid` is reserved by RFC 2606 and can never resolve, so this fails
  * without touching the network at all.
  */

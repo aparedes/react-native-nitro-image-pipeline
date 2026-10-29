@@ -38,6 +38,10 @@ const server = Bun.serve({
 
     const name = pathname.slice(1);
     if ((IMAGES as readonly string[]).includes(name)) {
+      // `?delay=<ms>` holds the response back, so a suite can make one load
+      // reliably finish after another (capped so a typo can't hang a run).
+      const delay = Number(new URL(request.url).searchParams.get('delay'));
+      if (delay > 0) await Bun.sleep(Math.min(delay, 10000));
       const image = file(FIXTURES + name);
       return new Response(image, {
         headers: {
