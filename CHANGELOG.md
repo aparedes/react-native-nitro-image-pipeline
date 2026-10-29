@@ -1,3 +1,14 @@
+## [1.8.0](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v1.7.0...v1.8.0) (2026-10-29)
+
+### ✨ Features
+
+* release far off-screen images on Android, fix stale loader images, bump Coil to 3.4.0 ([#103](https://github.com/[secure]/react-native-nitro-image-pipeline/issues/103)) ([a299fd4](https://github.com/[secure]/react-native-nitro-image-pipeline/commit/a299fd4bf9ab32bca14387dceb702dae3bcd976e))
+
+### 🐛 Bug Fixes
+
+* **deps:** pin conventional-changelog-conventionalcommits to v9 ([#104](https://github.com/[secure]/react-native-nitro-image-pipeline/issues/104)) ([eea23e5](https://github.com/[secure]/react-native-nitro-image-pipeline/commit/eea23e5e6391d46c03882ad9c54fb45180b5546a))
+* support React Native 0.88 and bump the example to it ([#97](https://github.com/[secure]/react-native-nitro-image-pipeline/issues/97)) ([bd767b6](https://github.com/[secure]/react-native-nitro-image-pipeline/commit/bd767b6ebbf9f14e1d9bef5b4a2f92ea2c04521a))
+
 ## [1.7.0](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v1.6.0...v1.7.0) (2026-09-09)
 
 ### ✨ Features
