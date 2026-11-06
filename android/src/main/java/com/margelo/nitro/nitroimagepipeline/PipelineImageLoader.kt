@@ -32,8 +32,8 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  * laid-out size with no JS round trips, and detaching cancels the request and releases the bitmap —
  * the decoded image stays in the shared memory/disk caches, so re-attaching (list recycling) is
  * instant. An attached view does the same once it is far off-screen, and loads again as it scrolls
- * back near the window (see [ViewportTracker]), so a `ScrollView` grid holds bitmaps only around
- * what is visible.
+ * or is moved by a transform back near the window (see [ViewportTracker]), so a `ScrollView` grid
+ * holds bitmaps only around what is visible.
  *
  * [ViewOptions] values are in points (dp); this class converts them to the pixel-based [Options] of
  * the shared request builder using the display density, so cache keys match an equivalent

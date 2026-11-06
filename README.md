@@ -82,9 +82,11 @@ so nothing waits for an `onLayout` event to reach JS — and cancels it (releasi
 it detaches, which makes off-screen list cells free. Re-attaching hits the shared memory cache,
 so recycled cells re-display instantly. On Android, a view that stays attached also releases its
 bitmap once it is more than about one and a half screens off-screen, and loads it again as it
-comes within a screen of the visible area — so a `ScrollView` grid or a `FlatList` with
-`removeClippedSubviews={false}` holds bitmaps only around what is on screen, not one per mounted
-cell.
+comes within a screen of the visible area — whether it got there by scrolling or by a `transform`
+or animation (a carousel moved by `translateX`, say; that is noticed within about 100 ms). A
+`skew` transform is the one thing not seen: a skewed view is judged at its untransformed
+position. So a `ScrollView` grid or a `FlatList` with `removeClippedSubviews={false}` holds
+bitmaps only around what is on screen, not one per mounted cell.
 
 ```tsx
 import { NativePipelineImage } from 'react-native-nitro-image-pipeline';
