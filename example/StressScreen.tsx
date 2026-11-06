@@ -1,6 +1,7 @@
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   FlatList,
   type FlatList as FlatListType,
   ScrollView,
@@ -21,9 +22,12 @@ import {
 //     -d 'nitroimagepipeline://stress?component=native&list=flatlist&autoscroll=1'
 // With `autoscroll=1` it scrolls to the end one screen at a time and shows
 // "scroll: done", so a script knows when to measure.
+// `list=carousel` renders full-width pages placed only by a native-driver
+// `translateX` (their layout positions are all identical); `autoscroll=1`
+// animates one page at a time.
 
 export type StressComponent = 'pipeline' | 'native';
-export type StressList = 'flatlist' | 'scrollview';
+export type StressList = 'flatlist' | 'scrollview' | 'carousel';
 
 export interface StressConfig {
   component: StressComponent;
@@ -36,6 +40,12 @@ const COLUMNS = 3;
 const SCROLL_STEP_MS = 400;
 const AUTO_SCROLL_DELAY_MS = 6000;
 
+const NEXT_LIST: Record<StressList, StressList> = {
+  flatlist: 'scrollview',
+  scrollview: 'carousel',
+  carousel: 'flatlist',
+};
+
 const urls = Array.from(
   { length: IMAGE_COUNT },
   (_, i) => `https://picsum.photos/seed/stress-${i}/1200/1200`,
@@ -44,9 +54,10 @@ const urls = Array.from(
 export function parseStressUrl(url: string | null): StressConfig | undefined {
   if (!url?.startsWith('nitroimagepipeline://stress')) return undefined;
   const params = new URLSearchParams(url.split('?')[1] ?? '');
+  const list = params.get('list');
   return {
     component: params.get('component') === 'pipeline' ? 'pipeline' : 'native',
-    list: params.get('list') === 'scrollview' ? 'scrollview' : 'flatlist',
+    list: list === 'scrollview' || list === 'carousel' ? list : 'flatlist',
     autoScroll: params.get('autoscroll') === '1',
   };
 }
@@ -65,6 +76,32 @@ function Cell({
     <NativePipelineImage url={url} style={style} />
   ) : (
     <PipelineImage url={url} style={style} />
+  );
+}
+
+function Carousel({
+  component,
+  width,
+  position,
+}: {
+  component: StressComponent;
+  width: number;
+  position: Animated.Value;
+}): React.JSX.Element {
+  return (
+    <View style={styles.carousel}>
+      {urls.map((url, i) => {
+        const pageStyle = [
+          styles.page,
+          { transform: [{ translateX: Animated.add(position, i * width) }] },
+        ];
+        return (
+          <Animated.View key={url} style={pageStyle}>
+            <Cell url={url} size={width} component={component} />
+          </Animated.View>
+        );
+      })}
+    </View>
   );
 }
 
@@ -92,14 +129,29 @@ export function StressScreen({
   const rows = Math.ceil(IMAGE_COUNT / COLUMNS);
   const contentHeight = rows * size;
   const scroller = useRef<Scroller>(null);
+  const [position] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     if (!config.autoScroll) return;
     let offset = 0;
+    let page = 0;
     let interval: ReturnType<typeof setInterval> | undefined;
     const start = setTimeout(() => {
       setScrollState('scrolling');
       interval = setInterval(() => {
+        if (config.list === 'carousel') {
+          Animated.timing(position, {
+            toValue: -page * width,
+            duration: 300,
+            useNativeDriver: true,
+          }).start();
+          if (page >= IMAGE_COUNT - 1) {
+            clearInterval(interval);
+            setScrollState('done');
+          }
+          page += 1;
+          return;
+        }
         offset = Math.min(offset + height, contentHeight);
         if (scroller.current) scrollTo(scroller.current, offset);
         if (offset >= contentHeight) {
@@ -112,10 +164,12 @@ export function StressScreen({
       clearTimeout(start);
       clearInterval(interval);
     };
-  }, [config, height, contentHeight]);
+  }, [config, height, contentHeight, width, position]);
 
-  const toggle = (patch: Partial<StressConfig>) =>
+  const toggle = (patch: Partial<StressConfig>) => {
+    position.setValue(0);
     setConfig((c) => ({ ...c, ...patch, autoScroll: false }));
+  };
 
   return (
     <View style={styles.container}>
@@ -134,7 +188,7 @@ export function StressScreen({
           style={styles.button}
           onPress={() =>
             toggle({
-              list: config.list === 'flatlist' ? 'scrollview' : 'flatlist',
+              list: NEXT_LIST[config.list],
             })
           }
         >
@@ -150,7 +204,14 @@ export function StressScreen({
           {`scroll: ${scrollState}`}
         </Text>
       </View>
-      {config.list === 'flatlist' ? (
+      {config.list === 'carousel' ? (
+        <Carousel
+          key={`${config.component}-carousel`}
+          component={config.component}
+          width={width}
+          position={position}
+        />
+      ) : config.list === 'flatlist' ? (
         <FlatList
           // Remount on every switch so variants never share views.
           key={`${config.component}-flatlist`}
@@ -207,5 +268,14 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+  },
+  carousel: {
+    flex: 1,
+    overflow: 'hidden',
+  },
+  page: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
   },
 });
