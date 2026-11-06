@@ -1,3 +1,9 @@
+## [1.8.1](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v1.8.0...v1.8.1) (2026-11-06)
+
+### 🐛 Bug Fixes
+
+* **android:** load images moved on-screen by a transform ([#105](https://github.com/[secure]/react-native-nitro-image-pipeline/issues/105)) ([bed8491](https://github.com/[secure]/react-native-nitro-image-pipeline/commit/bed8491b4bf6d95f428b7a1929f77600a05f26e9))
+
 ## [1.8.0](https://github.com/[secure]/react-native-nitro-image-pipeline/compare/v1.7.0...v1.8.0) (2026-10-29)
 
 ### ✨ Features
