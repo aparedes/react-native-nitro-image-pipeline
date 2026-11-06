@@ -1,5 +1,7 @@
 package com.margelo.nitro.nitroimagepipeline
 
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.view.ViewTreeObserver
 import java.lang.ref.WeakReference
@@ -15,12 +17,20 @@ import java.util.WeakHashMap
  *
  * "Near" means within [ENTER_MARGIN] window sizes of the window on any side; a near view only
  * counts as far again once it is more than [EXIT_MARGIN] away, so a view sitting on the edge
- * doesn't flip on every scroll event. Only scrolling and layout are watched — a view moved by a
- * transform animation alone is re-evaluated on the next scroll or layout.
+ * doesn't flip on every scroll event.
  *
- * One tracker per window, with a single scroll listener and a single layout listener for all of its
- * views, so a hundred images cost one pass over a hundred positions per scroll event rather than a
- * hundred listeners. Main thread only.
+ * Scrolls and layouts are checked right away. A move by anything else — a transform, a
+ * native-driver animation — is checked within [DRAW_CHECK_DELAY_MS] of the frame that drew it, at
+ * most that often while frames keep coming, and never while nothing draws. The same check corrects
+ * a first decision `track()` made before the view's final position was applied. Known limits: a
+ * skew is applied through `View.setAnimationMatrix`, which `getLocationInWindow` doesn't see (and
+ * RN then also zeroes the translation), so a skewed view is judged at its untransformed position;
+ * and the extent tested is the untransformed size, so a scaled view is judged by its unscaled size,
+ * which the one-window margin absorbs.
+ *
+ * One tracker per window, with a single scroll, layout and pre-draw listener for all of its views,
+ * so a hundred images cost one pass over a hundred positions per scroll event rather than a hundred
+ * listeners. Main thread only.
  */
 internal class ViewportTracker private constructor(root: View) {
   /** What a view's current owner does when the view comes near or goes far. */
@@ -37,9 +47,28 @@ internal class ViewportTracker private constructor(root: View) {
   private val snapshot = ArrayList<Map.Entry<View, Entry>>()
   private val location = IntArray(2)
   private var observer: ViewTreeObserver? = null
+  // Whether [drawCheck] is posted. Cleared by every update(), whatever ran it.
+  private var drawCheckPending = false
 
   private val scrollListener = ViewTreeObserver.OnScrollChangedListener { update() }
   private val layoutListener = ViewTreeObserver.OnGlobalLayoutListener { update() }
+  private val drawCheck = Runnable { update() }
+  // A transform (translation, scale, rotation — what RN's `transform` and native-driver
+  // animations set) moves a view without a scroll or a layout, but every frame showing the move
+  // is drawn. Checking on each of those frames would multiply update()'s cost by the frame rate,
+  // so a drawn frame only schedules one check, at most DRAW_CHECK_DELAY_MS later, unless one is
+  // already pending — and every update() cancels it, having just seen the latest positions. So
+  // the last frame of any move is always checked, a scroll frame costs no extra pass (its scroll
+  // update runs after pre-draw and cancels the check), and a layout-only frame costs one trailing
+  // pass (its layout update runs before pre-draw). It also corrects a first decision made against a
+  // not-yet-final position. Never cancels the frame.
+  private val drawListener = ViewTreeObserver.OnPreDrawListener {
+    if (!drawCheckPending) {
+      drawCheckPending = true
+      mainHandler.postDelayed(drawCheck, DRAW_CHECK_DELAY_MS)
+    }
+    true
+  }
 
   private fun track(view: View, entry: Entry) {
     // A view shows one image at a time: a new owner (the view was given another loader) replaces
@@ -57,6 +86,7 @@ internal class ViewportTracker private constructor(root: View) {
           view.viewTreeObserver.also {
             it.addOnScrollChangedListener(scrollListener)
             it.addOnGlobalLayoutListener(layoutListener)
+            it.addOnPreDrawListener(drawListener)
           }
     }
     entry.near = isNear(view, ENTER_MARGIN)
@@ -73,13 +103,23 @@ internal class ViewportTracker private constructor(root: View) {
           ?.let {
             it.removeOnScrollChangedListener(scrollListener)
             it.removeOnGlobalLayoutListener(layoutListener)
+            it.removeOnPreDrawListener(drawListener)
           }
+      // Even when the observer is dead: a check posted before it died must not outlive the entries.
+      mainHandler.removeCallbacks(drawCheck)
+      drawCheckPending = false
       observer = null
       root.get()?.let { trackers.remove(it) }
     }
   }
 
   private fun update() {
+    // Whatever triggered this pass, it sees the latest positions: a pending draw check is
+    // redundant.
+    if (drawCheckPending) {
+      drawCheckPending = false
+      mainHandler.removeCallbacks(drawCheck)
+    }
     // A snapshot: the callbacks start or cancel loads, which may re-enter track/untrack.
     snapshot.addAll(entries.entries)
     try {
@@ -124,6 +164,11 @@ internal class ViewportTracker private constructor(root: View) {
 
     /** A near view counts as far once it is more than this many window sizes away. */
     const val EXIT_MARGIN = 1.5f
+
+    /** At most this long after a drawn frame, positions are checked again (see drawListener). */
+    const val DRAW_CHECK_DELAY_MS = 100L
+
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     private val trackers = WeakHashMap<View, ViewportTracker>()
 
