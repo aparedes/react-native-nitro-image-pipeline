@@ -113,10 +113,14 @@ class HybridNitroImagePipeline: HybridNitroImagePipelineSpec {
     // directory.
     static let sharedPipeline: ImagePipeline = {
         var configuration = ImagePipeline.Configuration.withDataCache
-        // Store processed (blurred/rounded) variants on disk in addition to
-        // the original download, so they survive memory eviction and
-        // restarts without dropping the original for other variants.
+        // Store processed variants on disk in addition to the original
+        // download, so they survive memory eviction and restarts without
+        // dropping the original for other variants — but only the opaque
+        // ones, which encode to a small JPEG. See OpaqueImageEncoder for why
+        // results with alpha (rounded, blurred, non-`cover` fits) are rebuilt
+        // from the original instead.
         configuration.dataCachePolicy = .storeAll
+        configuration.makeImageEncoder = { _ in OpaqueImageEncoder() }
         // A private, capped memory cache. The default (ImageCache.shared)
         // sizes itself at 15% of physical RAM — up to 768 MB of decoded
         // bitmaps on modern devices before anything is evicted, which shows
