@@ -31,7 +31,10 @@ Pod::Spec.new do |s|
 
   spm_dependency(s,
     url: 'https://github.com/kean/Nuke',
-    requirement: { kind: 'upToNextMajorVersion', minimumVersion: '13.0.0' },
+    # 13.2.1 is the first release that honours `disableDiskCacheWrites` for
+    # processed images (`cache: 'memory' | 'none'` and local sources rely on
+    # it); 13.2.3 adds atomic disk-cache writes.
+    requirement: { kind: 'upToNextMajorVersion', minimumVersion: '13.2.3' },
     products: ['Nuke']
   )
 
