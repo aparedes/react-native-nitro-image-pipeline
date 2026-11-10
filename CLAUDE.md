@@ -126,7 +126,10 @@ the value to its native blur unchanged:
 
 - iOS (`ios/GaussianBlur.swift`) runs three `vImageBoxConvolve_ARGB8888` passes whose widths are
   solved for the requested sigma. `CIGaussianBlur` is deliberately not used — its `inputRadius`
-  measures ≈ `1.18 × sigma` and it fades image borders.
+  measures ≈ `1.18 × sigma` and it fades image borders. The buffers are laid out BGRA
+  (`premultipliedFirst | byteOrder32Little`), not ARGB: the box filter treats the four channels
+  alike, and BGRA is the one order Core Animation doesn't convert on the main thread when the
+  result is first shown.
 - Android (`android/src/main/cpp/GaussianBlur.cpp`) is a port of that kernel: the same
   `boxSizes(forSigma:)` search and the same three passes, each a separable box that rounds to 8 bits
   once, run in place on the `ARGB_8888` bitmap through `AndroidBitmap_lockPixels`. There is no
