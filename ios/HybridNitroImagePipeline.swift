@@ -71,6 +71,20 @@ class HybridImage: HybridImageSpec, NativeImage {
         return Double(uiImage.size.height)
     }
 
+    // What the JS garbage collector is told this object keeps alive. Without
+    // it the conformance falls back to `HybridObject`'s default of 0:
+    // nitro-image binds `memorySize` to the bitmap for its own images, but in
+    // an internal extension this module can't see. A JS `Image` a few words
+    // in size, pinning megabytes of bitmap, then gives the GC no reason to
+    // run — Android's `HybridImage` (nitro-image's own class) reports it.
+    var memorySize: Int {
+        guard let cgImage = uiImage.cgImage else {
+            let pixels = uiImage.size.width * uiImage.scale * uiImage.size.height * uiImage.scale
+            return Int(pixels) * 4
+        }
+        return cgImage.bytesPerRow * cgImage.height
+    }
+
     func toArrayBuffer() throws -> ArrayBuffer {
         guard let data = pngData() else {
             throw RuntimeError.error(withMessage: "Failed to encode image to PNG")
