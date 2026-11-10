@@ -75,6 +75,7 @@ lib/   ← compiled JS/TS outputs (commonjs, module, typedefs)
 | `ios/GaussianBlur.swift` | iOS blur kernel (Accelerate) — no UIKit/Nuke, so `scripts/verify-blur.swift` can compile it on the host |
 | `ios/GaussianBlurProcessor.swift` | UIImage + Nuke `ImageProcessing` plumbing around that kernel |
 | `scripts/verify-blur.swift` | Host-side blur checks, run by `bun run verify:blur` and in CI |
+| `scripts/verify-blur-reference.cpp` | First step of `verify:blur`: the Android kernel against a naive reference, covering both of its window means. Plain C++, so it also runs off macOS |
 | `android/src/main/cpp/GaussianBlur.cpp` | Android blur kernel (C++, no JNI/Android headers) — a port of the iOS one, so `scripts/verify-blur.swift` can compile it on the host too |
 | `android/.../transform/BlurTransformation.kt` | Coil `Transformation` around that kernel, via the JNI entry point in `android/src/main/cpp/GaussianBlurJni.cpp` |
 | `ios/FitResizeProcessor.swift` / `android/.../transform/FitGeometry.kt` + `ResizeTransformation.kt` | The `resize.fit` geometry (see below); the default `cover` stays on Nuke's / the original Coil path so its bytes and cache keys never change |
@@ -135,9 +136,17 @@ Both clamp at the edges rather than sampling past them: vImage via `kvImageEdgeE
 kernel by clamping the sample coordinate. That is what keeps blurred images from fading out at their
 borders.
 
+The C++ kernel takes each window's rounded mean, `(sum + area / 2) / area`, by multiplying with a
+precomputed reciprocal (`ReciprocalMean`) — a per-pixel integer division was most of a pass's cost —
+and only divides (`DividedMean`) for boxes wider than 2895, i.e. sigma above ~1447, whose sums no
+longer fit 32 bits. Both give the division's result exactly; anything that changes the rounding
+breaks the byte-for-byte match with vImage.
+
 Changing either kernel means re-checking both against the same sigma — `bun run verify:blur`
-compiles both kernels for the host and asserts they pick the same box widths, measure the same sigma
-and produce byte-identical output on the same image.
+compiles both kernels for the host, checks the C++ one against a naive reference
+(`scripts/verify-blur-reference.cpp`, the only check that reaches the wide-box path) and asserts the
+two pick the same box widths, measure the same sigma and produce byte-identical output on the same
+image.
 
 ### Nitro Modules Concepts
 
